@@ -230,8 +230,35 @@ def test_file(path: Path) -> tuple[str, str] | None:
     undecided = undecided_exit(argv[0], done.returncode)
     if undecided:
         return "SKIP", f"{argv[0]} exited {done.returncode} and decided nothing: {undecided[:90]}"
+    missing = missing_declared(done.stdout + done.stderr) if done.returncode == 2 else ""
+    if missing:
+        return "SKIP", f"{argv[0]} runs where declared dependency {missing} is not installed; the locked gate runs it"
     failure = next((line for line in tail if line.startswith("FAILED ")), tail[-1] if tail else str(done.returncode))
     return "FAIL", f"{argv[0]}: {failure[:300]}"
+
+
+def missing_declared(output: str) -> str:
+    """The module a collection error could not import when a tracked requirements file declares it, else "".
+
+    THE RUNNER'S ENVIRONMENT IS NOT THE PROJECT'S. A pytest found on PATH may live in its own isolated
+    install (pipx, uv tool) without the project's locked packages, so a test importing one died at
+    collection and the rung called the TEST refused on a machine where nothing was wrong with it. A
+    missing DECLARED dependency is an environment gap and decides nothing; any other missing module, a
+    typo or an undeclared import, stays FAIL. The pinned unit gate runs these files with the lock.
+    """
+    import re  # noqa: PLC0415
+    from fnmatch import fnmatch  # noqa: PLC0415
+
+    found = re.search(r"No module named '([\w.]+)'", output)
+    if not found:
+        return ""
+    module = found.group(1).split(".")[0].lower()
+    names = set()
+    for req in (p for p in tracked() if fnmatch(p.name, "*requirements*.txt")):
+        for line in req.read_text(errors="replace").splitlines():
+            head = re.match(r"([A-Za-z0-9][A-Za-z0-9._-]*)", line)
+            names |= {re.sub(r"[-.]", "_", head.group(1).lower())} if head else set()
+    return module if module in names else ""
 
 
 def _verdict(path: Path) -> tuple[str, str]:
