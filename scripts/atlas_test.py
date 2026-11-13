@@ -953,7 +953,7 @@ def main() -> int:
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
     for line in safeedit.restore_leftovers(ROOT):
         print(f"  restored a plant a killed run left behind: {line}")
-    from testgroups import finish_suite, scrub_git_env, shard_name, shard_pin
+    from testgroups import finish_suite, run_guard_halves, scrub_git_env, shard_name, shard_pin
     scrub_git_env()
     print("atlas contract — mutation tests")
 
@@ -972,12 +972,8 @@ def main() -> int:
     if shard in ("all", "guards", "guards-0", "guards-1"):
         import atlas_guards_test
         if shard == "all":
-            for part in (0, 1):
-                before = len(CASES)
-                atlas_guards_test.run(sys.modules[__name__], part)
-                expected_part = shard_pin(f"guards-{part}", False)
-                if len(CASES) - before != expected_part:
-                    raise SystemExit(f"SHARD SPLIT MOVED: guards-{part} ran {len(CASES) - before}, expected {expected_part}")
+            here = sys.modules[__name__]
+            run_guard_halves(here, lambda part: atlas_guards_test.run(here, part))
         else:
             part = int(shard[-1]) if shard.startswith("guards-") else None
             atlas_guards_test.run(sys.modules[__name__], part)
