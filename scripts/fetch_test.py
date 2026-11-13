@@ -204,6 +204,32 @@ def _handshake_problems() -> list[str]:
         return problems
 
 
+def _client_pin_problems() -> list[str]:
+    """`headron-mcp` started at `/` reads the pin in HEADRON_CLIENT_DIR's project, never the launch directory's (3.63.0)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        project = Path(tmp, "project")
+        (project / "elsewhere").mkdir(parents=True)  # a pinned root with no atlas: refused BY NAME if the pin is read
+        (project / ".atlas.yaml").write_text("atlas:\n  root: elsewhere\n", encoding="utf-8")
+        env = {k: v for k, v in os.environ.items() if k not in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT")}
+        env |= {"HEADRON_CLIENT_DIR": str(project), "HEADRON_NO_FETCH": "1"}
+        scripts = str(Path(__file__).resolve().parent)
+        code = f"import sys; sys.path.insert(0, {scripts!r}); import atlas_cli; sys.exit(atlas_cli.mcp_main())"
+        ask = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}) + "\n"
+        run = subprocess.run(
+            [sys.executable, "-c", code],
+            cwd="/",
+            env=env,
+            input=ask,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    if run.returncode != 2 or "root declared in .atlas.yaml" not in run.stdout:
+        return [f"started at / it skipped the project's pin: rc={run.returncode} stdout={run.stdout[-200:]!r}"]
+    return []
+
+
 def run(module: ModuleType) -> None:
     found = _fetch_problems()
     if found:
@@ -226,3 +252,12 @@ def run(module: ModuleType) -> None:
         )
     )
     print("  ok    headron-mcp on a bad root answers initialize with an error naming the root and the fix")
+    if found := _client_pin_problems():
+        raise SystemExit("FAIL headron-mcp resolves its atlas from the launch directory: " + "; ".join(found))
+    module.CASES.append(
+        (
+            "headron-mcp started outside the project reads the pin in HEADRON_CLIENT_DIR's .atlas.yaml",
+            "a server Cursor starts at / that skips the project's pin and silently serves the installed atlas",
+        )
+    )
+    print("  ok    headron-mcp reads the client project's pin wherever it is started")
