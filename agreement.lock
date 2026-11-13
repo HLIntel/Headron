@@ -1,5 +1,5 @@
 {
-  "contract": "3.62.0",
+  "contract": "3.63.0",
   "schema": 2,
   "schemas": {
     "tools/agent-task.schema.json": "83597b825645c89f",
@@ -94,7 +94,7 @@
     "tool_profiles": "04870283b3c355ed",
     "topologies": "52a720e221d04f16",
     "verification_policy": "585edebea87a932f",
-    "version": "2deeafbbc6060651",
+    "version": "712c748db492b198",
     "version_sites": "c6eabe572f4de382",
     "worktree_policy": "4189b7544a992b94"
   }

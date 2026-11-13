@@ -63,7 +63,7 @@
     "invariants": 52,
     "languages": 40,
     "lazy_docs": 211,
-    "lazy_kib": 707,
+    "lazy_kib": 708,
     "pair_checks": 9,
     "pairs": 360,
     "pairs_absent": 250,
@@ -78,7 +78,7 @@
     "tok_fewer": 89,
     "tool_entries": 385,
     "tool_manifests": 40,
-    "version": "3.62.0",
+    "version": "3.63.0",
     "version_sites": 10
   },
   "schema": 1

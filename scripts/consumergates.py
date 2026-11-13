@@ -13,7 +13,7 @@ from atlascore import ROOT, atlas
 def enter_lane(lane: Path, script: str, argv: list[str]) -> NoReturn:
     """Hand this command to a lane's own copy of `script`, with that copy as its own atlas.
 
-    SIGHTED (3.62.0): the installed CLI exports HEADRON_ROOT, so a lane's gates read the installed tree while running
+    SIGHTED (3.63.0): the installed CLI exports HEADRON_ROOT, so a lane's gates read the installed tree while running
     in the lane, and `headron verify` raised ValueError on a path outside it. Inherited, the root also never equals
     the lane, so the hand-off would repeat forever."""
     for name in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT"):
