@@ -241,7 +241,10 @@ def text(rec: dict, hooks: str) -> str:
     for c in rec["checks"]:
         how = shlex.join(c["argv"]) if c["argv"] else f"no established tool does this for {c['language']}"
         out.append(f"   {c['language']:<12} {c['check']:<24} {c['state']:<16} {how}")
-    out += ["", "4. Agents (Claude Code: CLAUDE.md, .mcp.json; Codex: AGENTS.md, .codex/config.toml; Cursor: .cursor/mcp.json)"]
+    out += [
+        "",
+        "4. Agents (Claude Code: CLAUDE.md, .mcp.json; Codex: AGENTS.md, .codex/config.toml; Cursor: .cursor/mcp.json)",
+    ]
     out += [f"   {w['result']:<10} {w['file']}{'  ' + w['why'] if w.get('why') else ''}" for w in rec["wiring"]]
     out += ["", "5. Git hooks", f"   {hooks}"]
     if rec["first_run"]:

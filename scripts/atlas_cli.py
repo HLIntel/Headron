@@ -178,7 +178,7 @@ def fetch_atlas(version: str) -> Path:
 
 def _resolved(argv: list[str]) -> tuple:
     try:
-        root, rule = resolve_root(argv, Path.cwd())
+        root, rule = resolve_root(argv, Path(os.getenv("HEADRON_CLIENT_DIR", "")).resolve())
         if rule != INSTALLED_FROM or (root / "atlas.yaml").exists():
             return root, rule
         if os.environ.get("HEADRON_NO_FETCH") == "1":
