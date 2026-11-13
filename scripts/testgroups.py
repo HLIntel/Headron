@@ -77,6 +77,28 @@ def split_moved(guards_ran: int | None) -> str | None:
     )
 
 
+def part_moved(module: ModuleType, part: int, ran: int) -> str | None:
+    """Why one guards half's count disagrees with its pin, or None.
+
+    A FAILED GROUP IS NOT A MOVED SPLIT: its cases are never promoted, so the half falls short for a reason
+    `finish_suite` names. Reporting the split first hid that reason (a host identity refusal read as a
+    moved split), so a half with recorded failures defers to `finish_suite`.
+    """
+    expected = shard_pin(f"guards-{part}", False)
+    if ran == expected or getattr(module, "SUITE_ERRORS", []):
+        return None
+    return f"SHARD SPLIT MOVED: guards-{part} ran {ran}, expected {expected}"
+
+
+def run_guard_halves(module: ModuleType, run_half: Callable[[int], object]) -> None:
+    """Run both guards halves in one process, refusing a half whose count moved for no recorded failure."""
+    for part in (0, 1):
+        before = len(module.CASES)
+        run_half(part)
+        if moved := part_moved(module, part, len(module.CASES) - before):
+            raise SystemExit(moved)
+
+
 def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = None):
     impact.save()  # every passing group's record, failed or not elsewhere: a failed group's record is dropped
     if failures := getattr(module, "SUITE_ERRORS", []):

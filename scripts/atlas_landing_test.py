@@ -241,6 +241,13 @@ def shard_split_cases() -> None:
         raise SystemExit("FAIL guard partitions overlap or omit groups or cases")
     if testgroups.split_moved(pinned) or testgroups.split_moved(None) or not testgroups.split_moved(pinned + 1):
         raise SystemExit("FAIL split_moved must name a moved split and nothing else")
+    half, failed = types.ModuleType("half"), types.ModuleType("failed")
+    vars(failed).update(SUITE_ERRORS=["group: refused"])
+    short = testgroups.GUARD_PARTS[1] - 1
+    if not testgroups.part_moved(half, 1, short) or testgroups.part_moved(half, 1, short + 1):
+        raise SystemExit("FAIL part_moved must name a half whose count moved, and only that")
+    if testgroups.part_moved(failed, 1, short):
+        raise SystemExit("FAIL part_moved hid a failed group behind a moved split")
     suite = types.ModuleType("suite")
     vars(suite).update(CASES=[0, 0])
     real = testgroups.impact
