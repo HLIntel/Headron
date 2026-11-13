@@ -400,6 +400,13 @@ def run(module: ModuleType) -> None:
         workflow = base / "ci.yml"
         version = f"{sys.version_info.major}.{sys.version_info.minor}"
         workflow.write_text(textwrap.dedent(WORKFLOW).replace("PYTHON_VERSION", version), encoding="utf-8")
+        # THE HOST'S `python` IS NOT ASSUMED: the adapter asks `python --version`, and a host with only
+        # python3 on PATH answered "unavailable" where the case expects a version mismatch. The version
+        # above is this interpreter's, so `python` is made to be this interpreter.
+        shim = base / "bin"
+        shim.mkdir()
+        (shim / "python").symlink_to(sys.executable)
+        path = os.pathsep.join((str(shim), os.environ.get("PATH", "")))
 
         def call(*argv: str, env: dict[str, str] | None = None, temp: str = "rt") -> subprocess.CompletedProcess[str]:
             return subprocess.run(
@@ -413,7 +420,7 @@ def run(module: ModuleType) -> None:
                     *argv,
                 ],
                 cwd=base,
-                env={**os.environ, **(env or {})},
+                env={**os.environ, "PATH": path, **(env or {})},
                 capture_output=True,
                 text=True,
                 check=False,
