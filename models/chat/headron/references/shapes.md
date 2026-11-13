@@ -12,6 +12,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_fixture_that_names_what_it_could_read` (any): the test's hard-coded value no longer exists in the file, so its planted edit changes nothing and the test still passes
 - `a_guard_that_crashes_on_another_guards_input` (headron): one checker throws a traceback on malformed input, and the checker whose job is to report that input never runs
 - `an_instrument_wrong_in_its_scope` (any): every sum is correct, but it was computed over the wrong set of items
+- `a_test_that_inherits_the_host_environment` (any): the same commit passes on one host and fails on another
 - `a_guard_matched_on_the_tool_name_rather_than_the_act` (any): the guard has no misses to show
 - `a_flow_value_split_on_a_comma` (headron): the loaded record has a key made of words and no value, and the field it split from ends mid-sentence
 - `a_generator_that_reads_the_disk_not_the_tree` (any): the generated table links to files under an ignored build directory that exist only on the machine that ran the example
@@ -36,6 +37,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_derived_roster_written_out_by_hand` (any): the tool's list of items was typed by hand, and the declaration it should have read holds more items
 - `a_generated_page_loaded_as_a_component` (any): a slash command, skill or agent named HEADRON appears beside the real ones after a directory gained a scope
 - `a_gate_that_resolves_to_silence` (any): the plan lists a gate and `headron gate` prints no command for it
+- `a_mutation_harness_scored_over_zero_runs` (any): every mutant is scored killed, or every one survived, though no test actually executed
 - `a_lane_on_a_replaced_history` (any): `headron landed <branch>` reports hundreds of unlanded commits for a lane that made two
 - `an_agent_landing_that_targets_the_atlas` (headron): every git call in the landing passes the policy root as its working directory, and nothing asks which repository the caller is standing in
 - `a_rebase_that_runs_before_a_push_that_will_be_refused` (any): a push or gate error and ahead=0 in the same run, and the commit is reachable only from `git reflog`
@@ -75,7 +77,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_lookup_by_name_that_finds_the_dead_record` (any): a lookup by name returns a record already merged or closed
 - `a_restore_that_erases_a_concurrent_write` (headron): an edit made while a suite ran in the background is gone and no command failed
 - `an_anchored_insert_that_silently_did_nothing` (any): the edit script printed ok and `git diff` does not show the insert
-- `a_mutation_harness_scored_over_zero_runs` (any): every mutant is scored killed, or every one survived, though no test actually executed
 - `a_pull_that_leaves_a_half_merge` (any): git says "you have unmerged files" or "Fix them up in the work tree" on a pull nobody ran by hand
 - `a_branch_judged_landed_by_its_file_list` (any): the closing comment cites file names, and no `git cherry`, diff or patch comparison appears before it
 - `an_untrack_that_deletes_on_every_other_clone` (any): a diff shows a tracked directory removed with `--cached`, and the repository is pulled by another machine
@@ -126,3 +127,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_multiple_patch_operations_on_one_file` (any): the patch verifier reports that multiple operations target one file
 - `a_checkout_reset_during_uncommitted_work` (any): HEAD reflog records a hard reset and tracked edits disappear
 - `a_gate_that_proves_nothing_reported_as_fail` (any): the FAIL rows cluster on a few tools, the repository has no config for them and no build, hook or CI file names them, or the same file passes every reader of its own dialect
+- `a_count_check_masking_its_cause` (any): SUITE_ERRORS is non-empty when the count check fires
+- `an_unchecked_model_claim` (any): opening each cited function shows a body that does what the claim says is missing
+- `a_server_that_exits_before_its_handshake` (any): piping one initialize line into the launcher with the configured env exits non-zero and stderr names the missing root

@@ -72,6 +72,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: every sum is correct, but it was computed over the wrong set of items — and the set it MISSED is often the larger one: a per-turn cost counter that measured FILES on the entry path while tool schemas arriving over a protocol at runtime, 30,855 tokens measured at v3.59.0 of them, sat outside its window entirely; read as the total, the same counter predicted a fresh first turn near 21k tokens against 74k measured, and its override matcher read bare skill names while plugin skills are keyed plugin:skill, so 338 overridden tokens were still charged
 - do instead: every instrument declaring what it does NOT measure, and a closer that disagrees
 
+## a_test_that_inherits_the_host_environment
+
+- shape: a test starts a tool by PATH name, or runs git under the ambient identity, so its verdict depends on the host it runs on rather than the tree
+- looks like: a suite green on the authoring machine and red on a clean host: a missing locked requirement, a setup case answering unavailable, a hook refusing the commit identity, a pinned case count short by the cases of a toolchain the host lacks
+- tell: the same commit passes on one host and fails on another; the failing case spawned python, python3 or git commit without the running interpreter or a hermetic identity, or skipped for a missing toolchain
+- do instead: spawn sys.executable, put a python shim for it first on PATH, and pass a noreply author and committer identity in env= to every planted commit, and declare toolchain-gated cases with testgroups.host_skipped so the pin counts them and CI refuses them
+
 ## a_guard_matched_on_the_tool_name_rather_than_the_act
 
 - shape: a pre-edit guard keys on the NAME of the tool that edits — Edit, Write, MultiEdit — and the agent writes the same files through a shell heredoc instead, so the guard never fires. It is present, correct, reachable, and blind to the path actually taken
@@ -239,6 +246,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a full manifest. The role is filled in, the reviewer sees a tool, and the unrunnable gate and the passing gate print the same nothing
 - tell: the plan lists a gate and `headron gate` prints no command for it
 - do instead: role_coverage_errors in atlasinv, which refuses any (pack, role) pair that is neither runnable nor declared `none` — 44 of 315 pairs at 2.26.0, every one closable by a command the same manifest already declared
+
+## a_mutation_harness_scored_over_zero_runs
+
+- shape: a harness that reads an exit code as a verdict, so a run that never happened scores exactly like a run that failed — and a probe run in a different process vouches for it
+- looks like: a perfect score. At 2.27.0 a zsh `$S:scripts` (`:s` is a substitution modifier) failed before any test ran and scored 5 of 5 mutants KILLED; fixed, the suite's own sys.path insert shadowed every mutant and scored 6 of 6 SURVIVED over the real module. At 3.62.0 mutants run under `python -I` scored KILLED because the child could not import the mutated module, not because a case failed
+- tell: every mutant is scored killed, or every one survived, though no test actually executed
+- do instead: a mutant counts as killed only by the NAMED assertion written for it, beside a control run that must pass, with the import checked in the SAME process as the suite
 
 ## a_lane_on_a_replaced_history
 
@@ -512,13 +526,6 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a script that printed ok. Three failure-mode entries were each anchored on the previous; the first was erased by a concurrent restore, so the second's insert did nothing, removing the third's anchor. Three records lost, zero errors, found only by listing the keys
 - tell: the edit script printed ok and `git diff` does not show the insert
 - do instead: safeedit.replace_once (refuses 0 or 2+ matches), write_verified (every write read back), anchoring on a COMMITTED key and never on a sibling written in the same batch, and verifying each record by parsing the file after the write rather than by the script's exit
-
-## a_mutation_harness_scored_over_zero_runs
-
-- shape: a harness that reads an exit code as a verdict, so a run that never happened scores exactly like a run that failed — and a probe run in a different process vouches for it
-- looks like: a perfect score. At 2.27.0 a zsh `$S:scripts` (`:s` is a substitution modifier) failed before any test ran and scored 5 of 5 mutants KILLED; fixed, the suite's own sys.path insert shadowed every mutant and scored 6 of 6 SURVIVED over the real module
-- tell: every mutant is scored killed, or every one survived, though no test actually executed
-- do instead: a mutant counts as killed only by the NAMED assertion written for it, beside a control run that must pass, with the import checked in the SAME process as the suite
 
 ## a_pull_that_leaves_a_half_merge
 
@@ -869,3 +876,24 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: verify finding many style and parse failures in a healthy public repository
 - tell: the FAIL rows cluster on a few tools, the repository has no config for them and no build, hook or CI file names them, or the same file passes every reader of its own dialect
 - do instead: a gate answers where it runs or why no run there proves anything: a style formatter runs only where the repository adopts it, a tool skips a dialect it cannot read, a per-project verb runs in its project; the skipped row is NOT RUN with that why, never a PASS
+
+## a_count_check_masking_its_cause
+
+- shape: a case-count check runs before the recorded group failures print, so a failed group reads as a count that moved and its real failure is never shown
+- looks like: SHARD SPLIT MOVED: guards-1 ran 248, expected 277, read as a mis-pinned split
+- tell: SUITE_ERRORS is non-empty when the count check fires; running that half alone prints FAIL group <name>
+- do instead: a half with recorded failures defers to finish_suite, which prints them before any count verdict
+
+## an_unchecked_model_claim
+
+- shape: a model reads a digest of names or signatures and reports gaps in code it never read; the report is acted on without opening the cited lines
+- looks like: an audit listing missing implementations and unhandled cases, each with a plausible file and function name
+- tell: opening each cited function shows a body that does what the claim says is missing
+- do instead: a model audit yields leads, not findings: each lead counts only after an instrument (read, test, grep) confirms it
+
+## a_server_that_exits_before_its_handshake
+
+- shape: a stdio tool server refuses its configuration by printing to stderr and exiting before initialize, so the client shows only that the connection closed
+- looks like: Connection closed on every reconnect, with no reason in the client
+- tell: piping one initialize line into the launcher with the configured env exits non-zero and stderr names the missing root
+- do instead: on a root it cannot serve, answer initialize with a JSON-RPC error carrying the hint, then exit
