@@ -362,10 +362,13 @@ def _go_answers_from_the_tables() -> None:
         raise SystemExit(f"FAIL the corpus does not reach every category: {sorted({c for c, _ in python})}")
 
 
+GO_CASES = 4  # the Go engine's cases, run only where `go` is installed
+
+
 def _test_go_engine() -> bool:
     """Tests 36-39: the Go engine, or a named skip that is not counted as a pass."""
     if not shutil.which("go"):
-        print("  skip  Go engine: go is not installed here, so its 4 cases did not run")
+        print(f"  skip  Go engine: go is not installed here, so its {GO_CASES} cases did not run")
         return False
     scripts = str(ROOT / "scripts")
     for name, kills, argv in (
@@ -441,7 +444,7 @@ def main() -> int:
     go_ran = _test_go_engine()
     _test_go_bridge()
 
-    expected = 32 if go_ran else 28
+    expected = 28 + GO_CASES * go_ran
     if len(CASES) != expected:
         raise SystemExit(f"FAIL case count: {len(CASES)} cases, expected {expected}")
     print(f"\n{len(CASES)}/{expected} cases passed")
@@ -450,9 +453,11 @@ def main() -> int:
 
 def run(module: ModuleType) -> None:
     """Run in the counted contract suite only after all local cases pass."""
-    from testgroups import run_counted
+    from testgroups import host_skipped, run_counted
 
     run_counted(module, CASES, main)
+    if not shutil.which("go"):
+        host_skipped(module, GO_CASES, "go is not installed")
 
 
 if __name__ == "__main__":
