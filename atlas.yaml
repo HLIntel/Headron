@@ -3512,7 +3512,6 @@ agent_failure_modes:
     prevented_by: 'a model audit yields leads, not findings: each lead counts only after an instrument (read, test, grep) confirms it'
     unenforceable: whether a prose claim about code is true needs the code read; no check over this tree can see a chat report
     closed_by: every lead in a model audit is marked confirmed or refuted by a named check before it is reported
-    intake: 3.62.0
   a_server_that_exits_before_its_handshake:
     shape: 'a stdio tool server refuses its configuration by printing to stderr and exiting before initialize, so the client shows only that the connection closed'
     looks_like: 'Connection closed on every reconnect, with no reason in the client'
