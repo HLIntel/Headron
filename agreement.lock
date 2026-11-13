@@ -12,7 +12,7 @@
   "sections": {
     "absent_input_owners": "81c18b1e31ce193b",
     "adaptive_recovery": "3091ec1dc9d0a93c",
-    "agent_failure_modes": "25bc0607f33ad88a",
+    "agent_failure_modes": "45699c462122d8e3",
     "agent_policy": "b68b1ff0bbe9fa50",
     "agent_roles": "59062529286c0008",
     "agent_success_patterns": "83ae451a0067dcdc",
