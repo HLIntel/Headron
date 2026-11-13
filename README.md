@@ -93,8 +93,8 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **815** declared planted cases |
-| Failure ledger | 128 shapes, 220 sightings; 103 in-tree guarded, 25 host-only |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **816** declared planted cases |
+| Failure ledger | 128 shapes, 220 sightings; 104 in-tree guarded, 24 host-only |
 | Field ledger | 940 verifications (136 clean); 1133 refusals; 394 landings; 711 lessons; 394 sessions |
 | Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
@@ -153,7 +153,7 @@ Generated on every build; `check` refuses drift.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
 - **52** hard invariants — enforced on every change, zero unowned
-- **367** agreement edges — each a file tied to the declaration it answers for
+- **368** agreement edges — each a file tied to the declaration it answers for
 - **95** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
 - **184** harness Python files — every one held by `lint` · `format` · `typecheck`

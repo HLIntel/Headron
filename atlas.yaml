@@ -1642,7 +1642,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 8
-    module_bytes: 10531
+    module_bytes: 11192
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -1657,6 +1657,9 @@ context_policy:
       every run re-hashes it against the manifest it was unpacked with, refusing an edited, added or
       removed file (fetch_test plants each). 3.59.0 RAISED 10477 -> 10531 for release_cache(): the doctor''s
       state footprint sizes the very path the fetch writes, from this one definition, not a copy.
+      3.62.0 RAISED 10531 -> 11192 for the handshake refusal: on a root it cannot serve, headron-mcp answers
+      initialize with a JSON-RPC error naming the root, where it exited and the client showed only "Connection
+      closed" (seen twice). It runs exactly when no atlas resolved, so atlas_cli is the only module present.
       3.60.0 RAISED resolved_closure 2 -> 8 for receipt_test: its planted schema cases import jsonschema,
       which lives in the hash lock only (optional in third_party; scripts/requirements.txt stays runtime-only),
       plus its six pinned dependencies.'
@@ -3516,9 +3519,7 @@ agent_failure_modes:
     tell: piping one initialize line into the launcher with the configured env exits non-zero and stderr names the missing root
     sightings: 1
     prevented_by: 'on a root it cannot serve, answer initialize with a JSON-RPC error carrying the hint, then exit'
-    unenforceable: 'until mcp_main answers initialize on refusal, the stderr hint is only visible to someone who runs the probe'
-    closed_by: headron-mcp with a bad HEADRON_ROOT returns a JSON-RPC error naming the root to initialize
-    intake: 3.62.0
+    enforced_by: [fetch_test._handshake_problems]
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
