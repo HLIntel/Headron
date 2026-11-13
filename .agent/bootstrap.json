@@ -1,7 +1,7 @@
 {
 "schema":1,
 "project":"Headron Software",
-"atlas_version":"3.62.0",
+"atlas_version":"3.63.0",
 "glance":{"is":"a rule contract and CLI mapping changed files to checks. Hooks are optional; `headron verify` runs done gates.","is_not":"a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.","init_writes":["AGENTS.md","CLAUDE.md",".mcp.json",".codex/config.toml",".git/hooks/pre-commit"],"more":"llms.txt"},
 "read_nothing_first":"port first; load only named files",
 "commands":{"port":"python scripts/atlas.py port <path> --frame agent --json","find":"python scripts/atlas.py find <query> --json","gate":"python scripts/atlas.py gate <path> <gate> --json","plan":"python scripts/atlas.py plan <path> --task <task> --change <class> --json","check":"python scripts/atlas.py check","doctor":"python scripts/atlas.py doctor --json","policy":"python scripts/agentpolicy.py <contract>","run":"python scripts/agentrun.py <contract> --json","installed":"headron --where; headron --atlas-root <checkout> port <path> --json"},

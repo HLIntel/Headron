@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-66 modules that at most one other module imports: 27 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+67 modules that at most one other module imports: 27 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -21,6 +21,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [edges](../scripts/edges.py) | The test -> declaration edge: every planted case names the enforcer(s) its plant must trip | 1 | atlas, atlasgen, atlasinv, packmanifest, roster, safeedit, testgroups | [atlas_rules_test](../scripts/atlas_rules_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
 | [enforce](../scripts/enforce.py) | The enforcement rung at commit time, for ANY repository and ANY agent: refuse a change whose file fails its… | 1 | agentpolicy, atomicfile, gateplace, gaterunner, localtools, verify | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) +3 |
 | [failureledger](../scripts/failureledger.py) | The failure ledger's row-shape rules: the closed key set, and the `signature` regexes `headron failures… | 1 |  |  |
+| [formula](../scripts/formula.py) | Spreadsheet formulas for the data kit: parsed and evaluated, never executed | 1 |  | [formula_test](../scripts/formula_test.py) |
 | [ghaudit](../scripts/ghaudit.py) | ghaudit — does the LIVE GitHub configuration match config/github-controls.json? | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [githubapp](../scripts/githubapp.py) | The Headron GitHub App, one module: every pushed head gets a real "Headron verify" check run | 1 | agentpolicy, atomicfile, branchstate, githubjob, knowledge, runtime | [githubapp_test](../scripts/githubapp_test.py), [runtime_test](../scripts/runtime_test.py) |
 | [githubjob](../scripts/githubjob.py) | The GitHub App's wire and queue shapes, as types only: nothing imports this at run time | 1 |  | [githubapp_test](../scripts/githubapp_test.py) |
@@ -54,7 +55,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [brainstorm](../scripts/brainstorm.py) | brainstorm — a strategic brainstorm as a record a program can refuse: diverge, pre-mortem, converge, prove | 0 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [cadence](../scripts/cadence.py) | The time-boxed session, declared once and printed as a clock — `headron cadence [--minutes N]` | 0 |  | [atlas_guards_test](../scripts/atlas_guards_test.py) |
 | [claude_hook](../scripts/claude_hook.py) | Claude Code PreToolUse adapter: refuses the pushes and bypasses the repository forbids, before they run | 0 | boundedinput, gitobject | [claude_hook_test](../scripts/claude_hook_test.py) |
-| [datakit](../scripts/datakit.py) | Data kit: read tables from data files, check them against a schema, trace a report's numbers | 0 | artifacts | [datakit_test](../scripts/datakit_test.py) |
+| [datakit](../scripts/datakit.py) | Data kit: read tables from data files, check them against a schema, trace a report's numbers | 0 | artifacts, formula | [datakit_test](../scripts/datakit_test.py) |
 | [freshness](../scripts/freshness.py) | Which parts of this tree have not been re-examined lately — measured in CONTRACT VERSIONS | 0 |  | [handoff_test](../scripts/handoff_test.py) |
 | [handoff](../scripts/handoff.py) | A bounded, artifact-specific handoff — route evidence instead of a repository dump | 0 | agentpolicy, atlas | [handoff_test](../scripts/handoff_test.py) |
 | [headron_edit](../scripts/headron_edit.py) | The MCP route that may EDIT — separate, opt-in, and bounded by the task contract it is started with | 0 | agentaudit, agentpolicy, headron_mcp, safeedit | [atlas_guards_test](../scripts/atlas_guards_test.py), [edit_version_test](../scripts/edit_version_test.py) |

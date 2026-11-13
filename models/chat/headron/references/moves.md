@@ -337,3 +337,17 @@ GENERATED from atlas.yaml/agent_success_patterns.
 - when: a gate, placement or verdict rule changes how many FAILs a consumer sees
 - verify: compare.py over the two JSON runs names each row that moved, and every row that left FAIL is NOT RUN with a why, never a PASS
 - answers: a_gate_that_proves_nothing_reported_as_fail
+
+## pin_a_test_to_the_tree_not_the_host
+
+- move: spawn the running interpreter, give planted commits a hermetic identity, and declare a toolchain-gated case with testgroups.host_skipped so the pin counts it and CI refuses it
+- when: a test starts a tool, commits in a planted repo, or skips for a toolchain the host may lack
+- verify: the same commit gives the same verdict on a clean host with a fresh venv from the lock, and a host skip under CI fails
+- answers: a_test_that_inherits_the_host_environment
+
+## score_a_mutant_only_by_its_named_assertion
+
+- move: run an unmutated control first and count a mutant killed only when the assertion written for it fails, never by a non-zero exit
+- when: a mutation run reports kills or survivors
+- verify: a mutant whose child cannot import the module is scored not run, not killed
+- answers: a_mutation_harness_scored_over_zero_runs

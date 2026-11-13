@@ -51,7 +51,7 @@ def _names(file: Path, spelling: str) -> bool:
 def unadopted(path: Path, tool: str, spec: dict) -> str | None:
     """None when the repository holding `path` adopts `tool`, else why its formatter gate proves nothing.
 
-    A STYLE IS THE REPOSITORY'S CHOICE (3.62.0). Measured on 8 public repositories: 31 of 58 FAIL rows were
+    A STYLE IS THE REPOSITORY'S CHOICE (3.63.0). Measured on 8 public repositories: 31 of 58 FAIL rows were
     prettier, shfmt, taplo or ruff checking files in repositories that configure none of them, so a FAIL
     reported the default style, not a defect. ADOPTED means the tool's config file sits between the file
     and its repository's top, or a build, hook or CI file there names it. An `.editorconfig` adopts only the

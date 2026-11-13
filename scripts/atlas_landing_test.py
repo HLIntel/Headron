@@ -241,6 +241,32 @@ def shard_split_cases() -> None:
         raise SystemExit("FAIL guard partitions overlap or omit groups or cases")
     if testgroups.split_moved(pinned) or testgroups.split_moved(None) or not testgroups.split_moved(pinned + 1):
         raise SystemExit("FAIL split_moved must name a moved split and nothing else")
+    half, failed = types.ModuleType("half"), types.ModuleType("failed")
+    vars(failed).update(SUITE_ERRORS=["group: refused"])
+    short = testgroups.GUARD_PARTS[1] - 1
+    if not testgroups.part_moved(half, 1, short) or testgroups.part_moved(half, 1, short + 1):
+        raise SystemExit("FAIL part_moved must name a half whose count moved, and only that")
+    if testgroups.part_moved(failed, 1, short):
+        raise SystemExit("FAIL part_moved hid a failed group behind a moved split")
+    skipped = types.ModuleType("skipped")
+    vars(skipped).update(CASES=[0], HOST_SKIPS=[(2, "no toolchain")])
+    if testgroups.counted(skipped) != 3:
+        raise SystemExit("FAIL a host's named skip must count toward the pin, apart from its passes")
+    ci = os.environ.get("CI")
+    os.environ["CI"] = "true"
+    try:
+        testgroups.host_skipped(skipped, 1, "no toolchain")
+    except SystemExit:
+        refused = True
+    else:
+        refused = False
+    finally:
+        if ci is None:
+            os.environ.pop("CI")
+        else:
+            os.environ["CI"] = ci
+    if not refused:
+        raise SystemExit("FAIL a host skip in CI must fail, never quietly lower the count")
     suite = types.ModuleType("suite")
     vars(suite).update(CASES=[0, 0])
     real = testgroups.impact

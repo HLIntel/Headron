@@ -1,7 +1,7 @@
 # Headron Index
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**40** languages · **60** extensions · **64** gates · **17** runtimes · **124** failure shapes · **48** success moves · **52** invariants · **95** instruments · **363** agreement edges · **2** dependency
+**40** languages · **60** extensions · **64** gates · **17** runtimes · **128** failure shapes · **50** success moves · **52** invariants · **95** instruments · **368** agreement edges · **2** dependency
 <!-- END generated: glance -->
 
 ## Use it
@@ -49,7 +49,7 @@ Start with the task below and follow the linked page; the index is a map, not a 
 
 | Need | Start |
 |---|---|
-| code-development wiki | [docs/wiki/README.md](wiki/README.md) |
+| Headron wiki | [docs/wiki/README.md](wiki/README.md) |
 | systems | [systems](systems/README.md) |
 | concepts paired with mechanisms | [ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) |
 | consistency | [CONSISTENCY.md](CONSISTENCY.md) |

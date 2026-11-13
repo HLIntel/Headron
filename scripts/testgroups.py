@@ -77,6 +77,45 @@ def split_moved(guards_ran: int | None) -> str | None:
     )
 
 
+def part_moved(module: ModuleType, part: int, ran: int) -> str | None:
+    """Why one guards half's count disagrees with its pin, or None.
+
+    A FAILED GROUP IS NOT A MOVED SPLIT: its cases are never promoted, so the half falls short for a reason
+    `finish_suite` names. Reporting the split first hid that reason (a host identity refusal read as a
+    moved split), so a half with recorded failures defers to `finish_suite`.
+    """
+    expected = shard_pin(f"guards-{part}", False)
+    if ran == expected or getattr(module, "SUITE_ERRORS", []):
+        return None
+    return f"SHARD SPLIT MOVED: guards-{part} ran {ran}, expected {expected}"
+
+
+def host_skipped(module: ModuleType, cases: int, why: str) -> None:
+    """Cases this host cannot run (no toolchain): named, counted apart from passes, refused in CI.
+
+    THE PIN MUST NOT DEPEND ON THE MACHINE: a host without `go` ran 4 fewer cases and read as a moved
+    split. CI declares every toolchain, so a skip there is a FAIL, never a quieter pin.
+    """
+    if os.environ.get("CI"):
+        raise SystemExit(f"FAIL {cases} cases did not run in CI: {why}")
+    vars(module).setdefault("HOST_SKIPS", []).append((cases, why))
+    print(f"  skip  {cases} cases not run on this host: {why}")
+
+
+def counted(module: ModuleType) -> int:
+    """Cases that passed plus cases this host named as not runnable: what the pins are compared with."""
+    return len(module.CASES) + sum(n for n, _ in getattr(module, "HOST_SKIPS", []))
+
+
+def run_guard_halves(module: ModuleType, run_half: Callable[[int], object]) -> None:
+    """Run both guards halves in one process, refusing a half whose count moved for no recorded failure."""
+    for part in (0, 1):
+        before = counted(module)
+        run_half(part)
+        if moved := part_moved(module, part, counted(module) - before):
+            raise SystemExit(moved)
+
+
 def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = None):
     impact.save()  # every passing group's record, failed or not elsewhere: a failed group's record is dropped
     if failures := getattr(module, "SUITE_ERRORS", []):
@@ -89,13 +128,15 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
         except Exception:  # noqa: S110
             pass  # fails open: never block the suite on a ledger write
         return 1
-    if len(module.CASES) != expected:
+    if counted(module) != expected:
         raise SystemExit(
-            f"CASE COUNT MOVED: {len(module.CASES)} ran, {expected} expected — a harness that silently skips cases prints a full pass"
+            f"CASE COUNT MOVED: {counted(module)} ran, {expected} expected — a harness that silently skips cases prints a full pass"
         )
     if moved := split_moved(guards_ran):
         raise SystemExit(moved)
-    print(f"atlas tests: {len(module.CASES)}/{expected} pass")
+    skips = getattr(module, "HOST_SKIPS", [])
+    host = "".join(f"; {n} not run on this host ({why})" for n, why in skips)
+    print(f"atlas tests: {len(module.CASES)}/{expected} pass{host}")
     module.edges.coverage(len(module.CASES))
     # Record test run success for session-to-session benefits
     try:
@@ -114,7 +155,7 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # own checkout, so their plants never meet. The pinned total is the sum of the two shard pins. GUARDS_CASES is
 # measured by running that shard alone, never intended.
 SHARDS = ("all", "core", "guards", "guards-0", "guards-1")
-GUARD_PARTS = (228, 277)
+GUARD_PARTS = (229, 277)
 GUARDS_CASES = sum(GUARD_PARTS)
 
 
@@ -127,8 +168,8 @@ def shard_name() -> str:
 
 def shard_pin(name: str, cross_checked: bool) -> int:
     base = {
-        "all": 666,
-        "core": 666 - GUARDS_CASES,
+        "all": 667,
+        "core": 667 - GUARDS_CASES,
         "guards": GUARDS_CASES,
         "guards-0": GUARD_PARTS[0],
         "guards-1": GUARD_PARTS[1],
