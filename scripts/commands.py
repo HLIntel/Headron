@@ -327,7 +327,11 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "set up a repository: machine, languages, checks, agent wiring, first run",
         "emit the setup as a record",
         (
-            _arg("--no-wiring", **_ON, help="write no AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml or .cursor/mcp.json"),
+            _arg(
+                "--no-wiring",
+                **_ON,
+                help="write no AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml or .cursor/mcp.json",
+            ),
             _arg("--no-run", **_ON, help="list the checks without running them"),
         ),
     ),
