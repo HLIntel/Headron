@@ -288,26 +288,52 @@ def test_port_agent_frame_says_what_a_directory_proves():
     assert "  proves: " + " · ".join(rec["proves"]) in port.text(rec, color=False)
 
 
-def test_search_speed_and_cache():
-    """Verify search is fast (< 500ms cold, < 200ms warm)."""
+def _reference_ms() -> float:
+    """CPU ms of a fixed pure-Python loop, best of 3: this core's speed right now (~26 ms on a performance core)."""
     import time
+
+    best = float("inf")
+    for _ in range(3):
+        t0, s = time.process_time(), 0
+        for i in range(300_000):
+            s += hash(str(i)) & 7
+        best = min(best, (time.process_time() - t0) * 1000)
+    return best
+
+
+def test_search_speed_and_cache():
+    """Search stays under 600 ms cold and 250 ms warm, at a performance core's speed (23 and 9 reference loops)."""
+    import time
+    from unittest.mock import patch
 
     # A stale store rebuilds on the first read (~0.9 s measured); this test times reading a current one.
     if atlasindex.verify():
         atlasindex.build()
-    t0 = time.perf_counter()
-    hits_cold = atlasindex.search("mind", limit=5)
-    t1 = time.perf_counter()
-    assert len(hits_cold) > 0
-    cold_ms = (t1 - t0) * 1000
-    assert cold_ms < 600, f"Cold search took {cold_ms:.1f}ms, expected < 600ms"
-
-    t0 = time.perf_counter()
-    hits_warm = atlasindex.search("mind", limit=5)
-    t1 = time.perf_counter()
-    assert len(hits_warm) > 0
-    warm_ms = (t1 - t0) * 1000
-    assert warm_ms < 250, f"Warm search took {warm_ms:.1f}ms, expected < 250ms"
+    # MEASURED IN REFERENCE LOOPS, NOT MILLISECONDS (3.63.0). Neither clock is load-invariant here: wall
+    # clock counted the other gates verify runs beside this, and macOS moves a loaded process to an
+    # efficiency core, where the same cold search costs 1103-1173 ms of CPU time against 285-291 ms on a
+    # performance core. Timing a fixed loop before and after the search, and taking the slower, expresses
+    # the old 600/250 ms ceilings in this core's speed (600 / 26 ms per loop = 23 loops).
+    with (
+        patch.object(atlasindex, "_RECORDS_CACHE", None),  # cold means cold, whatever earlier tests loaded
+        patch.object(atlasindex, "_IDF_CACHE", None),
+        patch.object(atlasindex, "_VECTORS_CACHE", None),
+    ):
+        before = _reference_ms()
+        t0 = time.process_time()
+        hits_cold = atlasindex.search("mind", limit=5)
+        cold_ms = (time.process_time() - t0) * 1000
+        t0 = time.process_time()
+        hits_warm = atlasindex.search("mind", limit=5)
+        warm_ms = (time.process_time() - t0) * 1000
+        loop = max(before, _reference_ms())
+    assert hits_cold and hits_warm
+    assert cold_ms / loop < 23, (
+        f"Cold search took {cold_ms:.0f}ms = {cold_ms / loop:.1f} loops of {loop:.0f}ms, want < 23"
+    )
+    assert warm_ms / loop < 9, (
+        f"Warm search took {warm_ms:.0f}ms = {warm_ms / loop:.1f} loops of {loop:.0f}ms, want < 9"
+    )
 
 
 def test_search_vector_cache():
