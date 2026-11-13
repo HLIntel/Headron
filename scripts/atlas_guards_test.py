@@ -347,9 +347,14 @@ def accident_ledger_cases() -> None:
 def precommit_cases() -> None:
     """A red fast rung refuses the commit: plant a duplicate definition, run the hook, expect 1."""
     hook = ROOT / ".githooks" / "pre-commit"
+    # A HERMETIC IDENTITY: the hook's privacy rung reads the next commit's author, and a host with no
+    # user.email (a fresh VPS) would refuse the clean tree for the machine, not for the tree. The address
+    # is joined at run time, as privacy_guard_test.py does: the public-tree scan reads every literal.
+    who = "t", "t" + chr(64) + "users.noreply.github.com"
+    env = os.environ | dict(zip(("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"), who * 2))
     with mutated("scripts/doctor.py", lambda s: s + "\n\ndef main():\n    return 0\n"):
-        red = subprocess.run(["sh", str(hook)], cwd=ROOT, capture_output=True, text=True, check=False, timeout=600)
-    clean = subprocess.run(["sh", str(hook)], cwd=ROOT, capture_output=True, text=True, check=False, timeout=600)
+        red = subprocess.run(["sh", str(hook)], cwd=ROOT, env=env, capture_output=True, text=True, check=False, timeout=600)
+    clean = subprocess.run(["sh", str(hook)], cwd=ROOT, env=env, capture_output=True, text=True, check=False, timeout=600)
     assert red.returncode == 1 and "REFUSED" in red.stderr, f"a red rung did not refuse the commit: {red.returncode}"
     assert clean.returncode == 0, f"the hook refused a clean tree: {clean.stderr[:200]}"
     CASES.append(("pre-commit: a red fast rung refuses the commit; a clean tree passes",
