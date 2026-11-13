@@ -11,8 +11,10 @@ THAT TREE IS LOCKED (3.54.0): read-only, re-hashed on every run; an edit refuses
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import io
+import json
 import os
 import re
 import shutil
@@ -229,7 +231,19 @@ def mcp_main() -> int:
     argv = sys.argv[1:]
     if "--where" in argv:
         return main(argv)
-    if _enter(argv, "headron_mcp.py")[0] is None:
+    said = io.StringIO()
+    with contextlib.redirect_stderr(said):
+        root = _enter(argv, "headron_mcp.py")[0]
+    sys.stderr.write(said.getvalue())
+    if root is None:
+        # REFUSE IN THE HANDSHAKE (3.62.0): exiting before `initialize` showed the client only "Connection closed".
+        try:
+            ask = {} if sys.stdin.isatty() else json.loads(sys.stdin.readline() or "{}")
+        except ValueError:
+            ask = {}
+        if isinstance(ask, dict) and "id" in ask:
+            why = {"code": -32000, "message": "headron-mcp refused: " + " ".join(said.getvalue().split())}
+            print(json.dumps({"jsonrpc": "2.0", "id": ask["id"], "error": why}), flush=True)
         return 2
     import headron_mcp  # noqa: PLC0415 — as in main
 

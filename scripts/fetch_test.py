@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
+import subprocess
+import sys
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
@@ -170,6 +173,37 @@ def _lock_problems(atlas_cli: ModuleType, version: str, files: dict[str, bytes],
     return problems
 
 
+def _handshake_problems() -> list[str]:
+    """`headron-mcp` with a HEADRON_ROOT holding no atlas: exit 2 AND one JSON-RPC error reply to initialize."""
+    with tempfile.TemporaryDirectory() as empty:
+        env = {**os.environ, "HEADRON_ROOT": empty, "HEADRON_NO_FETCH": "1"}
+        ask = json.dumps({"jsonrpc": "2.0", "id": 7, "method": "initialize", "params": {}}) + "\n"
+        code = "import sys; sys.path.insert(0, 'scripts'); import atlas_cli; sys.exit(atlas_cli.mcp_main())"
+        root = Path(__file__).resolve().parents[1]
+        run = subprocess.run(
+            [sys.executable, "-c", code],
+            cwd=root,
+            env=env,
+            input=ask,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+        try:
+            reply = json.loads(run.stdout)
+        except ValueError:
+            return [f"no JSON-RPC reply to initialize: rc={run.returncode} stdout={run.stdout[:160]!r}"]
+        message, problems = str((reply.get("error") or {}).get("message", "")), []
+        if run.returncode != 2 or reply.get("id") != 7 or "result" in reply:
+            problems.append(f"want rc=2 and an error for id 7: rc={run.returncode} reply={reply!r}"[:240])
+        if str(Path(empty).resolve()) not in message or "HEADRON_ROOT" not in message:
+            problems.append(f"the error does not name the root and the fix: {message[:200]!r}")
+        if "no atlas with scripts/headron_mcp.py" not in run.stderr:
+            problems.append("the refusal no longer reaches stderr")
+        return problems
+
+
 def run(module: ModuleType) -> None:
     found = _fetch_problems()
     if found:
@@ -183,3 +217,12 @@ def run(module: ModuleType) -> None:
         )
     )
     print("  ok    release fetch: the verified release is cached once; every planted defect refuses")
+    if found := _handshake_problems():
+        raise SystemExit("FAIL headron-mcp on a bad root does not answer initialize: " + "; ".join(found))
+    module.CASES.append(
+        (
+            "headron-mcp on a root it cannot serve answers initialize with a JSON-RPC error naming the root",
+            "a server that prints its refusal on stderr and exits, so the client shows only 'Connection closed'",
+        )
+    )
+    print("  ok    headron-mcp on a bad root answers initialize with an error naming the root and the fix")
