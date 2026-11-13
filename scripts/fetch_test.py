@@ -230,6 +230,58 @@ def _client_pin_problems() -> list[str]:
     return []
 
 
+def _pinned_root_problems() -> list[str]:
+    """A `.atlas.yaml` root runs only as the top of its own git checkout, at its `ref` when one is pinned (3.64.0)."""
+    from unittest import mock
+
+    import atlas_cli
+
+    def git(where: Path, *args: str) -> str:
+        cmd = ["git", "-C", str(where), "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
+        cmd += ["-c", "commit.gpgsign=false", *args]
+        return subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=60).stdout.strip()
+
+    def verdict(project: Path, pin: str, env: dict[str, str]) -> str:
+        (project / ".atlas.yaml").write_text(f"atlas:\n{pin}", encoding="utf-8")
+        with mock.patch.dict(os.environ, env):
+            try:
+                return "ran " + atlas_cli.resolve_root([], project)[0].name
+            except atlas_cli.ConfigError as exc:
+                return f"refused {exc}"
+
+    problems = []
+    with tempfile.TemporaryDirectory() as tmp:
+        project, atlas = Path(tmp, "project"), Path(tmp, "atlas")
+        for repo in (project, atlas):
+            (repo / "scripts").mkdir(parents=True)
+            git(repo, "init", "-q")
+            git(repo, "commit", "-q", "--no-verify", "--allow-empty", "-m", "first")
+        old = git(atlas, "rev-parse", "HEAD")
+        git(atlas, "commit", "-q", "--no-verify", "--allow-empty", "-m", "second")
+        (project / "vendor" / "headron").mkdir(parents=True)
+        own, copied = "the top of its own git checkout", "  root: vendor/headron\n"
+        cases = {  # label -> (pin, verdict must contain)
+            "a tree copied into the project": (copied, own),
+            "a directory outside any checkout": ("  root: ../nowhere\n", own),
+            "its own checkout at another ref": (f"  root: ../atlas\n  ref: {old[:7]}\n", "at its pinned ref"),
+            "a ref that names nothing": ("  root: ../atlas\n  ref: v0.0.0-none\n", "at its pinned ref"),
+            "its own checkout at its ref": (
+                f"  root: ../atlas\n  ref: {git(atlas, 'rev-parse', 'HEAD')}\n",
+                "ran atlas",
+            ),
+            "its own checkout, no ref": ("  root: ../atlas\n", "ran atlas"),
+        }
+        Path(tmp, "nowhere").mkdir()
+        bare = {k: v for k, v in os.environ.items() if k not in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT")}
+        with mock.patch.dict(os.environ, bare, clear=True):
+            for hook in ({}, {"GIT_DIR": str(project / ".git"), "GIT_WORK_TREE": str(project)}):
+                for label, (pin, want) in cases.items():
+                    said = verdict(project, pin, hook)
+                    if want not in said:
+                        problems.append(f"{label}{' under a hook GIT_DIR' if hook else ''}: {said[:200]}")
+    return problems
+
+
 def run(module: ModuleType) -> None:
     found = _fetch_problems()
     if found:
@@ -261,3 +313,13 @@ def run(module: ModuleType) -> None:
         )
     )
     print("  ok    headron-mcp reads the client project's pin wherever it is started")
+    if found := _pinned_root_problems():
+        raise SystemExit("FAIL a pinned atlas root runs without being its own checkout at its ref: " + "; ".join(found))
+    module.CASES.append(
+        (
+            "an .atlas.yaml root runs only as the top of its own git checkout, at its pinned ref, even under a "
+            "hook's GIT_DIR; a copied tree, a non-checkout, another ref and a ref naming nothing each refuse",
+            "a cloned project whose .atlas.yaml points at a tree it ships, so the approved MCP entry runs its code",
+        )
+    )
+    print("  ok    a pinned atlas root runs only as its own checkout at its pinned ref")
