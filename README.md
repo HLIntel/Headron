@@ -100,7 +100,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,593 tokens. The 211 documents (701 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,593 tokens. The 211 documents (703 KiB) load on demand; install: 10 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -109,7 +109,7 @@ Entry context: ~1,593 tokens. The 211 documents (701 KiB) load on demand; instal
 
 - **Agents and runtimes:** [adapters](models/README.md) describe supported integrations.
 - **Headron-Harness:** a separate desktop dashboard and runtime; see [product boundaries](docs/PRODUCT-STRATEGY.md).
-- **Other repositories:** `headron init` sets up a repository; [CONSUMING](docs/CONSUMING.md) covers CI.
+- **Other repositories:** `headron init` sets up a repository; [CONSUMING](docs/CONSUMING.md) covers CI, the [GitHub Action](docs/CONSUMING.md#as-a-github-action) and the [hosted MCP](docs/CONSUMING.md#hosted-mind-api--mcp).
 - **Languages:** routes declare available checks and identify checks without a tool.
 
 ## Agent contract

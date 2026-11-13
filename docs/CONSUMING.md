@@ -114,6 +114,39 @@ jobs:
 
 `task`, `process` and `paths` are optional. Leave `paths` empty to use the pull request's own diff.
 
+### As a GitHub Action
+
+[`action.yml`](../action.yml) ("Headron Agentic Code Verification") installs the CLI from the action's own
+checkout and runs one `headron` command in your job. Unlike the reusable workflow, it runs the checks.
+Pin it to a tag or commit, never a branch:
+
+```yaml
+steps:
+  # after your checkout step
+  - uses: HLIntel/Headron@<tag>
+    id: headron
+    with:
+      command: verify                               # verify, check, plan or port
+      mind-key: ${{ secrets.HEADRON_MIND_KEY }}     # optional; leave unset to skip the hosted plan
+```
+
+Inputs: `command`, `args`, `mind-key`, `mind-url` (default `https://headron.tech/api/mind`), `mind-files`
+(one per line; empty reads the triggering event) and `risk-modifiers` (comma separated).
+
+| output | meaning |
+|---|---|
+| `mind-status` | inactive when no key is set, otherwise active, invalid key, no active plan, or unavailable |
+| `change-classes` | Change classes inferred for the changed files, comma separated |
+| `required-gates` | Gates the hosted plan requires for those classes, comma separated |
+| `policy-revision` | Revision of the policy the plan was read from |
+
+`action.yml` is the source of truth for these names. The command runs with `HEADRON_ROOT` set to the
+action's own checkout, so the atlas is the pinned tag's. Without `mind-key` the Mind step reports
+`inactive` and passes. With a key it fails closed: an invalid key, no active plan, an unreachable service,
+or changed files it cannot read fails the step. When `mind-files` is empty, check out with
+`fetch-depth: 0` so the event's changed files can be read. The hosted plan adds gates; it never replaces
+the command's own verdict.
+
 ### Evidence and adoption
 
 | question | current evidence |
@@ -191,7 +224,16 @@ server over stdio can use it with this entry, in the runtime's own config format
 
 ### Hosted Mind API & MCP
 
-For hosted planning over Streamable HTTP without a local toolchain, Headron provides the **Mind API & MCP** at `https://headron.tech/mcp`. The hosted MCP endpoint is a private service for Mind API keyholders:
+`https://headron.tech/mcp` speaks MCP over Streamable HTTP. It runs no local toolchain and cannot inspect
+your project; the local server above does that.
+
+- **Public, no key:** its resources (the agent guide, llms.txt, and the documentation page) and a
+  read_document tool that returns either one.
+- **Mind key:** a plan_change tool, listed when hosted Mind is enabled, plans the gates for one or more
+  declared change classes plus risk modifiers and returns the plan as structured content. It needs a paid
+  Mind API key, sent as an `Authorization: Bearer ak_…` header or, where a client cannot set headers, as
+  the tool's api_key argument. A refused call names the cause: invalid key (401), no active plan (402),
+  or service unavailable.
 
 ```json
 {
@@ -206,7 +248,9 @@ For hosted planning over Streamable HTTP without a local toolchain, Headron prov
 }
 ```
 
-Keys are generated through your account at [headron.tech/checkout.html](https://headron.tech/checkout.html). See the [Mind API reference](https://headron.tech/mind-api.html).
+Omit `headers` to use only the public documentation tools. Keys are generated through your account at
+[headron.tech/checkout.html](https://headron.tech/checkout.html); current prices are on the
+[plans page](https://headron.tech/#plans). See the [Mind API reference](https://headron.tech/mind-api.html).
 
 Or install it as a **Claude Code plugin** — opt-in, nothing loads until you install it:
 
@@ -246,9 +290,10 @@ Headron Software is the core product of HLIntel (Headron Layer Intelligence):
   - _Failure Ledger:_ Past agent failure catalog and regression seeds.
 - **Mind API:** shared orchestration interface.
 
-<a id="headronos-preview-limits"></a>
+<a id="headron-harness-preview-limits"></a>
 
-HLIntel's desktop preview currently uses ad-hoc signing and manual updates. HLIntel-hosted team
-features, paid checkout and signed automatic distribution are not offered yet. These are availability
+HLIntel's Headron-Harness desktop preview currently uses ad-hoc signing and manual updates. Of the Headron
+software plans only hosted Mind is on sale; Headron-Harness and Team are proposed and cannot be bought
+yet, and signed automatic distribution is not offered. These are availability
 notes for HLIntel's companion service, not restrictions on the public software or on downstream
 products. Optional host hints are advisory; required CI checks enforce merge policy when configured.
