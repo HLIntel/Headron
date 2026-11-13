@@ -16,6 +16,7 @@ the packaged instructions a runtime loads by name, whose DESCRIPTIONS are a per-
 ## Read here
 
 - [headron/SKILL.md](headron/SKILL.md)
+- [headron-verification/SKILL.md](headron-verification/SKILL.md)
 - [land/SKILL.md](land/SKILL.md)
 - [rekick/SKILL.md](rekick/SKILL.md)
 - [sync/SKILL.md](sync/SKILL.md)
