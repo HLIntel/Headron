@@ -93,7 +93,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **816** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **817** declared planted cases |
 | Failure ledger | 128 shapes, 220 sightings; 104 in-tree guarded, 24 host-only |
 | Field ledger | 940 verifications (136 clean); 1133 refusals; 394 landings; 711 lessons; 394 sessions |
 | Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
