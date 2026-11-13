@@ -170,11 +170,12 @@ The local Mind receipt view summarizes the latest local verification record, not
 
 ## As an installed command, an MCP server, or a Claude Code plugin
 
-The package declares `headron` and `headron-mcp`, plus the legacy `atlas` alias for `headron`. These commands resolve the atlas by the same rule
-(`--atlas-root`, then `HEADRON_ROOT`, then `.atlas.yaml`), and `headron --where` prints which one won. With
-none of them, from contract 3.53.0, the CLI downloads the release tarball of **its own installed version**, checks it
-against that release's `.sha256` and caches it under `$XDG_CACHE_HOME/headron/atlas-<version>`; a
-mismatch or no network refuses, never a different version. `HEADRON_NO_FETCH=1` turns that off:
+The package declares `headron`, `headron-mcp` and legacy `atlas`. All resolve the atlas by one rule
+(`--atlas-root`, then `HEADRON_ROOT`, then `.atlas.yaml`); `headron --where` prints which won. A
+`.atlas.yaml` `root:` must top its own git checkout, at its `ref:` if set; a vendored copy refuses. With
+none, from contract 3.53.0, the CLI fetches the release tarball of **its own installed version**, checks
+its `.sha256` and caches it under `$XDG_CACHE_HOME/headron/atlas-<version>`; a
+mismatch or no network refuses, never another version. `HEADRON_NO_FETCH=1` turns that off:
 
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
 ```bash
