@@ -39,9 +39,17 @@ checkout: it returns the checks that file owes.
 
 https://headron.tech/mcp (Streamable HTTP). Documentation tools are public
 (read_document). Planning (plan_change) requires a Headron Mind key
-($10 per month) sent as a Bearer token.
+sent as a Bearer token.
 
 ## CLI only
 
-`pip install headron-software`, then `headron init` in a repository and
-`headron verify` before landing a change.
+<!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
+```bash
+# install
+uv tool install headron-software && headron doctor
+# editable, to change Headron itself
+git clone --depth 1 --branch v3.63.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
+```
+<!-- END generated: install -->
+
+Then `headron init` in a repository and `headron verify` before landing a change.

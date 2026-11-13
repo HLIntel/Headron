@@ -1,6 +1,6 @@
 ---
 name: headron-verification
-description: Verify a code change with Headron before calling it done. Use when finishing any coding task in a repository that has an atlas.yaml, or when a user asks for proof that a change works.
+description: Verify a change with Headron before calling it done. Use when finishing a coding task in a repo with an atlas.yaml, or when asked to prove a change works.
 ---
 
 # Headron verification
@@ -38,7 +38,8 @@ Never claim a run you did not make.
 
 ## Install
 
-- CLI: `pip install headron-software`
+- CLI: the install block in the [README](https://github.com/HLIntel/Headron#quickstart)
+  (CI runs that exact command).
 - MCP (stdio, read-only): `uvx --from headron-software headron-mcp` with
   HEADRON_ROOT set to the checkout. Registry name: io.github.HLIntel/headron.
 - Hosted planning: https://headron.tech/mcp (plan_change needs a Headron Mind key).

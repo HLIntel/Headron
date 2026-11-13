@@ -783,8 +783,8 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "canonical-flow": (("docs/CONSISTENCY.md",), canonical_flow_block),
     "landed-states": (("docs/wiki/BRANCH-WORKTREES.md",), landed_states_block),
     "topics": (("ABOUT.md",), topics_block),
-    # BOTH DOCUMENTS, ONE DECLARATION: the command CI executes is the command a reader pastes.
-    "install": (("README.md", "docs/CONSUMING.md"), lambda: __import__("installcheck").install_block()),
+    # EVERY INSTALL DOCUMENT, ONE DECLARATION (llms-install.md is the MCP-marketplace entry): the command CI executes is the command a reader pastes.
+    "install": (("README.md", "docs/CONSUMING.md", "llms-install.md"), lambda: __import__("installcheck").install_block()),
 }
 
 
