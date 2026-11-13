@@ -168,8 +168,8 @@ def shard_name() -> str:
 
 def shard_pin(name: str, cross_checked: bool) -> int:
     base = {
-        "all": 667,
-        "core": 667 - GUARDS_CASES,
+        "all": 668,
+        "core": 668 - GUARDS_CASES,
         "guards": GUARDS_CASES,
         "guards-0": GUARD_PARTS[0],
         "guards-1": GUARD_PARTS[1],
