@@ -216,6 +216,7 @@ server over stdio can use it with this entry, in the runtime's own config format
 
 - `HEADRON_CLIENT_DIR` is the directory relative paths resolve against. Set it when the runtime may start the
   server outside the project; a missing directory makes the server exit 2 with the reason on stderr.
+- Cursor: `headron init` writes a portable entry, see [its adapter](../models/cursor/README.md#native-tools-stay).
 - Tool schemas are plain JSON Schema for the arguments; every result carries its verdict in
   `structuredContent` and the same JSON as text, so a client that ignores `structuredContent` still reads it.
 - The protocol revisions answered are the ones `atlas.yaml/external_versions` lists. A remote runtime that

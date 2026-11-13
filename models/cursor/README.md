@@ -7,6 +7,11 @@ Rules: [CLAUDE.md](../../CLAUDE.md), [AGENTS.md](../../AGENTS.md). Runtimes: [MO
 Cursor reads `AGENTS.md`, and path-scoped rules where they are configured. Keep any rule file thin
 and let it point here: a second copy of the rules is the drift this repository refuses.
 
+Cursor reads MCP servers only from `<your repo>/.cursor/mcp.json` and `~/.cursor/mcp.json`, never a root
+`.mcp.json`. `headron init` adds a `headron` entry there and keeps your own when one is already
+there: `uvx --from headron-software headron-mcp` with `HEADRON_CLIENT_DIR` set to `${workspaceFolder}`.
+It holds no absolute path, so a committed copy works in every clone.
+
 ## Cursor-family engines (including Grok Bot)
 
 Engines hosted inside Cursor — including Grok Bot — share this adapter: the same entry file, the

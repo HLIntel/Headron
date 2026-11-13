@@ -8,7 +8,8 @@ printed glyphs; nothing wired an agent. This walks the path once, in the user's 
   1 THIS MACHINE   git, and every tool a check here calls: found, or what it costs to lack it
   2 THIS REPO      tracked files per language
   3 CHECKS         the checks a change to each language must pass, with the command
-  4 AGENTS         AGENTS.md (Codex, and anything that reads it), CLAUDE.md, .mcp.json, .codex/config.toml
+  4 AGENTS         AGENTS.md (Codex, and anything that reads it), CLAUDE.md, .mcp.json, .codex/config.toml,
+                   .cursor/mcp.json; no absolute path in any of them, so a committed file works in every clone
   5 GIT HOOK       a commit whose file fails its own language's check is refused; a hook already there still runs first
   6 FIRST RUN      those checks run once on today's code, so a failure an agent meets later is not blamed on it
 Wiring is idempotent and marker-delimited: a second run changes no byte, and text outside the markers is kept.
@@ -47,6 +48,16 @@ AGENTS_BLOCK = """## Checking a change with Headron
 CLAUDE_BLOCK = "@AGENTS.md"
 CODEX_TABLE = "[mcp_servers.headron]"
 CODEX_BLOCK = f'# written by `headron init`\n{CODEX_TABLE}\ncommand = "headron-mcp"\n'
+CLAUDE_MCP = {"command": "headron-mcp", "args": []}  # Claude Code starts a project's servers in the project
+# PORTABLE CURSOR ENTRY (3.63.0). Cursor reads only .cursor/mcp.json, never a root .mcp.json, so before this
+# entry Cursor got no Headron at all. Cursor's launch directory is undocumented: HEADRON_CLIENT_DIR, from
+# Cursor's own ${workspaceFolder}, makes relative paths resolve in the project on every machine. HEADRON_ROOT is
+# left unset: it names an atlas, which a consumer project is not. uvx needs only uv, not a prior tool install.
+CURSOR_MCP = {
+    "command": "uvx",
+    "args": ["--from", "headron-software", "headron-mcp"],
+    "env": {"HEADRON_CLIENT_DIR": "${workspaceFolder}"},
+}
 SKIP_DIRS = ("node_modules/", "vendor/", "dist/", "build/", "third_party/")
 
 
@@ -141,12 +152,12 @@ def _block(text: str, block: str) -> str:
     return (text.rstrip("\n") + "\n\n" if text.strip() else "") + framed + "\n"
 
 
-def _mcp(text: str) -> str:
+def _mcp(text: str, entry: dict) -> str:
     data = json.loads(text) if text.strip() else {}
     servers = data.setdefault("mcpServers", {})
     if "headron" in servers:
         return text  # the user's own entry wins, whatever it says
-    servers["headron"] = {"command": "headron-mcp", "args": []}
+    servers["headron"] = entry
     return json.dumps(data, indent=2) + "\n"
 
 
@@ -157,8 +168,9 @@ def _codex(text: str) -> str:
 WIRING = {
     "AGENTS.md": lambda t: _block(t, AGENTS_BLOCK),
     "CLAUDE.md": lambda t: _block(t, CLAUDE_BLOCK),
-    ".mcp.json": _mcp,
+    ".mcp.json": lambda t: _mcp(t, CLAUDE_MCP),
     ".codex/config.toml": _codex,
+    ".cursor/mcp.json": lambda t: _mcp(t, CURSOR_MCP),
 }
 
 
@@ -229,7 +241,7 @@ def text(rec: dict, hooks: str) -> str:
     for c in rec["checks"]:
         how = shlex.join(c["argv"]) if c["argv"] else f"no established tool does this for {c['language']}"
         out.append(f"   {c['language']:<12} {c['check']:<24} {c['state']:<16} {how}")
-    out += ["", "4. Agents (Claude Code: CLAUDE.md, .mcp.json; Codex: AGENTS.md, .codex/config.toml)"]
+    out += ["", "4. Agents (Claude Code: CLAUDE.md, .mcp.json; Codex: AGENTS.md, .codex/config.toml; Cursor: .cursor/mcp.json)"]
     out += [f"   {w['result']:<10} {w['file']}{'  ' + w['why'] if w.get('why') else ''}" for w in rec["wiring"]]
     out += ["", "5. Git hooks", f"   {hooks}"]
     if rec["first_run"]:

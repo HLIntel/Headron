@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 from pathlib import Path
 from types import ModuleType
 
@@ -62,7 +63,34 @@ PUBLIC = (  # pinned: a moved default branch must not move the measurement
     ("typescript", "https://github.com/sindresorhus/ky", "v1.7.2"),
     ("go", "https://github.com/spf13/pflag", "v1.0.5"),
 )
-WIRED = ("AGENTS.md", "CLAUDE.md", ".mcp.json", ".codex/config.toml")
+WIRED = ("AGENTS.md", "CLAUDE.md", ".mcp.json", ".codex/config.toml", ".cursor/mcp.json")
+# HOW CURSOR FINDS THE PROJECT: its launch directory is undocumented, so the entry names the project with Cursor's
+# own variable. HEADRON_ROOT names an atlas, which the user's project is not: set to the project, every call refuses.
+CURSOR_ENV = {"HEADRON_CLIENT_DIR": "${workspaceFolder}"}
+
+
+def _strings(node: object) -> list[str]:
+    if isinstance(node, dict):
+        return [s for v in node.values() for s in _strings(v)]
+    if isinstance(node, list):
+        return [s for v in node for s in _strings(v)]
+    return [node] if isinstance(node, str) else []
+
+
+def absolute_paths(repo: Path, env: dict) -> list[str]:
+    """Every path in a wiring file that only exists on this machine: a committed copy breaks in the next clone."""
+    here = {str(repo), str(repo.resolve()), env.get("HOME", ""), str(ROOT), sys.executable} - {""}
+    bad = []
+    for rel in WIRED:
+        text = (repo / rel).read_text(encoding="utf-8")
+        bad += [f"{rel} holds {path}" for path in sorted(here) if path in text]
+        parsed = json.loads(text) if rel.endswith(".json") else tomllib.loads(text) if rel.endswith(".toml") else {}
+        bad += [
+            f"{rel} holds {value!r}"
+            for value in _strings(parsed)
+            if os.path.isabs(value) or value.startswith("~") or re.match(r"[A-Za-z]:[\\/]", value)
+        ]
+    return bad
 
 
 def jargon(out: str) -> list[str]:
@@ -97,6 +125,9 @@ def judge(name: str, repo: Path, env: dict, headron: list[str]) -> dict:
     missing = [w for w in WIRED if not (repo / w).is_file()]
     assert not missing, f"{name}: agents left unwired: {missing}"
     assert json.loads((repo / ".mcp.json").read_text())["mcpServers"]["headron"]["command"] == "headron-mcp"
+    cursor = json.loads((repo / ".cursor/mcp.json").read_text())["mcpServers"]["headron"]
+    assert cursor.get("env") == CURSOR_ENV, f"{name}: Cursor's entry does not name the project portably: {cursor}"
+    assert not absolute_paths(repo, env), f"{name}: wiring holds this machine's paths: {absolute_paths(repo, env)}"
     before = {w: (repo / w).read_bytes() for w in WIRED}
     again, out2, _ = init(repo, env, headron)
     assert again == 0 and all((repo / w).read_bytes() == before[w] for w in WIRED), (
