@@ -1642,7 +1642,7 @@ context_policy:
     # closure, because --require-hashes refuses anything it does not pin; the invariant
     # dependency_count_is_the_closure holds this number to the lock AND to the installed metadata.
     resolved_closure: 8
-    module_bytes: 12168
+    module_bytes: 12619
     slack_bytes: 2048
     # A RISE MUST NAME WHAT EARNED IT. Written as only-falls, this ratchet twice refused a genuine
     # capability and was twice paid for by removing something real — which is the ratchet working.
@@ -1662,9 +1662,10 @@ context_policy:
       closed" (seen twice). It runs exactly when no atlas resolved, so atlas_cli is the only module present.
       3.63.0 RAISED 11192 -> 11233 to read the consumer pin from HEADRON_CLIENT_DIR: Cursor starts headron-mcp
       at / with that directory set, and resolving from the launch directory skipped the project''s .atlas.yaml.
-      3.64.0 RAISED 11233 -> 12168 for the pinned-root trust check: a .atlas.yaml root: pin decides which
+      3.64.0 RAISED 11233 -> 12619 for the pinned-root trust check: a .atlas.yaml root: pin decides which
       headron_mcp.py an approved client entry runs, so the pinned directory must top its own git checkout,
-      at the pinned ref when one is declared; a tree copied into a project refuses (fetch_test plants six).
+      not the pinning project''s own, at the pinned ref when declared; a copied tree refuses, and no git refuses
+      in the reply rather than crashing before it (fetch_test plants eight).
       3.60.0 RAISED resolved_closure 2 -> 8 for receipt_test: its planted schema cases import jsonschema,
       which lives in the hash lock only (optional in third_party; scripts/requirements.txt stays runtime-only),
       plus its six pinned dependencies.'

@@ -270,6 +270,7 @@ def _pinned_root_problems() -> list[str]:
                 "ran atlas",
             ),
             "its own checkout, no ref": ("  root: ../atlas\n", "ran atlas"),
+            "the pinning project itself": ("  root: .\n", "apart from the project that pins it"),
         }
         Path(tmp, "nowhere").mkdir()
         bare = {k: v for k, v in os.environ.items() if k not in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT")}
@@ -279,6 +280,9 @@ def _pinned_root_problems() -> list[str]:
                     said = verdict(project, pin, hook)
                     if want not in said:
                         problems.append(f"{label}{' under a hook GIT_DIR' if hook else ''}: {said[:200]}")
+            with mock.patch.object(atlas_cli.subprocess, "run", side_effect=FileNotFoundError("git")):
+                if "git could not answer" not in (said := verdict(project, "  root: ../atlas\n", {})):
+                    problems.append(f"no git on PATH: {said[:200]}")
     return problems
 
 
@@ -318,7 +322,8 @@ def run(module: ModuleType) -> None:
     module.CASES.append(
         (
             "an .atlas.yaml root runs only as the top of its own git checkout, at its pinned ref, even under a "
-            "hook's GIT_DIR; a copied tree, a non-checkout, another ref and a ref naming nothing each refuse",
+            "hook's GIT_DIR; a copied tree, the project's own checkout, a non-checkout, another ref, a ref naming "
+            "nothing and no git each refuse",
             "a cloned project whose .atlas.yaml points at a tree it ships, so the approved MCP entry runs its code",
         )
     )

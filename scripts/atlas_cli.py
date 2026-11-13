@@ -89,17 +89,28 @@ def root_flag(argv: list[str]) -> tuple[str | None, int, int]:
 CALLER_ENV = dict(os.environ)
 
 
-def _untrusted(base: Path, ref: str | None) -> str:
-    """Why a pinned root is refused, else "": it must top its own git checkout, at `ref` if pinned (3.64.0)."""
+def _untrusted(base: Path, ref: str | None, home: Path) -> str:
+    """Why a pinned root is refused, else "": it must top its own git checkout, not its pinner's, at `ref` (3.64.0)."""
     env = {k: v for k, v in os.environ.items() if k[:4] != "GIT_"}  # a hook's GIT_DIR would answer instead
-    top, head, want = (
-        subprocess.run(
-            ["git", "-C", base, "rev-parse", *a], capture_output=True, text=True, env=env, timeout=30
-        ).stdout.strip()
-        for a in (["--show-toplevel"], ["HEAD"], ["-q", "--verify", f"{ref}^{{commit}}"])
+    asks = (
+        (base, "--show-toplevel"),
+        (base, "HEAD"),
+        (base, "-q", "--verify", f"{ref}^{{commit}}"),
+        (home, "--show-toplevel"),
     )
+    try:
+        top, head, want, own = (
+            subprocess.run(
+                ["git", "-C", d, "rev-parse", *a], capture_output=True, text=True, env=env, timeout=30
+            ).stdout.strip()
+            for d, *a in asks
+        )
+    except (OSError, subprocess.SubprocessError) as exc:  # no git: refuse in the reply, never crash before it
+        return f"verifiable; git could not answer ({exc})"
     if not top or Path(top).resolve() != base:
         return "the top of its own git checkout; a tree copied into a project never runs"
+    if own and Path(own).resolve() == base:
+        return "a checkout apart from the project that pins it"
     return f"checked out at its pinned ref {ref}" if ref and want != head else ""
 
 
@@ -114,7 +125,7 @@ def resolve_root(argv: list[str], cwd: Path) -> tuple[Path, str]:
     config, where = _config(cwd)
     if where and config.get("root"):
         base, rule = (where.parent / config["root"]).resolve(), f"root declared in {where.name}"
-        if why := _untrusted(base, config.get("ref")):
+        if why := _untrusted(base, config.get("ref"), where.parent):
             raise ConfigError(f"{base} ({rule} at {where.parent}) is not {why}")
         return base, f"{rule} (ref {config.get('ref', 'unpinned')})"
     return Path(__file__).resolve().parents[1], INSTALLED_FROM
