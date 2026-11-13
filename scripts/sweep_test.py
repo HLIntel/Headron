@@ -211,6 +211,66 @@ def _cold_store_cases(tmp_path: Path) -> None:
         assert build.call_count == 0, "an existing empty store is verify()'s to name, not rebuilt on every read"
 
 
+def test_warm_store_rebuilds_when_stale():
+    """A warm store answers like a cold one: changed or never-indexed tracked files rebuild it first.
+
+    Measured at 3.63.0: a long-lived checkout at the same SHA as a fresh clone cited 4 changed
+    files as `stale` and had never indexed 7 tracked files (a skill added that day among them),
+    because the store was built only when missing. A fresh clone answered correctly.
+    """
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        _warm_store_cases(Path(tmp).resolve())
+
+
+def _warm_store_cases(root: Path) -> None:
+    from unittest.mock import patch
+
+    kept, added = root / "kept.md", root / "added.md"
+    kept.write_text("# kept\nalpha\n", encoding="utf-8")
+    added.write_text("# added\nbeta\n", encoding="utf-8")
+    current = {
+        "path": "kept.md",
+        "checksum": atlasindex._checksum(kept.read_text(encoding="utf-8")),
+        "tokens": ["alpha"],
+    }
+
+    def cached(records: list[dict], files: list[Path]) -> int:
+        with (
+            patch.multiple(atlasindex, _RECORDS_CACHE=None, _IDF_CACHE=None, _VECTORS_CACHE=None),
+            patch.object(atlasindex, "ROOT", root),
+            patch.object(atlasindex, "tracked", return_value=files),
+            patch.object(atlasindex, "load", return_value=records),
+            patch.object(atlasindex, "build") as build,
+        ):
+            atlasindex._get_cached_records()
+            return build.call_count
+
+    assert cached([current], [kept]) == 0, "a current store is read, not rebuilt"
+    assert cached([current], [kept, added]) == 1, "a tracked file the store never indexed rebuilds it"
+    assert cached([dict(current, checksum="0" * 64)], [kept]) == 1, "a changed file rebuilds the store"
+    with patch.object(atlasindex, "ROOT", root), patch.object(atlasindex, "tracked", return_value=[kept, added]):
+        assert any("added.md" in p and "not indexed" in p for p in atlasindex.verify([current]))
+
+
+def test_build_replaces_store_atomically():
+    """Readers in other processes never load a half-written store: build replaces it atomically."""
+    import tempfile
+    from unittest.mock import patch
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp).resolve()
+        with (
+            patch.object(atlasindex, "ROOT", root),
+            patch.object(atlasindex, "tracked", return_value=[]),
+            patch.object(atlasindex.atomicfile, "write_text", wraps=atlasindex.atomicfile.write_text) as write,
+        ):
+            atlasindex.build()
+        assert write.call_count == 1 and write.call_args[0][0] == root / atlasindex.STORE / "chunks.jsonl"
+        assert [p.name for p in (root / atlasindex.STORE).iterdir()] == ["chunks.jsonl"]
+
+
 def test_port_sweep_integration():
     """Verify port incorporates sweep for agents."""
     rec = port.record(".", "codebase", "agent", None, sweep=True)
@@ -232,6 +292,9 @@ def test_search_speed_and_cache():
     """Verify search is fast (< 500ms cold, < 200ms warm)."""
     import time
 
+    # A stale store rebuilds on the first read (~0.9 s measured); this test times reading a current one.
+    if atlasindex.verify():
+        atlasindex.build()
     t0 = time.perf_counter()
     hits_cold = atlasindex.search("mind", limit=5)
     t1 = time.perf_counter()
@@ -258,6 +321,7 @@ def test_search_vector_cache():
         patch.object(atlasindex, "_IDF_CACHE", None),
         patch.object(atlasindex, "_VECTORS_CACHE", None),
         patch.object(atlasindex, "load", return_value=records) as load,
+        patch.object(atlasindex, "verify", return_value=[]),
     ):
         cached_records, idf, vectors = atlasindex._get_cached_records()
         assert cached_records == records
@@ -312,6 +376,8 @@ def main() -> int:
         test_search_citation_freshness,
         test_find_refuses_empty_index,
         test_cold_store_builds_before_answering,
+        test_warm_store_rebuilds_when_stale,
+        test_build_replaces_store_atomically,
         test_port_sweep_integration,
         test_port_agent_frame_says_what_a_directory_proves,
         test_search_speed_and_cache,
