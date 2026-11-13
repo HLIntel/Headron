@@ -640,13 +640,18 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
     ),
     (
         "data",
-        "read tables from CSV/TSV/JSON/JSONL/Excel/Markdown, check one against a schema, or trace a report's numbers",
+        "read tables from CSV/TSV/JSON/JSONL/Excel/Markdown, check one against a schema, trace a report's numbers, or recompute formulas",
         "emit the record as JSON",
         (
-            _arg("action", choices=["read", "check", "trace"], help="read tables, check a schema, or trace numbers"),
+            _arg(
+                "action",
+                choices=["read", "check", "trace", "calc"],
+                help="read tables, check a schema, trace numbers, or recompute Excel formulas",
+            ),
             _arg("files", nargs="+", help="data files to read or check; for trace, the report (.md or .txt)"),
             _arg("--schema", help="check: a JSON schema of table, min_rows, columns, extra_columns, sha256"),
             _arg("--source", action="append", help="trace: a data file the report's numbers come from (repeat)"),
+            _arg("--formula", help='calc: evaluate one Excel expression, e.g. "=SUM(B2:B9)", against the file'),
             _arg("--limit", type=int, default=20, help="max rows, findings or numbers listed"),
         ),
     ),

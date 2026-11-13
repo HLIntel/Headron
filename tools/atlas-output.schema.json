@@ -110,7 +110,7 @@
   "$defs": {
     "data": {
       "type": "object",
-      "description": "`headron data read|check|trace --json`: tables with cell locations, a schema check, or a report's numbers traced to sources; sealed with a receipt.",
+      "description": "`headron data read|check|trace|calc --json`: tables with cell locations, a schema check, a report's numbers traced to sources, or workbook formulas recomputed; sealed with a receipt.",
       "required": [
         "schema",
         "version",
@@ -131,7 +131,8 @@
           "enum": [
             "read",
             "check",
-            "trace"
+            "trace",
+            "calc"
           ]
         },
         "verdict": {
@@ -200,6 +201,34 @@
           }
         },
         "untraced": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "formula": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "number",
+            "string",
+            "boolean"
+          ]
+        },
+        "failed": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "not_run": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "filled": {
           "type": "array",
           "items": {
             "type": "object"

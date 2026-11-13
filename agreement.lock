@@ -3,7 +3,7 @@
   "schema": 2,
   "schemas": {
     "tools/agent-task.schema.json": "83597b825645c89f",
-    "tools/atlas-output.schema.json": "dc84135622376d85",
+    "tools/atlas-output.schema.json": "21e720e25aa94a11",
     "tools/codexbrief.schema.json": "d90b333e00341d11",
     "tools/headron-commands.schema.json": "56f3386c40024220",
     "tools/receipt.schema.json": "f5c6f0e84a8f4947",
@@ -55,7 +55,7 @@
     "host_shapes": "7f67347de672e978",
     "identity": "3845bff8f2e92d33",
     "install_commands": "a165d7b3c78cc831",
-    "instrument_roster": "298ec39cdfa44eda",
+    "instrument_roster": "d3864997aa4646d9",
     "instruments": "9c3c5314444242a7",
     "intents": "bdc178b851e1ea46",
     "issue_route_terms": "1eb7ea6cabea5e64",
@@ -93,7 +93,7 @@
     "tool_claims": "7b517c578bca9fcf",
     "tool_profiles": "04870283b3c355ed",
     "topologies": "52a720e221d04f16",
-    "verification_policy": "43b2b456d769cbb8",
+    "verification_policy": "585edebea87a932f",
     "version": "2deeafbbc6060651",
     "version_sites": "c6eabe572f4de382",
     "worktree_policy": "4189b7544a992b94"

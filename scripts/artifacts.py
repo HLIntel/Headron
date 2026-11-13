@@ -211,14 +211,18 @@ def _run_xlsx(zf: zipfile.ZipFile, findings: list[Finding], records: list[dict])
     return counts
 
 
-def workbook_cells(path: Path) -> tuple[list[tuple[str, str, str | None, str | None]], list[Finding]]:
-    """Every cell of a workbook as (sheet, ref, type, value), behind the same refusals as inspect().
+Formula = tuple[str, str | None, str | None]  # (text, t, si) of a cell's <f>: a shared child has no text
+WorkbookCell = tuple[str, str, str | None, str | None, Formula | None]
+
+
+def workbook_cells(path: Path) -> tuple[list[WorkbookCell], list[Finding]]:
+    """Every cell of a workbook as (sheet, ref, type, value, formula), behind the same refusals as inspect().
 
     The data kit reads workbooks through this, so there is one OOXML reader. An unsafe container
     returns no cells and its blocker findings; a file that is not a workbook raises Unreadable.
     """
     findings: list[Finding] = []
-    cells: list[tuple[str, str, str | None, str | None]] = []
+    cells: list[WorkbookCell] = []
     try:
         with zipfile.ZipFile(path) as zf:
             _zip_structure(zf, findings, [])
@@ -230,7 +234,9 @@ def workbook_cells(path: Path) -> tuple[list[tuple[str, str, str | None, str | N
                     ref, kind, value = cell.get("r", "?"), cell.get("t"), _cell(cell, shared)
                     if kind == "e":
                         findings.append(Finding("blocker", "error_value", f"{name}!{ref}", str(value)))
-                    cells.append((name, ref, kind, value))
+                    f = cell.find(_m(SML, "f"))
+                    formula = None if f is None else (f.text or "", f.get("t"), f.get("si"))
+                    cells.append((name, ref, kind, value, formula))
     except Unsafe as exc:
         return [], [*findings, exc.finding]
     except zipfile.BadZipFile as exc:

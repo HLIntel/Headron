@@ -4,7 +4,10 @@
 value carrying where it came from (`book.xlsx:Revenue!B3`, `rows.csv!C7`, `notes.md:12:amount`,
 `data.json$[3].total`). `check` holds a table to a declared schema. `trace` takes every number a
 report states and either names the source value it came from or marks it UNTRACED, so an agent's
-summary of a spreadsheet or a research table can be proved number by number.
+summary of a spreadsheet or a research table can be proved number by number. `calc` recomputes a
+workbook's formulas from the cells they read and holds each result to the value the spreadsheet
+cached, and `calc --formula "=SUM(B2:B9)"` evaluates one Excel expression against any file the kit
+reads (a CSV is an A1 grid: its header is row 1). formula.py is the language; nothing is eval'd.
 
 Standard library only; workbooks are read through artifacts.workbook_cells, behind the same zip,
 DTD and size refusals as `headron inspect`. Nothing is extracted, executed or written.
@@ -12,7 +15,7 @@ DTD and size refusals as `headron inspect`. Nothing is extracted, executed or wr
 Verdicts follow the repo's rule: PASS, FAIL or NOT RUN, exit 0, 1, 2. A number the report states is
 never dropped: it is traced, UNTRACED, or ignored with the reason (code, date, time, version,
 reference, ordinal, year, link). A derived figure (a total the report computed) is UNTRACED by
-design: trace proves a number was read, not that arithmetic on it was right.
+design: trace proves a number was read, not that arithmetic on it was right; calc checks the arithmetic.
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ import bisect
 import csv
 import io
 import json
+import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -29,6 +33,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import artifacts
+import formula
 
 SCHEMA = "headron-data/1"
 VERSION = "1.0.0"
@@ -200,27 +205,12 @@ def column_type(raws: list[str]) -> str:
 # ---------------------------------------------------------------- readers
 
 
-def _col(n: int) -> str:
-    letters = ""
-    while n:
-        n, rem = divmod(n - 1, 26)
-        letters = chr(65 + rem) + letters
-    return letters
-
-
-def _col_index(letters: str) -> int:
-    n = 0
-    for ch in letters:
-        n = n * 26 + ord(ch) - 64
-    return n
-
-
 def _header(cells: list[str], width: int) -> list[str]:
     """Header names, padded to the widest row; a blank or repeated name takes its column letter."""
     header: list[str] = []
     for i, cell in enumerate(cells + [""] * (width - len(cells))):
-        name = cell.strip() or _col(i + 1)
-        header.append(f"{name} ({_col(i + 1)})" if name in header else name)
+        name = cell.strip() or formula.col_letters(i + 1)
+        header.append(f"{name} ({formula.col_letters(i + 1)})" if name in header else name)
     return header
 
 
@@ -238,7 +228,9 @@ def _read_delimited(path: Path, text: str, loaded: Loaded) -> None:
     reader = csv.reader(io.StringIO(text), delimiter="\t" if path.suffix.lower() == ".tsv" else ",")
     numbered = [(reader.line_num, row) for row in reader if any(cell.strip() for cell in row)]
     rows = [row for _, row in numbered]
-    loaded.tables.append(_grid(path.name, rows, lambda r, c: f"{path.name}!{_col(c + 1)}{numbered[r][0]}"))
+    loaded.tables.append(
+        _grid(path.name, rows, lambda r, c: f"{path.name}!{formula.col_letters(c + 1)}{numbered[r][0]}")
+    )
 
 
 def _scalar(value: object) -> str:
@@ -312,21 +304,21 @@ def _read_jsonl(path: Path, text: str, loaded: Loaded) -> None:
 def _read_xlsx(path: Path, loaded: Loaded) -> None:
     cells, loaded.findings = artifacts.workbook_cells(path)
     sheets: dict[str, dict[int, dict[int, tuple[str, str]]]] = {}
-    for sheet, ref, kind, value in cells:
+    for sheet, ref, kind, value, _ in cells:
         match = re.fullmatch(r"([A-Z]+)(\d+)", ref)
         if match is None or value is None or kind == "e":
             continue
         raw = ("TRUE" if value == "1" else "FALSE") if kind == "b" else value
         where = f"{path.name}:{sheet}!{ref}"
         loaded.values.append((where, raw))
-        sheets.setdefault(sheet, {}).setdefault(int(match[2]), {})[_col_index(match[1])] = (raw, where)
+        sheets.setdefault(sheet, {}).setdefault(int(match[2]), {})[formula.col_index(match[1])] = (raw, where)
     for sheet, grid in sheets.items():
         width = max(max(row) for row in grid.values())
         first, *rest = sorted(grid)
         table = Table(sheet, _header([grid[first].get(c, ("", ""))[0] for c in range(1, width + 1)], width))
         for r in rest:
             table.rows.append([grid[r].get(c, ("", ""))[0] for c in range(1, width + 1)])
-            table.where.append([f"{path.name}:{sheet}!{_col(c)}{r}" for c in range(1, width + 1)])
+            table.where.append([f"{path.name}:{sheet}!{formula.col_letters(c)}{r}" for c in range(1, width + 1)])
         loaded.tables.append(table)
 
 
@@ -689,6 +681,197 @@ def read(loaded: list[Loaded], limit: int) -> dict:
     return {"command": "read", "verdict": verdict, "reason": reason, "files": files}
 
 
+# ---------------------------------------------------------------- formulas
+
+Key = tuple[str, int, int]  # (sheet, row, column)
+
+
+@dataclass
+class Book:
+    """A workbook or table as typed A1 cells, its formulas with shared ones expanded, and the refused ones."""
+
+    sheets: dict[str, str] = field(default_factory=dict)  # lowercased name -> name, Excel matches without case
+    values: dict[Key, object] = field(default_factory=dict)  # cached or stored values only
+    formulas: dict[Key, str] = field(default_factory=dict)
+    refused: dict[Key, str] = field(default_factory=dict)
+    computing: set[Key] = field(default_factory=set)
+
+    def cell(self, sheet: str | None, row: int, col: int) -> object:
+        name = self.sheets.get((sheet or "").lower())
+        if name is None:
+            raise formula.XlError("#REF!")
+        key = (name, row, col)
+        if key in self.values:
+            return self.values[key]
+        if key in self.refused:
+            raise formula.Unsupported(f"{_at(key)} reads {self.refused[key]}")
+        if key not in self.formulas:
+            return None
+        return self.compute(key)  # an uncached formula: compute it, so a formula reading it is checked
+
+    def compute(self, key: Key) -> object:
+        if key in self.computing:
+            raise formula.Unsupported(f"circular reference through {_at(key)}")
+        self.computing.add(key)
+        try:
+            value = formula.evaluate(self.formulas[key], self.cell, key[0])
+        except RecursionError:
+            raise formula.Unsupported(f"reference chain through {_at(key)} is too deep") from None
+        finally:
+            self.computing.discard(key)
+        if isinstance(value, formula.XlError):
+            raise value
+        return value
+
+
+def _at(key: Key) -> str:
+    return f"{key[0]}!{formula.col_letters(key[2])}{key[1]}"
+
+
+def _typed(kind: str | None, value: str | None) -> object:
+    """A stored workbook value as the evaluator's type: float, str, bool, XlError or None for blank."""
+    if value is None:
+        return None
+    if kind == "e":
+        return formula.XlError(value)
+    if kind == "b":
+        return value == "1"
+    if kind in ("s", "inlineStr", "str"):
+        return value
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+def _raw_typed(raw: str) -> object:
+    """A text cell (CSV, JSON, Markdown) as Excel would read it in: number, boolean, text or blank."""
+    if not raw.strip():
+        return None
+    if raw.strip().lower() in ("true", "false"):
+        return raw.strip().lower() == "true"
+    number = parse_value(raw)
+    return raw if number is None else float(number)
+
+
+def workbook_book(path: Path) -> tuple[Book, list[artifacts.Finding]]:
+    cells, findings = artifacts.workbook_cells(path)
+    book, masters, children = Book(), {}, []
+    for sheet, ref, kind, value, f in cells:
+        book.sheets.setdefault(sheet.lower(), sheet)
+        key = (sheet, *formula.address(ref))
+        if f is not None and (f[0] or f[1] == "shared"):
+            text, how, si = f
+            if how in ("array", "dataTable"):
+                book.refused[key] = f"an {how} formula (not evaluated)"
+            elif how == "shared" and not text:
+                children.append((key, si))
+            else:
+                book.formulas[key] = text
+                if how == "shared":
+                    masters[(sheet, si)] = (text, key)
+        if value is not None:
+            book.values[key] = _typed(kind, value)
+    for key, si in children:
+        master = masters.get((key[0], si))
+        if master is None:
+            book.refused[key] = f"shared formula {si} with no master cell"
+        else:
+            text, (_, row, col) = master
+            book.formulas[key] = formula.shift(text, key[1] - row, key[2] - col)
+    return book, findings
+
+
+def table_book(loaded: Loaded) -> Book:
+    """Text tables as A1 grids, one sheet per table: the header is row 1, the first record row 2."""
+    book = Book()
+    for table in loaded.tables:
+        book.sheets.setdefault(table.name.lower(), table.name)
+        for r, row in enumerate([table.columns, *table.rows], start=1):
+            for c, raw in enumerate(row, start=1):
+                if (value := _raw_typed(raw)) is not None:
+                    book.values[(table.name, r, c)] = value
+    return book
+
+
+def _same(cached: object, computed: object) -> bool:
+    if isinstance(cached, float) and isinstance(computed, float) and not isinstance(computed, bool):
+        return math.isclose(cached, computed, rel_tol=1e-9, abs_tol=1e-9)
+    if isinstance(cached, str) and isinstance(computed, str):
+        return cached == computed
+    return type(cached) is type(computed) and cached == computed
+
+
+def _shown(value: object) -> object:
+    return str(value) if isinstance(value, formula.XlError) else value
+
+
+def recalc(book: Book, limit: int) -> dict:
+    """Every formula recomputed from the cells it reads, held to its cached value."""
+    counts = {"formulas": len(book.formulas) + len(book.refused), "checked": 0, "failed": 0, "not_run": 0, "filled": 0}
+    failed, not_run, filled = [], [], []
+    not_run += [{"where": _at(k), "reason": why} for k, why in book.refused.items()]
+    for key, text in sorted(book.formulas.items()):
+        try:
+            computed = formula.evaluate(text, book.cell, key[0])
+        except formula.Unsupported as exc:
+            not_run.append({"where": _at(key), "formula": text, "reason": str(exc)})
+            continue
+        except RecursionError:
+            not_run.append({"where": _at(key), "formula": text, "reason": "reference chain too deep"})
+            continue
+        row = {"where": _at(key), "formula": text, "computed": _shown(computed)}
+        if key not in book.values:
+            counts["filled"] += 1
+            filled.append(row)
+        elif _same(book.values[key], computed):
+            counts["checked"] += 1
+        else:
+            counts["checked"] += 1
+            failed.append(row | {"cached": _shown(book.values[key])})
+    counts["failed"], counts["not_run"] = len(failed), len(not_run)
+    verdict = "FAIL" if failed else "PASS" if counts["checked"] else "NOT RUN"
+    reason = (
+        f"{counts['checked']} formula(s) checked, {len(failed)} differ from the cached value, {len(not_run)} not run"
+    )
+    if verdict == "NOT RUN":
+        reason = "no formula with a cached value could be recomputed"
+    record = {"command": "calc", "verdict": verdict, "reason": reason, "counts": counts}
+    return record | {"failed": failed[:limit], "not_run": not_run[:limit], "filled": filled[:limit]}
+
+
+def calc(path: Path, expression: str | None, limit: int) -> dict:
+    """`calc`: recompute a workbook's formulas, or evaluate one --formula against any data file."""
+    base = {"command": "calc", "file": Path(path).name, "counts": {}}
+    loaded = load(Path(path))
+    refused = [f for f in loaded.findings if f.severity == "blocker" and f.check != "error_value"]
+    if loaded.verdict == "NOT RUN" or refused:
+        why = f"{refused[0].check} {refused[0].detail}" if refused else loaded.reason
+        return base | {"verdict": "NOT RUN", "reason": f"{loaded.file}: {why}"}
+    book = workbook_book(Path(path))[0] if loaded.kind == "xlsx" else table_book(loaded)
+    if expression is None:
+        if loaded.kind != "xlsx":
+            return base | {
+                "verdict": "NOT RUN",
+                "reason": "calc without --formula reads workbook formulas; this is a " + loaded.kind,
+            }
+        return base | recalc(book, limit)
+    first = next(iter(book.sheets.values()), None)
+    try:
+        value = formula.evaluate(expression, book.cell, first)
+    except formula.Unsupported as exc:
+        return base | {"verdict": "NOT RUN", "reason": str(exc), "formula": expression}
+    except RecursionError:
+        return base | {"verdict": "NOT RUN", "reason": "reference chain too deep", "formula": expression}
+    verdict = "FAIL" if isinstance(value, formula.XlError) else "PASS"
+    return base | {
+        "verdict": verdict,
+        "reason": f"= {formula.to_text(value)}",
+        "formula": expression,
+        "value": _shown(value),
+    }
+
+
 def _seal(record: dict) -> dict:
     body = {"schema": SCHEMA, "version": VERSION} | record
     return body | {"receipt": artifacts._receipt(body)}
@@ -707,6 +890,16 @@ def _text(record: dict) -> str:
             lines += [f"    {x['severity']} {x['check']} {x['where']}: {x['detail']}" for x in f["findings"]]
     elif record["command"] == "check":
         lines += [f"  {x['check']} {x['where']}: {x['detail']}" for x in record["findings"]]
+    elif record["command"] == "calc":
+        lines += [
+            f"  FAIL {x['where']} {x['formula']} = {x['computed']!r}, cached {x['cached']!r}"
+            for x in record.get("failed", [])
+        ]
+        lines += [f"  NOT RUN {x['where']}: {x['reason']}" for x in record.get("not_run", [])]
+        lines += [
+            f"  filled {x['where']} {x['formula']} = {x['computed']!r} (no cached value)"
+            for x in record.get("filled", [])
+        ]
     else:
         lines += [f"  {s['verdict']} source {s['file']} [{s['kind']}] {s['reason']}" for s in record["sources"]]
         lines += [f"  UNTRACED {u['where']} {u['text']!r}" for u in record.get("untraced", [])]
@@ -719,10 +912,22 @@ EXIT = {"PASS": 0, "FAIL": 1, "NOT RUN": 2}
 
 
 def cli(
-    action: str, files: list[str], schema: str | None, sources: list[str] | None, limit: int, want_json: bool
+    action: str,
+    files: list[str],
+    schema: str | None,
+    sources: list[str] | None,
+    limit: int,
+    want_json: bool,
+    expression: str | None = None,
 ) -> int:
-    """`headron data read|check|trace`. Exit 0 PASS, 1 FAIL, 2 NOT RUN (never a pass)."""
-    if action == "read":
+    """`headron data read|check|trace|calc`. Exit 0 PASS, 1 FAIL, 2 NOT RUN (never a pass)."""
+    if action == "calc":
+        record = (
+            calc(Path(files[0]), expression, limit)
+            if len(files) == 1
+            else {"command": "calc", "verdict": "NOT RUN", "reason": "calc takes one file", "counts": {}}
+        )
+    elif action == "read":
         record = read([load(Path(f)) for f in files], limit)
     elif action == "check":
         rules, reason = None, "check takes one file and --schema"

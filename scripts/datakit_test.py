@@ -246,6 +246,90 @@ def test_cli_exit_codes_and_sealed_json(tmp_path: Path):
         assert datakit.cli("read", [str(src)], None, None, 20, False) == 0
 
 
+def _num(ref: str, v: float) -> str:
+    return f'<c r="{ref}"><v>{v}</v></c>'
+
+
+def _f(ref: str, text: str, cached: str | None, attrs: str = "") -> str:
+    v = "" if cached is None else f"<v>{cached}</v>"
+    return f'<c r="{ref}"><f{attrs}>{text}</f>{v}</c>'
+
+
+def _calc(path: Path, expression: str | None = None) -> dict:
+    return datakit.calc(path, expression, 20)
+
+
+def test_calc_recomputes_cached_formulas_and_names_a_wrong_one(tmp_path: Path):
+    rows = (
+        f'<row r="1">{_num("A1", 2)}{_num("B1", 3)}{_f("C1", "A1*B1", "6")}</row>'
+        f'<row r="2">{_num("A2", 4)}{_num("B2", 5)}{_f("C2", "SUM(A1:B2)", "14")}</row>'
+        f'<row r="3"><c r="A3" t="str"><f>_xlfn.CONCAT(A1,"x")</f><v>2x</v></c></row>'
+    )
+    rec = _calc(make_xlsx(tmp_path, rows, name="ok.xlsx"))
+    assert rec["verdict"] == "PASS" and rec["counts"]["checked"] == 3, rec
+    wrong = rows.replace("<v>14</v>", "<v>15</v>")
+    rec = _calc(make_xlsx(tmp_path, wrong, name="bad.xlsx"))
+    assert rec["verdict"] == "FAIL" and rec["counts"]["failed"] == 1, rec
+    assert rec["failed"][0] == {"where": "Model!C2", "formula": "SUM(A1:B2)", "computed": 14.0, "cached": 15.0}
+
+
+def test_calc_expands_shared_formulas_and_fills_uncached_ones(tmp_path: Path):
+    rows = "".join(
+        f'<row r="{r}">{_num(f"A{r}", r)}'
+        + (
+            _f(f"B{r}", "A1*10", "10", ' t="shared" ref="B1:B3" si="0"')
+            if r == 1
+            else f'<c r="B{r}"><f t="shared" si="0"/><v>{r * 10}</v></c>'
+        )
+        + "</row>"
+        for r in (1, 2, 3)
+    )
+    rows += f'<row r="4">{_f("B4", "SUM(B1:B3)", None)}{_f("C4", "B4/2", "30")}</row>'
+    rec = _calc(make_xlsx(tmp_path, rows))
+    assert rec["verdict"] == "PASS" and rec["counts"]["checked"] == 4, rec
+    assert rec["filled"] == [{"where": "Model!B4", "formula": "SUM(B1:B3)", "computed": 60.0}]
+    rec = _calc(make_xlsx(tmp_path, rows.replace("<f>B4/2</f><v>30</v>", "<f>B4/2</f><v>9</v>"), name="b2.xlsx"))
+    assert rec["verdict"] == "FAIL" and [x["where"] for x in rec["failed"]] == ["Model!C4"], rec
+
+
+def test_calc_reports_what_it_cannot_evaluate_as_not_run(tmp_path: Path):
+    rows = f'<row r="1">{_f("A1", "FOO(1)", "1")}{_f("B1", "C1+1", None)}{_f("C1", "B1+1", None)}</row>'
+    array = _f("A2", "ROW()", "2", ' t="array" ref="A2"')
+    rows += f'<row r="2">{array}</row>'
+    rec = _calc(make_xlsx(tmp_path, rows))
+    assert rec["verdict"] == "NOT RUN" and rec["counts"]["not_run"] == 4, rec
+    reasons = " ".join(x["reason"] for x in rec["not_run"])
+    assert "FOO" in reasons and "circular" in reasons and "array" in reasons, reasons
+    mixed = rows + f'<row r="3">{_num("A3", 1)}{_f("B3", "A3+1", "2")}</row>'
+    rec = _calc(make_xlsx(tmp_path, mixed, name="mixed.xlsx"))
+    assert rec["verdict"] == "PASS" and rec["counts"] == {
+        "formulas": 5,
+        "checked": 1,
+        "failed": 0,
+        "not_run": 4,
+        "filled": 0,
+    }, rec
+
+
+def test_calc_formula_reads_any_table_and_refuses_what_is_not_a_book(tmp_path: Path):
+    src = _write(tmp_path, "q.csv", "region,revenue\nnorth,10\nsouth,32\n")
+    rec = _calc(src, '=SUMIF(A2:A3,"s*",B2:B3)+MAX(B2:B3)')
+    assert rec["verdict"] == "PASS" and rec["value"] == 64.0, rec
+    assert _calc(src, "=B2/0")["verdict"] == "FAIL"
+    assert _calc(src, "=NOPE()")["verdict"] == "NOT RUN"
+    assert _calc(src)["verdict"] == "NOT RUN"
+    fake = tmp_path / "fake.xlsx"
+    fake.write_bytes(b"not a zip")
+    assert _calc(fake, "=1")["verdict"] == "NOT RUN"
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        assert datakit.cli("calc", [str(src)], None, None, 20, True, "=B3-B2") == 0
+    with contextlib.redirect_stdout(io.StringIO()):
+        assert datakit.cli("calc", [str(src), str(src)], None, None, 20, False, "=1") == 2
+    rec = json.loads(out.getvalue())
+    assert rec["value"] == 22.0 and len(rec["receipt"]) == 64, rec
+
+
 TESTS = [
     test_scaled_number_traces_within_its_written_precision,
     test_overprecise_scaled_number_is_untraced,
@@ -264,6 +348,10 @@ TESTS = [
     test_a_pin_alone_holds_a_format_with_no_reader,
     test_check_refuses_a_rule_it_does_not_know,
     test_cli_exit_codes_and_sealed_json,
+    test_calc_recomputes_cached_formulas_and_names_a_wrong_one,
+    test_calc_expands_shared_formulas_and_fills_uncached_ones,
+    test_calc_reports_what_it_cannot_evaluate_as_not_run,
+    test_calc_formula_reads_any_table_and_refuses_what_is_not_a_book,
 ]
 
 
