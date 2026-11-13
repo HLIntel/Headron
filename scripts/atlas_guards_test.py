@@ -799,6 +799,10 @@ def commit_behaviour_cases() -> None:
         good.write_text("def test_a():\n    assert True\n")
         bad.write_text("def test_a():\n    assert False\n")
         verdicts = cast(Any, (enforce.test_file(good), enforce.test_file(bad), enforce.test_file(ROOT / "scripts/doctor.py")))
+    gap = enforce.missing_declared("E   ModuleNotFoundError: No module named 'defusedxml.ElementTree'")
+    typo = enforce.missing_declared("E   ModuleNotFoundError: No module named 'defusedxmll'")
+    if gap != "defusedxml" or typo:
+        raise SystemExit(f"FAIL a runner missing a locked dependency must SKIP and a typo must FAIL: {gap!r} {typo!r}")
     if not _shutil_which("pytest"):
         print("        commit-time test probe: NOT RUN (no pytest on this machine)")
         return
