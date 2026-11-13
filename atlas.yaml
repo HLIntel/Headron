@@ -2873,8 +2873,10 @@ agent_failure_modes:
       exactly like a run that failed — and a probe run in a different process vouches for it
     looks_like: a perfect score. At 2.27.0 a zsh `$S:scripts` (`:s` is a substitution modifier)
       failed before any test ran and scored 5 of 5 mutants KILLED; fixed, the suite's own
-      sys.path insert shadowed every mutant and scored 6 of 6 SURVIVED over the real module
-    sightings: 1
+      sys.path insert shadowed every mutant and scored 6 of 6 SURVIVED over the real module.
+      At 3.62.0 mutants run under `python -I` scored KILLED because the child could not import
+      the mutated module, not because a case failed
+    sightings: 2
     prevented_by: a mutant counts as killed only by the NAMED assertion written for it, beside a
       control run that must pass, with the import checked in the SAME process as the suite
   a_verdict_printed_and_not_gated:
@@ -3485,6 +3487,38 @@ agent_failure_modes:
     prevented_by: 'every `headron <verb> --flag` in a span, fence or entry prose ("the X verb") must parse against command_table()'
     enforced_by: [agreement.documented_command_errors, clihelp_test.run]
     closed_by: 'agreement.documented_command_errors, which reads entry prose through agreement.named_verbs'
+  a_test_that_inherits_the_host_environment:
+    shape: 'a test starts a tool by PATH name, or runs git under the ambient identity, so its verdict depends on the host it runs on rather than the tree'
+    looks_like: 'a suite green on the authoring machine and red on a clean host: a missing locked requirement, a setup case answering unavailable, a hook refusing the commit identity, a pinned case count short by the cases of a toolchain the host lacks'
+    tell: 'the same commit passes on one host and fails on another; the failing case spawned python, python3 or git commit without the running interpreter or a hermetic identity, or skipped for a missing toolchain'
+    sightings: 4
+    prevented_by: 'spawn sys.executable, put a python shim for it first on PATH, and pass a noreply author and committer identity in env= to every planted commit, and declare toolchain-gated cases with testgroups.host_skipped so the pin counts them and CI refuses them'
+    enforced_by: [testgroups.host_skipped, atlas_landing_test.shard_split_cases]
+  a_count_check_masking_its_cause:
+    shape: 'a case-count check runs before the recorded group failures print, so a failed group reads as a count that moved and its real failure is never shown'
+    looks_like: 'SHARD SPLIT MOVED: guards-1 ran 248, expected 277, read as a mis-pinned split'
+    tell: SUITE_ERRORS is non-empty when the count check fires; running that half alone prints FAIL group <name>
+    sightings: 1
+    prevented_by: 'a half with recorded failures defers to finish_suite, which prints them before any count verdict'
+    enforced_by: [testgroups.part_moved, atlas_landing_test.shard_split_cases]
+  an_unchecked_model_claim:
+    shape: a model reads a digest of names or signatures and reports gaps in code it never read; the report is acted on without opening the cited lines
+    looks_like: 'an audit listing missing implementations and unhandled cases, each with a plausible file and function name'
+    tell: opening each cited function shows a body that does what the claim says is missing
+    sightings: 1
+    prevented_by: 'a model audit yields leads, not findings: each lead counts only after an instrument (read, test, grep) confirms it'
+    unenforceable: whether a prose claim about code is true needs the code read; no check over this tree can see a chat report
+    closed_by: every lead in a model audit is marked confirmed or refuted by a named check before it is reported
+    intake: 3.62.0
+  a_server_that_exits_before_its_handshake:
+    shape: 'a stdio tool server refuses its configuration by printing to stderr and exiting before initialize, so the client shows only that the connection closed'
+    looks_like: 'Connection closed on every reconnect, with no reason in the client'
+    tell: piping one initialize line into the launcher with the configured env exits non-zero and stderr names the missing root
+    sightings: 1
+    prevented_by: 'on a root it cannot serve, answer initialize with a JSON-RPC error carrying the hint, then exit'
+    unenforceable: 'until mcp_main answers initialize on refusal, the stderr hint is only visible to someone who runs the probe'
+    closed_by: headron-mcp with a bad HEADRON_ROOT returns a JSON-RPC error naming the root to initialize
+    intake: 3.62.0
 # WHAT COUNTS AS A SUCCESS (3.45.0). A success is a MOVE worth repeating, never a record that something was
 # built: "shipped X", "fixed Y" and "merged Z" are accomplishments and are refused. Each success declares
 # which kinds of benefit it carries, and each kind is checked, not claimed (knowledge.success_kind_errors).
@@ -3930,6 +3964,24 @@ agent_success_patterns:
     evidence: 'on 8 public repositories 82 FAIL rows fell to 58 once per-project verbs ran in their project, then 58 to 23 once unadopted formatters and unreadable dialects were skipped, each move traced row by row (3.62.0)'
     pairs: [a_gate_that_proves_nothing_reported_as_fail]
     proven_by: [gateplace.placement, atlas_landing_test.gate_adoption_cases]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
+  pin_a_test_to_the_tree_not_the_host:
+    move: 'spawn the running interpreter, give planted commits a hermetic identity, and declare a toolchain-gated case with testgroups.host_skipped so the pin counts it and CI refuses it'
+    when: 'a test starts a tool, commits in a planted repo, or skips for a toolchain the host may lack'
+    verification: 'the same commit gives the same verdict on a clean host with a fresh venv from the lock, and a host skip under CI fails'
+    evidence: 'one commit passed on the authoring machine and failed planted_suite on a clean host four ways: python3, python, git identity, a missing go'
+    pairs: [a_test_that_inherits_the_host_environment]
+    proven_by: [testgroups.host_skipped, atlas_landing_test.shard_split_cases]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
+  score_a_mutant_only_by_its_named_assertion:
+    move: 'run an unmutated control first and count a mutant killed only when the assertion written for it fails, never by a non-zero exit'
+    when: a mutation run reports kills or survivors
+    verification: 'a mutant whose child cannot import the module is scored not run, not killed'
+    evidence: 'mutants under python -I scored killed because the child failed to import, with no case run'
+    pairs: [a_mutation_harness_scored_over_zero_runs]
+    proven_by: [edges.verdict, atlas_test.case]
     kinds: [reusable, ai_beneficial]
     reused: 1
 staleness_discipline:
@@ -6048,7 +6100,6 @@ orphan_exemptions:
   testgroups.run_counted: the case harness a test module runs its cases under; a test is its only caller by design
   testgroups.micro_shreds: the case harness that splits a test module's cases; a test is its only caller by design
   testgroups.run_guard_halves: the case harness that runs both guards halves in one process; a test is its only caller by design
-  testgroups.host_skipped: the case harness that names cases a host has no toolchain for; a test is its only caller by design
 
 issue_route_terms: [atlas, binary_artifact, compatibility, context7, database, dbhub, dependencies, dependency_scan, environment, extension, fuzz, generated_artifact, github, http, integration_test, issue_labels, language_debugger, language_lane, links, manifest, merge, migration, module_size, mutation_test, orphans, ownership, payload_size, playwright, polyglot, property_test, query_plan, regression, routes, runtime_debugger, schema, semgrep, serena, task_profile, topic_branch, transaction, versions, webhook, worktree]
 
