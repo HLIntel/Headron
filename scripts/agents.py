@@ -611,6 +611,59 @@ def _field_streams() -> tuple[list[Path], list[Path]]:
     return sorted((folder / "archive").glob("*.jsonl.gz")), sorted(folder.glob("*.jsonl"))
 
 
+def unshown(session: object, keys: list[str], now: float | None = None) -> list[str]:
+    """The lesson ids this session has NOT been shown yet, in order; each is then recorded as shown.
+
+    ONCE PER SESSION (3.63.0): the port hook sealed every lesson of the edited file on every edit,
+    so one session's 13-edit burst counted one lesson 13 times (26 of one month's 39 field_lesson events),
+    and `lessons_shown` measured edits, not lessons. A session with no id joins nothing, so
+    every key passes, as before. Bound: one small file per session under HEADRON_HOME, pruned after
+    KEEP_SECONDS here, in the writer.
+    """
+    keys = [k for k in dict.fromkeys(keys) if isinstance(k, str) and k]
+    if not isinstance(session, str) or not session.strip():
+        return keys
+    stamp = time.time() if now is None else now
+    folder = registry().parent / "shown"
+    folder.mkdir(parents=True, exist_ok=True)
+    for old in folder.iterdir():
+        if stamp - old.stat().st_mtime > KEEP_SECONDS:
+            old.unlink(missing_ok=True)
+    path = folder / hashlib.sha256(session.encode()).hexdigest()[:24]
+    seen = set(path.read_text(encoding="utf-8").splitlines()) if path.exists() else set()
+    fresh = [k for k in keys if k not in seen]
+    if fresh:
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write("".join(k + "\n" for k in fresh))
+    return fresh
+
+
+def say_lessons(hook_text: str, route: str, lessons: object) -> list[str]:
+    """The port hook's lesson lines: each lesson this hook record's session has not seen, rendered as
+    `lesson <id> — do: <move>`, and sealed as one field_lesson. A lesson already said this session is
+    neither repeated nor counted again (3.63.0). An unwritable seen-file costs the dedup, never the plug."""
+    try:
+        session = json.loads(hook_text).get("session_id")
+    except (ValueError, AttributeError):
+        session = None
+    listed = lessons if isinstance(lessons, list) else []
+    rows = [x for x in listed if isinstance(x, dict) and isinstance(x.get("failure"), str)]
+    try:
+        fresh = unshown(session, [x["failure"] for x in rows])
+    except OSError:
+        fresh = [x["failure"] for x in rows]
+    said = [
+        f"lesson {x['failure']}" + (f" — do: {' '.join(str(x['do']).split())[:160]}" if x.get("do") else "")
+        for x in rows
+        if x["failure"] in fresh
+    ]
+    if fresh:
+        if isinstance(session, str) and session:  # field() stamps the session from this variable
+            os.environ.setdefault("CLAUDE_CODE_SESSION_ID", session)
+        field("field_lesson", {"route": route, "failures": fresh})
+    return said
+
+
 def headline_mark() -> Path:
     """The headline's high-water mark: beside the ledger it measures, never in a checkout."""
     return registry().parent / "field" / "headline.json"

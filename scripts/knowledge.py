@@ -971,7 +971,8 @@ def edit_guard_hook(text: str) -> int:
 
 
 def port_hook(text: str) -> int:
-    """`headron port --hook`: a PostToolUse hook. The edited file's one-line plug reaches the agent as context."""
+    """`headron port --hook`: a PostToolUse hook. The edited file's one-line plug, and each lesson this session
+    has not yet seen, reach the agent as context; only those lessons are sealed as shown (`agents.say_lessons`)."""
     import os  # noqa: PLC0415
     from pathlib import Path  # noqa: PLC0415
 
@@ -985,11 +986,10 @@ def port_hook(text: str) -> int:
     except (OSError, ValueError, KeyError):
         return 0
     if rec["route"] is not None:  # a file no pack routes has no gate to name: silence, not a "none" line
-        _hook_answer("PostToolUse", additionalContext=rec["line"] + port.lock_drift_note())
-        shown = [lesson.get("failure") for lesson in rec.get("lessons") or [] if isinstance(lesson, dict)]
-        if shown:
-            import agents  # noqa: PLC0415
-            agents.field("field_lesson", {"route": rec["route"], "failures": shown})
+        import agents  # noqa: PLC0415
+
+        said = agents.say_lessons(text, rec["route"], rec.get("lessons"))
+        _hook_answer("PostToolUse", additionalContext="\n".join([rec["line"] + port.lock_drift_note(), *said]))
     return 0
 
 

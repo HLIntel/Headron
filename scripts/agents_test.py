@@ -112,7 +112,88 @@ def shown_cases(module: ModuleType) -> None:
             if not _shown_problems(module):
                 raise SystemExit(f"FAIL the shown guard missed a planted defect: {old!r} -> {new_!r}")
     print("  ok    2 planted shown defects each caught")
+    port_hook_cases(module)
     headline_cases(module)
+
+
+# The port hook against a stubbed `port.record`: two lessons, two edits in one session, one edit in another.
+_PORT_HOOK = r"""
+import json, sys
+import port, knowledge
+port.record = lambda *a, **k: {"route": "python", "line": "plug", "lessons": [{"failure": "a_shape", "do": "the move"}, {"failure": "b_shape"}]}
+port.lock_drift_note = lambda: ""
+for session in sys.argv[2:]:
+    knowledge.port_hook(json.dumps({"session_id": session, "tool_input": {"file_path": sys.argv[1]}}))
+"""
+
+
+def _port_hook_problems() -> list[str]:
+    """Each lesson is rendered and sealed once per session, however many edits the session makes."""
+    problems = []
+    root = Path(__file__).resolve().parents[1]
+    with tempfile.TemporaryDirectory() as home:
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CODE_SESSION_ID"} | {"HEADRON_HOME": home}
+        out = subprocess.run(
+            [sys.executable, "-c", _PORT_HOOK, str(root / "scripts/agents.py"), "s1", "s1", "s2"],
+            cwd=root / "scripts",
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=60,
+            env=env,
+        )
+        said = [
+            json.loads(x)["hookSpecificOutput"]["additionalContext"]
+            for x in out.stdout.splitlines()
+            if x.startswith("{")
+        ]
+        if out.returncode != 0 or len(said) != 3:
+            return [f"the hook did not answer three edits: rc={out.returncode} {out.stderr[-300:]!r}"]
+        if "lesson a_shape — do: the move" not in said[0] or "lesson b_shape" not in said[0]:
+            problems.append(f"a session's first edit did not render its lessons: {said[0]!r}")
+        if "lesson" in said[1]:
+            problems.append(f"the same session's second edit repeated a lesson: {said[1]!r}")
+        if "lesson a_shape" not in said[2]:
+            problems.append(f"a second session was never shown the lesson: {said[2]!r}")
+        rc = subprocess.run(
+            [sys.executable, "scripts/atlas.py", "agents", "--field", "--json"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=60,
+            env=env,
+        )
+        try:
+            shown = json.loads(rc.stdout).get("lessons_shown")
+        except ValueError:
+            shown = None
+        if shown != 4:
+            problems.append(f"lessons_shown={shown}, want 4 (2 lessons x 2 sessions; the repeat edit seals none)")
+    return problems
+
+
+def port_hook_cases(module: ModuleType) -> None:
+    """The port hook says and seals a lesson once per session (3.63.0: 13 seals per lesson per burst)."""
+    problems = _port_hook_problems()
+    if problems:
+        raise SystemExit("FAIL port hook lessons:\n  " + "\n  ".join(problems))
+    module.CASES.append(
+        (
+            "the port hook renders and seals each lesson once per session",
+            "every lesson sealed as shown on every edit while the agent saw only a count",
+        )
+    )
+    print("  ok    the port hook renders and seals each lesson once per session")
+    for rel, old, new_ in (
+        ("scripts/agents.py", "fresh = [k for k in keys if k not in seen]", "fresh = keys"),
+        ("scripts/agents.py", '        if x["failure"] in fresh\n', ""),
+        ("scripts/agents.py", 'field("field_lesson", {"route": route, "failures": fresh})', "None"),
+    ):
+        with module.mutated(rel, lambda s, o=old, n=new_: s.replace(o, n, 1)):
+            if not _port_hook_problems():
+                raise SystemExit(f"FAIL the port-hook guard missed a planted defect: {old!r} -> {new_!r}")
+    print("  ok    3 planted port-hook defects each caught")
 
 
 def _headline_problems(module: ModuleType) -> list[str]:
