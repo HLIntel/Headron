@@ -34,6 +34,12 @@ def _rules() -> dict:
     return ((atlas().get("agent_policy") or {}).get("audit")) or {}
 
 
+def kinds_declared() -> list[str]:
+    """Every kind `append` accepts: the task events, then the field kinds, whose bodies `fields` declares."""
+    rules = _rules()
+    return [str(k) for k in (rules.get("events") or [])] + [str(k) for k in (rules.get("fields") or {})]
+
+
 def stream_path(task_id: str) -> Path:
     """Where one task's events live. One file per task, named by the id the contract declares."""
     return ROOT / str(_rules().get("stream") or ".agent/audit") / f"{task_id}.jsonl"
@@ -103,7 +109,7 @@ def append(path: Path, kind: str, body: dict) -> dict:
     that did both at once sealed the same sequence twice and forked the owner's field ledger (found
     at 3.61.0, event 695, two writes 2 ms apart). The stream's own lock spans the read and the write.
     """
-    kinds = [str(k) for k in (_rules().get("events") or [])]
+    kinds = kinds_declared()
     limit = int(_rules().get("max_stream_bytes") or 0)
     if kind not in kinds and kind != "audit_capped":
         raise ValueError(f"'{kind}' is not one of the {len(kinds)} declared audit events")

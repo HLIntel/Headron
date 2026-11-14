@@ -156,6 +156,52 @@ def field_stream(now: float | None = None) -> Path:
     return registry().parent / "field" / f"{month}.jsonl"
 
 
+ENVELOPE = ("ts", "session", "task", "agent", "runtime")  # what `field` stamps on every event; a body may override
+
+
+def _land_reasons() -> set[object]:
+    import cilocal  # noqa: PLC0415
+
+    return {*cilocal.LAND_REFUSALS, cilocal.LAND_UNATTRIBUTED}
+
+
+def _routes() -> set[object]:
+    from atlascore import route_targets  # noqa: PLC0415
+
+    return {*route_targets(), None}  # None: a file no route claims, which a gate refusal still names
+
+
+# THE NAMED SETS a role in atlas.yaml/agent_policy.audit.fields may draw on, each read from its one home.
+FIELD_SETS = {"routes": _routes, "land_reasons": _land_reasons, "sources": lambda: set(SOURCES)}
+
+
+def field_refusal(kind: str, body: dict) -> None:
+    """Refuse a field write whose kind, keys or values atlas.yaml/agent_policy.audit.fields does not declare.
+
+    Raises ValueError, which `field` reports and drops (it fails open); the AST guard in agents_test turns
+    the same mistake at a literal call site into a suite failure, so a dropped kind is never silent twice."""
+    from atlascore import atlas  # noqa: PLC0415
+
+    schema = ((atlas().get("agent_policy") or {}).get("audit") or {}).get("fields") or {}
+    if kind not in schema:
+        raise ValueError(f"'{kind}' is not a declared field kind (atlas.yaml/agent_policy.audit.fields)")
+    roles = schema[kind] or {}
+    for key, value in body.items():
+        if key in ENVELOPE:
+            continue
+        if key not in roles:
+            raise ValueError(f"{kind}: undeclared key {key!r}; declared: {', '.join(sorted(roles))}")
+        allowed = roles[key]
+        if allowed is None:
+            continue
+        if isinstance(allowed, str):
+            if allowed not in FIELD_SETS:
+                raise ValueError(f"{kind}.{key}: names set {allowed!r}, which agents.FIELD_SETS does not hold")
+            allowed = FIELD_SETS[allowed]()
+        if not any(value == a and type(value) is type(a) for a in allowed):
+            raise ValueError(f"{kind}.{key}: {value!r} is outside its declared set")
+
+
 def field(kind: str, body: dict) -> dict | None:
     """Seal one field event (a refusal, a verify, a lesson shown, a land, an end) onto the field ledger.
 
@@ -175,6 +221,7 @@ def field(kind: str, body: dict) -> dict | None:
     }
     ids = {key: value for key, value in ids.items() if value}
     try:
+        field_refusal(kind, body)
         stream = field_stream()
         if not stream.exists():  # a new month: the oldest beyond FIELD_MONTHS are compressed aside, never deleted
             archive_months(stream.parent)
@@ -182,18 +229,6 @@ def field(kind: str, body: dict) -> dict | None:
     except (OSError, ValueError) as exc:
         print(f"agents: no field event recorded: {exc}", file=sys.stderr)
         return None
-
-
-def record_test_run(groups_ran: int, groups_total: int, secs: float, passed: bool) -> dict | None:
-    """Record a test run summary for session-to-session benefits: timing, coverage, and pass/fail.
-
-    This lets a later session know how long tests typically take and whether the last run passed,
-    so it can make better decisions about which gates to run first.
-    """
-    return field(
-        "field_test_run",
-        {"groups_ran": groups_ran, "groups_total": groups_total, "secs": round(secs, 1), "passed": passed},
-    )
 
 
 # Context lifecycle management: track token consumption per session to prevent degradation
@@ -228,8 +263,8 @@ def record_token_usage(session_id: str, tokens_used: int, context_window: int | 
     ctx_file.write_text(json.dumps(status, indent=1), encoding="utf-8")
     if status["should_compact"]:
         field(
-            "field_context_compact",
-            {"session": session_id, "usage_ratio": status["usage_ratio"], "tokens_used": tokens_used},
+            "field_compaction",
+            {"phase": "due", "session": session_id, "usage_ratio": status["usage_ratio"], "tokens_used": tokens_used},
         )
     return status
 
@@ -264,7 +299,9 @@ def compact_context(session_id: str) -> dict | None:
         status["usage_ratio"] = round(status["tokens_used"] / status.get("context_window", DEFAULT_CONTEXT_WINDOW), 3)
         status["ts"] = compacted_at
         ctx_file.write_text(json.dumps(status, indent=1), encoding="utf-8")
-        field("field_context_compacted", {"session": session_id, "compaction_count": status["compaction_count"]})
+        field(
+            "field_compaction", {"phase": "done", "session": session_id, "compaction_count": status["compaction_count"]}
+        )
         return status
     except (json.JSONDecodeError, OSError):
         return None

@@ -138,6 +138,7 @@ def shown_cases(module: ModuleType) -> None:
     print("  ok    2 planted shown defects each caught")
     port_hook_cases(module)
     headline_cases(module)
+    schema_cases(module)
 
 
 # The port hook against a stubbed `port.record`: two lessons, two edits in one session, one edit in another.
@@ -256,8 +257,8 @@ def _headline_problems(module: ModuleType) -> list[str]:
                 return out.returncode, {}
 
         try:
-            for kind in ("field_refused", "field_refused", "field_landed"):
-                agents.field(kind, {"shape": "x"})
+            for kind, body in (("field_refused", {"shape": "x"}),) * 2 + (("field_landed", {"armed": True}),):
+                agents.field(kind, body)
             mark = agents.headline_mark()
             rc, said = report()
             high = json.loads(mark.read_text(encoding="utf-8"))["high"] if mark.exists() else {}
@@ -266,7 +267,7 @@ def _headline_problems(module: ModuleType) -> list[str]:
             stream = agents.field_stream()
             aside = Path(home) / "aside.jsonl"
             stream.rename(aside)
-            agents.field("field_landed", {"shape": "x"})  # a split home: one fresh event, the history gone
+            agents.field("field_landed", {"armed": True})  # a split home: one fresh event, the history gone
             rc, said = report()
             kept = json.loads(mark.read_text(encoding="utf-8"))["high"]
             if (
@@ -354,6 +355,128 @@ def headline_cases(module: ModuleType) -> None:
             if not _headline_problems(module):
                 raise SystemExit(f"FAIL the headline guard missed a planted defect: {old!r} -> {new_!r}")
     print("  ok    5 planted headline defects each caught")
+
+
+def field_call_sites(root: Path, schema: dict) -> list[str]:
+    """Every literal `field(...)` / `agents.field(...)` in a non-test script, checked against the declared kinds
+    and keys, so a write `field()` would drop at run time (it fails open) fails the suite instead. A body held
+    in a variable (`cilocal.record_landing`) has its kind checked here and its keys at run time."""
+    import ast
+
+    from atlascore import parsed_python, walked
+
+    envelope = __import__("agents").ENVELOPE
+    problems = []
+    for path in sorted(root.glob("*.py")):
+        if path.name.endswith("_test.py"):
+            continue
+        for node in walked(parsed_python(path.read_text(encoding="utf-8"), str(path)) or ast.Module([], [])):
+            if not isinstance(node, ast.Call) or not node.args:
+                continue
+            fn = node.func
+            named = isinstance(fn, ast.Name) and fn.id == "field" and path.name == "agents.py"
+            if not (
+                named
+                or (isinstance(fn, ast.Attribute) and fn.attr == "field" and getattr(fn.value, "id", "") == "agents")
+            ):
+                continue
+            where = f"{path.name}:{node.lineno}"
+            kind = node.args[0]
+            if not (isinstance(kind, ast.Constant) and isinstance(kind.value, str)):
+                problems.append(f"{where}: field kind is not a literal")
+                continue
+            if kind.value not in schema:
+                problems.append(f"{where}: undeclared field kind {kind.value!r}")
+                continue
+            body = node.args[1] if len(node.args) > 1 else None
+            for key in body.keys if isinstance(body, ast.Dict) else []:
+                if (
+                    isinstance(key, ast.Constant)
+                    and key.value not in (schema[kind.value] or {})
+                    and key.value not in envelope
+                ):
+                    problems.append(f"{where}: {kind.value} has undeclared key {key.value!r}")
+    return problems
+
+
+def _schema_problems() -> list[str]:
+    """A declared write is sealed; an undeclared kind, key or out-of-set value is refused and leaves the stream
+    byte for byte; the call-site scan is clean here and reports each planted miss. Loaded fresh from disk, so a
+    planted defect in agents.py reaches the run."""
+    import importlib.util
+
+    from atlascore import atlas
+
+    spec = importlib.util.spec_from_file_location("agents_schema_probe", Path(__file__).with_name("agents.py"))
+    if spec is None or spec.loader is None:
+        return ["agents.py did not load as a module"]
+    agents = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(agents)
+    schema = atlas()["agent_policy"]["audit"]["fields"]
+    problems = []
+    with scratch_home():
+        for kind, body in (
+            ("field_landed", {"armed": False, "result_code": 65, "attempts": 1, "reason": "gate", "gate": "x.py"}),
+            ("field_landed", {"armed": True, "result_code": 0, "attempts": 1}),
+            ("field_lesson", {"route": "python", "failures": ["a"]}),
+            ("field_gate_refused", {"gate": "g", "route": None, "state": "undeclared"}),
+            ("field_compaction", {"phase": "due", "session": "s", "tokens_used": 9}),
+            ("session_ended", {"agent": "a", "source": "hook"}),
+        ):
+            if agents.field(kind, body) is None:
+                problems.append(f"a declared write was refused: {kind} {body}")
+        for kind, body in (
+            ("field_bogus", {}),
+            ("field_lesson", {"route": "python", "rout": "python"}),
+            ("field_landed", {"reason": "bogus"}),
+            ("field_landed", {"armed": "yes"}),
+            ("field_lesson", {"route": "cobol"}),
+            ("field_compaction", {"phase": "later"}),
+            ("session_ended", {"source": "cron"}),
+        ):
+            before = agents.field_stream().stat().st_size
+            with contextlib.redirect_stderr(io.StringIO()):
+                sealed = agents.field(kind, body)
+            if sealed is not None or agents.field_stream().stat().st_size != before:
+                problems.append(f"an undeclared write was sealed: {kind} {body}")
+    scripts = Path(__file__).resolve().parent
+    problems += [f"call site: {p}" for p in field_call_sites(scripts, schema)]
+    with tempfile.TemporaryDirectory() as planted:
+        (Path(planted) / "agents.py").write_text(
+            'field("field_bogus", {})\nfield("field_lesson", {"rout": 1})\nfield(kind, {})\n', encoding="utf-8"
+        )
+        if len(field_call_sites(Path(planted), schema)) != 3:
+            problems.append("the call-site scan missed a planted undeclared kind, key or computed kind")
+    if not field_call_sites(scripts, {k: v for k, v in schema.items() if k != "field_handoff"}):
+        problems.append("the call-site scan passed a live writer whose kind was undeclared")
+    return problems
+
+
+def schema_cases(module: ModuleType) -> None:
+    """A FIELD KIND IS A RELATION, ITS KEYS ITS ROLES: atlas.yaml/agent_policy.audit.fields declares both."""
+    problems = _schema_problems()
+    if problems:
+        raise SystemExit("FAIL the field schema:\n  " + "\n  ".join(problems))
+    module.CASES.append(
+        (
+            "a field write with an undeclared kind, key or out-of-set value is refused, and a literal call site is checked",
+            "three field kinds written for months and every write dropped, because nothing declared them",
+        )
+    )
+    print("  ok    the field schema refuses an undeclared kind, key or value, at the write and at the call site")
+    for old, new_ in (
+        (
+            "        if key not in roles:\n            raise",
+            "        if key not in roles:\n            continue\n            raise",
+        ),
+        ("        if not any(value == a and type(value) is type(a)", "        if False and not any(value == a"),
+        ("        field_refusal(kind, body)\n", ""),
+        ("        if key in ENVELOPE:\n", "        if True:\n"),
+    ):
+        with module.mutated("scripts/agents.py", lambda s, o=old, n=new_: s.replace(o, n, 1)):
+            if not _schema_problems():
+                raise SystemExit(f"FAIL the field-schema guard missed a planted defect: {old!r} -> {new_!r}")
+    print("  ok    4 planted field-schema defects each caught")
 
 
 def _clear(home: str) -> None:
