@@ -49,6 +49,25 @@ class EdgeType(Enum):
     RESTS_ON = "rests_on"
 
 
+_ANY = frozenset(NodeType)
+
+# The node types each edge may join, source then target, as the populators below fix them.
+# An edge type with no entry, or with empty sets, admits no edge: a new type must declare its ends.
+EDGE_DOMAINS: dict[EdgeType, tuple[frozenset[NodeType], frozenset[NodeType]]] = {
+    EdgeType.DEPENDS_ON: (frozenset({NodeType.GATE}), frozenset({NodeType.GATE})),
+    EdgeType.BLOCKS: (frozenset({NodeType.COMMAND, NodeType.VERDICT}), frozenset({NodeType.COMMAND})),
+    EdgeType.ENABLES: (frozenset({NodeType.COMMAND, NodeType.VERDICT}), frozenset({NodeType.COMMAND})),
+    EdgeType.REFERENCES: (
+        frozenset({NodeType.ROUTE, NodeType.INSTRUMENT}),
+        frozenset({NodeType.FILE, NodeType.INSTRUMENT}),
+    ),
+    EdgeType.ISOLATES: (frozenset({NodeType.INSTRUMENT}), frozenset({NodeType.FILE})),
+    EdgeType.FAST_TRACKS: (frozenset(), frozenset()),
+    # A dependent may be any node a claim already names; only the target is fixed.
+    EdgeType.RESTS_ON: (_ANY, frozenset({NodeType.CLAIM})),
+}
+
+
 @dataclass
 class Node:
     """A node in the knowledge graph.
@@ -252,7 +271,23 @@ class Graph:
         return [p for p in self.pointers if p.from_node == node_id or p.to_node == node_id]
 
 
-# Module-level singleton, built once at import
+def edge_violations(g: Graph) -> list[str]:
+    """Each edge whose ends are missing or whose end types fall outside EDGE_DOMAINS."""
+    out = []
+    for e in g.edges:
+        src, dst = g.nodes.get(e.source), g.nodes.get(e.target)
+        if src is None or dst is None:
+            out.append(f"{e.type.value} {e.source} -> {e.target}: endpoint not in graph")
+            continue
+        sources, targets = EDGE_DOMAINS.get(e.type, (frozenset(), frozenset()))
+        if src.type not in sources or dst.type not in targets:
+            out.append(
+                f"{e.type.value} {e.source} ({src.type.value}) -> {e.target} ({dst.type.value}): outside its domain"
+            )
+    return out
+
+
+# Module-level singleton, built on first get_graph()
 _graph: Graph | None = None
 
 
@@ -423,4 +458,7 @@ def _build_graph() -> Graph:
     _populate_routes_and_instruments(g, data)
     _populate_mind_and_tunnels(g, data)
     _populate_claims(g)
+    bad = edge_violations(g)
+    if bad:
+        raise ValueError("graph edges outside their declared domain:\n  " + "\n  ".join(bad[:10]))
     return g
