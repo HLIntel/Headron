@@ -262,7 +262,7 @@ def _test_graph() -> None:
         raise SystemExit(f"FAIL edge domain check\n  admitted: {graph.edge_violations(bad)}")
     real = graph._populate_claims
 
-    def planted(g):
+    def planted(g: graph.Graph) -> None:
         real(g)
         g.add_node(graph.Node("planted.py", graph.NodeType.FILE))
         g.add_edge(graph.Edge("planted.py", "planted.py", graph.EdgeType.DEPENDS_ON))
