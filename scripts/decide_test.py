@@ -248,6 +248,40 @@ def _test_graph() -> None:
     CASES.append(("graph traverse returns paths", "a traversal that returns non-list"))
     print("  ok    graph traverse returns paths")
 
+    # Every edge type declares the node types it may join, and the built graph keeps to them.
+    if set(graph.EDGE_DOMAINS) != set(graph.EdgeType):
+        raise SystemExit(f"FAIL edge domains\n  undeclared: {set(graph.EdgeType) - set(graph.EDGE_DOMAINS)}")
+    if graph.edge_violations(graph.get_graph()):
+        raise SystemExit(f"FAIL live graph edges\n  {graph.edge_violations(graph.get_graph())[:3]}")
+    bad = graph.Graph()
+    bad.add_node(graph.Node("claim:x", graph.NodeType.CLAIM))
+    bad.add_node(graph.Node("f.py", graph.NodeType.FILE))
+    bad.add_edge(graph.Edge("claim:x", "f.py", graph.EdgeType.RESTS_ON))
+    bad.add_edge(graph.Edge("f.py", "gone", graph.EdgeType.RESTS_ON))
+    if len(graph.edge_violations(bad)) != 2:
+        raise SystemExit(f"FAIL edge domain check\n  admitted: {graph.edge_violations(bad)}")
+    real = graph._populate_claims
+
+    def planted(g):
+        real(g)
+        g.add_node(graph.Node("planted.py", graph.NodeType.FILE))
+        g.add_edge(graph.Edge("planted.py", "planted.py", graph.EdgeType.DEPENDS_ON))
+
+    graph._populate_claims = planted
+    try:
+        graph._build_graph()
+        raise SystemExit("FAIL graph build admitted a depends_on edge between files")
+    except ValueError:
+        pass
+    finally:
+        graph._populate_claims = real
+    CASES.append(("graph edges keep to their declared domains", "an edge type with no declared ends"))
+    CASES.append(
+        ("graph refuses an edge outside its domain", "a rests_on edge from a claim to a file, or a dangling one")
+    )
+    CASES.append(("graph build refuses an out-of-domain edge", "a build that keeps a depends_on edge between files"))
+    print("  ok    graph edges keep to their declared domains")
+
     # Graph has edges and tunnels.
     g = graph.get_graph()
     if not g.edges:
@@ -444,7 +478,7 @@ def main() -> int:
     go_ran = _test_go_engine()
     _test_go_bridge()
 
-    expected = 28 + GO_CASES * go_ran
+    expected = 31 + GO_CASES * go_ran
     if len(CASES) != expected:
         raise SystemExit(f"FAIL case count: {len(CASES)} cases, expected {expected}")
     print(f"\n{len(CASES)}/{expected} cases passed")
