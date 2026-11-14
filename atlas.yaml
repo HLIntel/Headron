@@ -5365,8 +5365,25 @@ agent_policy:
       point of establishing what happened is not an audit
     events: [task_created, plan_resolved, policy_denied, command_started, command_finished,
              file_changed, approval_presented, approval_refused, budget_exhausted, gate_result,
-             scope_expanded, task_finished, field_refused, field_gate_refused, field_verify,
-             field_lesson, field_landed, field_handoff, session_ended]
+             scope_expanded, task_finished]
+    # A FIELD KIND IS A RELATION AND ITS BODY KEYS ARE ITS ROLES. A key declared only by the code that
+    # reads it means whatever that reader assumes, so every key a field event may carry is declared here,
+    # and `agents.field` refuses a write with an undeclared kind, an undeclared key or an out-of-set value.
+    # A role value is null (open), a list (the closed set) or the name of a set held where it is enforced
+    # (`agents.FIELD_SETS`), so no set has a second copy. A declared role may be absent: a role can be
+    # known while its filler is not. The envelope (ts, session, task, agent, runtime) is always allowed.
+    # The kinds below are audit events too: `agentaudit.append` accepts `events` and these keys, one home each.
+    fields:
+      field_refused: {shape: null, control: null, command: null}
+      field_gate_refused: {gate: null, route: routes, state: null}
+      field_verify: {exit: null, tally: null, failed: null, not_run: null, input_digest: null,
+                     wall_seconds: null}
+      field_lesson: {route: routes, failures: null}
+      field_landed: {armed: [true, false], result_code: null, attempts: null, reason: land_reasons,
+                     gate: null}
+      field_handoff: {pending_gates: null}
+      field_compaction: {phase: [due, done], usage_ratio: null, tokens_used: null, compaction_count: null}
+      session_ended: {source: sources}
 
 # A GATE IS A WORD UNTIL SOMETHING CAN RESOLVE IT TO A COMMAND.
 #

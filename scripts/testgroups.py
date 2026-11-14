@@ -120,13 +120,6 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
     impact.save()  # every passing group's record, failed or not elsewhere: a failed group's record is dropped
     if failures := getattr(module, "SUITE_ERRORS", []):
         print("\n".join(f"FAIL {failure}" for failure in failures))
-        # Record test run failure for session-to-session benefits
-        try:
-            import agents  # noqa: PLC0415
-
-            agents.record_test_run(0, expected, 0, False)
-        except Exception:  # noqa: S110
-            pass  # fails open: never block the suite on a ledger write
         return 1
     if counted(module) != expected:
         raise SystemExit(
@@ -138,13 +131,6 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
     host = "".join(f"; {n} not run on this host ({why})" for n, why in skips)
     print(f"atlas tests: {len(module.CASES)}/{expected} pass{host}")
     module.edges.coverage(len(module.CASES))
-    # Record test run success for session-to-session benefits
-    try:
-        import agents  # noqa: PLC0415
-
-        agents.record_test_run(len(module.CASES), expected, 0, True)
-    except Exception:  # noqa: S110
-        pass  # fails open: never block the suite on a ledger write
     print("SCOPE: these test the CONTRACT. Whether a declared tool EXISTS and RUNS is")
     print("       `python scripts/packprobe.py --mode smoke`; whether the live GitHub controls")
     print("       match the declaration is `python scripts/ghaudit.py`. Neither is left to prose.")
