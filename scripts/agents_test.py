@@ -29,6 +29,30 @@ def pin_suite_home() -> None:
     atexit.register(shutil.rmtree, os.environ["HEADRON_HOME"], True)
 
 
+@contextlib.contextmanager
+def scratch_home():
+    """A HEADRON_HOME of its own for a case that calls `branchstate.land`, whoever runs it (second sighting:
+    the guards' planted landings reached the owner's ledger twice before 3.63.0 from a run outside
+    the suite lock). Yields the inherited ledger's size, so the case can prove it untouched on the way out."""
+    import agents
+
+    outer = agents.field_stream()
+    before = outer.stat().st_size if outer.exists() else -1
+    saved = os.environ.get("HEADRON_HOME")
+    with tempfile.TemporaryDirectory(prefix="headron-case-home-") as home:
+        os.environ["HEADRON_HOME"] = home
+        try:
+            yield Path(home)
+        finally:
+            if saved is None:
+                os.environ.pop("HEADRON_HOME", None)
+            else:
+                os.environ["HEADRON_HOME"] = saved
+    after = outer.stat().st_size if outer.exists() else -1
+    if after != before:
+        raise SystemExit(f"FAIL a landing case wrote the inherited field ledger ({before} -> {after} bytes)")
+
+
 def run(module: ModuleType) -> None:
     """Each planted registry state is refused or counted as the design says, beside its clean twin."""
     import agents

@@ -36,6 +36,7 @@ import json
 import os
 import sys
 import time
+from collections import Counter
 from pathlib import Path
 from typing import TextIO
 
@@ -576,6 +577,10 @@ def field_summary(streams: list[Path]) -> dict:
         "lands_armed": sum(bool(b.get("armed")) for b in by["field_landed"]),
         "lands_not_armed": sum(not bool(b.get("armed")) for b in by["field_landed"]),
         "landing_retries": sum(attempts(b) - 1 for b in by["field_landed"]),
+        # the 65s by declared cause (branchstate.LAND_REFUSALS); "unrecorded" is an event from before the field
+        "lands_refused_by_reason": dict(
+            Counter(str(b.get("reason") or "unrecorded") for b in by["field_landed"] if b.get("result_code") == 65)
+        ),
         "sessions_ended": len(by["session_ended"]),
         "events_without_session": sum(not e.get("body", {}).get("session") for e in events),
         "events_without_task": sum(not e.get("body", {}).get("task") for e in events),

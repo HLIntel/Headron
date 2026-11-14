@@ -341,6 +341,7 @@ def land_empty_cases(module: ModuleType, *, plant: bool = True) -> None:
     import tempfile
 
     import branchstate
+    import cilocal
 
     def clean_git_env() -> dict[str, str]:
         env = dict(os.environ)
@@ -378,6 +379,7 @@ def land_empty_cases(module: ModuleType, *, plant: bool = True) -> None:
             empty = branchstate._land_once("claude/empty")
             git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "work")
             ahead = branchstate._land_once("claude/empty")
+            ahead_why = dict(cilocal.refusal)
         finally:
             os.chdir(here)
             branchstate.clean_checkout_errors = real
@@ -410,6 +412,7 @@ def land_empty_cases(module: ModuleType, *, plant: bool = True) -> None:
         try:
             os.chdir(lane)
             diverged = branchstate._land_once("claude/empty")
+            diverged_why = dict(cilocal.refusal)
         finally:
             os.chdir(here)
             branchstate.clean_checkout_errors, branchstate._pull_request = real_gate, real_pr
@@ -418,6 +421,9 @@ def land_empty_cases(module: ModuleType, *, plant: bool = True) -> None:
         )
     assert empty == 0 and gated == [1], f"ahead=0 must finish before the gate (rc {empty}, gate runs {len(gated)})"
     assert ahead == 65, f"a lane with a commit must reach the gate (rc {ahead})"
+    # the refusal names its cause for the field ledger; a planted refusal names no gate, so none is guessed
+    assert ahead_why == {"reason": "gate", "gate": "unattributed"}, f"a gate refusal recorded {ahead_why}"
+    assert diverged_why == {"reason": "diverged"}, f"a divergent remote recorded {diverged_why}"
     if plant:
         _land_force_push_plant(module)
     module.CASES.append(
@@ -512,10 +518,13 @@ def land_wait_case(module: ModuleType) -> None:
     codes, calls = [75, 75, 0], []
     branchstate._land_once = lambda b: calls.append(b) or codes[len(calls) - 1]
     branchstate._suite_host_free = lambda wait: True
-    try:
-        got = branchstate.land("lane")
-    finally:
-        branchstate._land_once, branchstate._suite_host_free = saved
+    from agents_test import scratch_home  # noqa: PLC0415
+
+    with scratch_home():  # the planted landing never reaches the owner's ledger, whoever runs this case
+        try:
+            got = branchstate.land("lane")
+        finally:
+            branchstate._land_once, branchstate._suite_host_free = saved
     if (got, len(calls)) != (0, 3):
         raise SystemExit(f"FAIL land after two lost lock races: rc {got} after {len(calls)} attempt(s), want 0 after 3")
     module.CASES.append(
