@@ -260,15 +260,18 @@ def _pinned_root_problems() -> list[str]:
         git(atlas, "commit", "-q", "--no-verify", "--allow-empty", "-m", "second")
         (project / "vendor" / "headron").mkdir(parents=True)
         own, copied = "the top of its own git checkout", "  root: vendor/headron\n"
+
+        def at(ref: str) -> str:  # quoted: a short sha of all digits is a YAML int, which the pin refuses
+            return f'  root: ../atlas\n  ref: "{ref}"\n'
+
         cases = {  # label -> (pin, verdict must contain)
             "a tree copied into the project": (copied, own),
             "a directory outside any checkout": ("  root: ../nowhere\n", own),
-            "its own checkout at another ref": (f"  root: ../atlas\n  ref: {old[:7]}\n", "at its pinned ref"),
-            "a ref that names nothing": ("  root: ../atlas\n  ref: v0.0.0-none\n", "at its pinned ref"),
-            "its own checkout at its ref": (
-                f"  root: ../atlas\n  ref: {git(atlas, 'rev-parse', 'HEAD')}\n",
-                "ran atlas",
-            ),
+            "its own checkout at another ref": (at(old[:7]), "at its pinned ref"),
+            "a ref that names nothing": (at("v0.0.0-none"), "at its pinned ref"),
+            "an all-digit ref, quoted": (at("1234567"), "at its pinned ref"),
+            "an all-digit ref, unquoted": ("  root: ../atlas\n  ref: 1234567\n", "want a string"),
+            "its own checkout at its ref": (at(git(atlas, "rev-parse", "HEAD")), "ran atlas"),
             "its own checkout, no ref": ("  root: ../atlas\n", "ran atlas"),
             "the pinning project itself": ("  root: .\n", "apart from the project that pins it"),
         }
