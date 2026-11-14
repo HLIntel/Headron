@@ -105,6 +105,14 @@ def case_total_pin_case() -> None:
     agent = atlasinv._declared_pin((atlasinv.ROOT / "scripts/agent_test.py").read_text(), "agent_test.py")
     if atlasinv.declared_case_total() != testgroups.shard_pin("all", False) + agent:
         raise SystemExit("FAIL suite total omits a declared pin")
+    import ast
+
+    from atlascore import nodes_of
+
+    shape = ast.parse((atlasinv.ROOT / "scripts/testgroups.py").read_text())
+    pins = next(n.value for n in nodes_of(shape, ast.Subscript) if isinstance(n.value, ast.Dict))
+    if any(isinstance(v, ast.Constant) for v in pins.values):  # a literal sum moves apart from its parts
+        raise SystemExit("FAIL a shard pin restates a count instead of deriving it from CORE_CASES/GUARD_PARTS")
     for source in ("pass", "expected = 1\nexpected = 2", "expected = unknown()", "expected ="):
         try:
             atlasinv._declared_pin(source, "atlas_test.py")
