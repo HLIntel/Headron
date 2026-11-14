@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -31,6 +32,7 @@ def run(module: ModuleType):
     merge_method_cases()
     fast_gate_cases()
     full_replay_cases()
+    landing_reason_cases()
     shard_split_cases()
     repo_reach_cases()
     local_ci_cases()
@@ -101,6 +103,7 @@ def fast_gate_cases() -> None:
     import types
 
     import branchstate
+    import cilocal
 
     calls: list[list[str]] = []
     noise = "\x1b[90m12:41PM\x1b[0m \x1b[32mINF\x1b[0m scanned ~16 MB"
@@ -134,6 +137,8 @@ def fast_gate_cases() -> None:
         raise SystemExit(
             f"FAIL a red fast gate returned {code} and pushed={any(c[:2] == ['git', 'push'] for c in calls)}"
         )
+    if cilocal.refusal != {"reason": "gate", "gate": "ci-local.sh fast"}:
+        raise SystemExit(f"FAIL a red fast gate recorded {cilocal.refusal}, not the gate it was")
     CASES.append(
         (
             "a red pre-push fast gate refuses the landing as the commit (65) before any push",
@@ -148,6 +153,7 @@ def full_replay_cases() -> None:
     import types
 
     import branchstate
+    import cilocal
 
     events: list[str] = []
     verdict = False
@@ -178,7 +184,7 @@ def full_replay_cases() -> None:
         setattr(branchstate, name, value)
     try:
         code = branchstate._land_once("lane")
-        red = list(events)
+        red, why = list(events), dict(cilocal.refusal)
         events.clear()
         verdict = True
         branchstate._land_once("lane")
@@ -187,12 +193,12 @@ def full_replay_cases() -> None:
             setattr(branchstate, name, value)
     if code != 65 or "git push" in red or "replay abc" not in red:
         raise SystemExit(f"FAIL a red full replay must refuse before any push: {code} {red}")
+    if why != {"reason": "replay"}:
+        raise SystemExit(f"FAIL a red full replay recorded {why}")
     if not events.index("replay abc") < events.index("git push") < events.index("post abc") or any(
         "ci-local.sh" in event for event in events
     ):
         raise SystemExit(f"FAIL a green replay must precede the push and post without a second gate: {events}")
-
-    import cilocal
 
     replays: list[str] = []
     states: list[str] = []
@@ -223,6 +229,103 @@ def full_replay_cases() -> None:
         )
     )
     print("  ok    the atlas's full replay runs before the push and a red one publishes nothing")
+
+
+def landing_reason_cases() -> None:
+    """Every 65 in a landing names its declared cause on field_landed, and never the gate's output.
+
+    MEASURED 2026-11: 47 of 182 landings exited 65 with only the code recorded, so no fix could be ranked.
+    """
+    import types
+
+    import agents
+    import branchstate
+    import cilocal
+    from agents_test import scratch_home
+
+    def refused(codes: dict[tuple[str, ...], int], **stubs: object) -> tuple[int, dict[str, str]]:
+        def fake(argv: Sequence[str], **_):
+            code = next((c for k, c in codes.items() if tuple(argv[: len(k)]) == k), 0)
+            return subprocess.CompletedProcess(argv, code, "", "")
+
+        with tempfile.TemporaryDirectory() as tree:
+            fakes = {
+                "subprocess": types.SimpleNamespace(run=fake, TimeoutExpired=subprocess.TimeoutExpired),
+                "_git": lambda *a: "1" if a[:2] == ("rev-list", "--count") else "abc" if a[0] == "rev-parse" else "",
+                "_tree": lambda: Path(tree),
+                "_is_atlas": lambda: False,
+                "clean_checkout_errors": lambda *a: None,
+                "_pull_request": lambda b: (None, True),
+                "replay_local_ci": lambda *a: True,
+                "post_local_ci": lambda *a, **k: True,
+                **stubs,
+            }
+            real = {name: getattr(branchstate, name) for name in fakes}
+            for name, value in fakes.items():
+                setattr(branchstate, name, value)
+            cilocal.refusal.clear()
+            try:
+                return branchstate._land_once("lane"), dict(cilocal.refusal)
+            finally:
+                for name, value in real.items():
+                    setattr(branchstate, name, value)
+
+    red_gate = "`/opt/py/bin/python3 /opt/x/scripts/verify.py --fast` exited 1: token=PLANTED-OUTPUT"
+    table = [
+        ({("git", "show-ref"): 2}, {}, {"reason": "uninspectable"}),
+        ({("git", "show-ref"): 0, ("git", "merge-base"): 1}, {}, {"reason": "diverged"}),
+        ({("git", "show-ref"): 1, ("git", "rebase"): 1}, {}, {"reason": "rebase"}),
+        ({("git", "merge"): 1}, {}, {"reason": "merge"}),
+        (
+            {("git", "show-ref"): 1},
+            {"clean_checkout_errors": lambda *a: red_gate},
+            {"reason": "gate", "gate": "verify.py --fast"},
+        ),
+        (
+            {("git", "show-ref"): 1},
+            {"_is_atlas": lambda: True, "replay_local_ci": lambda *a: False},
+            {"reason": "replay"},
+        ),
+        (
+            {("git", "show-ref"): 1},
+            {"_is_atlas": lambda: True, "post_local_ci": lambda *a, **k: False},
+            {"reason": "post_ci"},
+        ),
+    ]
+    for codes, stubs, want in table:
+        got = refused(codes, **stubs)
+        if got != (65, want):
+            raise SystemExit(f"FAIL a landing refused by {codes} {sorted(stubs)} recorded {got}, want (65, {want})")
+    if {want["reason"] for *_, want in table} != set(cilocal.LAND_REFUSALS):
+        raise SystemExit(f"FAIL a declared refusal reason has no landing path proving it: {cilocal.LAND_REFUSALS}")
+    try:
+        cilocal.refuse("flaky")
+        raise SystemExit("FAIL an undeclared refusal reason was recorded")
+    except ValueError:
+        pass
+
+    # Through land() onto a ledger: the cause reaches the event, and an attempt that names none never
+    # inherits the previous attempt's cause.
+    saved = branchstate._land_once
+    with scratch_home():
+        try:
+            for stub in (lambda b: cilocal.refuse("replay"), lambda b: 65, lambda b: 0):
+                branchstate._land_once = stub
+                branchstate.land("lane")
+        finally:
+            branchstate._land_once = saved
+        text = agents.field_stream().read_text(encoding="utf-8")
+    bodies = [e["body"] for e in map(json.loads, text.splitlines()) if e.get("event") == "field_landed"]
+    recorded = [(b.get("result_code"), b.get("reason")) for b in bodies]
+    if recorded != [(65, "replay"), (65, "unattributed"), (0, None)]:
+        raise SystemExit(f"FAIL field_landed recorded {recorded}, want the cause on each 65 and none on a 0")
+    CASES.append(
+        (
+            f"each of {len(table)} landing refusals records its declared cause, never the gate's output",
+            "47 of 182 landings exited 65 and no fix could be ranked: the ledger held the code alone",
+        )
+    )
+    print(f"  ok    {len(table)} landing refusals each record their declared cause on field_landed")
 
 
 def shard_split_cases() -> None:

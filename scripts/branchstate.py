@@ -43,7 +43,7 @@ from pathlib import Path
 
 import yaml
 from atlascore import ROOT, atlas, git_run, resolved_once, strict_yaml, text_of, worktree
-from cilocal import close_landing, merged_head, post_local_ci, replay_local_ci, tag_rescue
+from cilocal import close_landing, merged_head, post_local_ci, record_landing, refuse, replay_local_ci, tag_rescue
 from consumergates import consumer_gates, enter_lane
 from consumergates import consumer_records as consumer_records
 
@@ -590,7 +590,7 @@ def _land_once(branch: str) -> int:
     )
     if ref.returncode not in (0, 1):
         print("land: cannot inspect the published branch — REFUSING")
-        return 65
+        return refuse("uninspectable")
     published = ref.returncode == 0
     if published:
         ancestor = subprocess.run(
@@ -598,7 +598,7 @@ def _land_once(branch: str) -> int:
         )
         if ancestor.returncode != 0:
             print("land: the published branch has commits absent locally — REFUSING; reconcile the branch first")
-            return 65
+            return refuse("diverged")
     update = ["git", "merge", "--no-edit", f"origin/{base}"] if published else ["git", "rebase", f"origin/{base}"]
     for step in (update,):
         done = subprocess.run(step, cwd=_tree(), capture_output=True, text=True, check=False, timeout=600)
@@ -606,7 +606,7 @@ def _land_once(branch: str) -> int:
         if done.returncode != 0:  # HAND (65): a conflict is the same on every retry, so land never retries it
             subprocess.run(["git", step[1], "--abort"], cwd=_tree(), capture_output=True, check=False, timeout=600)
             print(f"land: the {step[1]} onto origin/{base} failed — aborted and REFUSING; reconcile by hand, then land")
-            return 65
+            return refuse(step[1])  # "merge" on a published lane, "rebase" on an unpublished one
     # NOTHING TO LAND IS FINISHED, NOT FAILED (second sighting). A lane at ahead=0 ran the clean-checkout
     # suite, then failed on `gh pr create` ("no commits between"), retried, and escalated as two writers.
     if _git("rev-list", "--count", f"origin/{base}..{branch}") == "0":
@@ -621,13 +621,13 @@ def _land_once(branch: str) -> int:
     if refused:
         busy = refused.startswith("NOT RUN")
         print(f"land: a CLEAN checkout of HEAD {'was NOT judged' if busy else 'fails'} — REFUSING to push. {refused}")
-        return 75 if busy else 65  # a failing gate fails again on a retry: it is the commit, not a race
+        return 75 if busy else refuse("gate", refused)  # it fails again on a retry: the commit
     # THE FULL REPLAY COMES BEFORE THE PUSH (atlas): run after it, a red shard left a published lane, which
     # may only merge and never rebase. It holds the fast job, so the atlas runs no second gate.
     head = _git("rev-parse", "HEAD") if _is_atlas() else ""
     if head and not replay_local_ci(_tree(), head):
         print(f"land: the full replay of {head[:12]} failed — REFUSING to push; nothing was published")
-        return 65
+        return refuse("replay")
     # THE HOOK'S GATE IS A STEP OF ITS OWN (3.61.0, second sighting). `git push` exits 1 whatever the
     # hook said, so a refused type error was retried as "two writers". Here its failure is the commit (65).
     gate = [str(_tree() / ".github" / "ci-local.sh"), "fast"]
@@ -643,7 +643,7 @@ def _land_once(branch: str) -> int:
     landing_env = {**os.environ, "ATLAS_LANDING": "1"}  # the one caller .githooks/pre-push admits
     for step in steps:
         if step[:3] == ["gh", "pr", "merge"] and _is_atlas() and not post_local_ci(branch, _tree(), _git, head):
-            return 65
+            return refuse("post_ci")
         done = subprocess.run(
             step, cwd=_tree(), capture_output=True, text=True, check=False, env=landing_env, timeout=600
         )
@@ -652,7 +652,7 @@ def _land_once(branch: str) -> int:
             noise = ("mINF\x1b", " INF ")  # gitleaks colours its level, so the plain token alone misses it
             tail = [line for line in (done.stdout + done.stderr).splitlines() if not any(n in line for n in noise)]
             print("land: stopped — " + "\n".join(tail[-12:]))
-            return 65 if step is gate else 1
+            return refuse("gate", f"`{' '.join(gate)}`") if step is gate else 1
     pr, forge_ok = _pull_request(branch)
     merged = forge_ok and not pr and merged_head(branch, base, _git, _gh)
     return close_landing(branch, landing_verdict(True, merged, pr, forge_ok), _git)
@@ -688,21 +688,13 @@ def land(branch: str) -> int:
             print(
                 f"land: NOT RUN — the suite lock stayed taken or retry bound {LAND_NOT_RUN_RETRIES} was reached; nothing was pushed"
             )
-        return _record_landing(first, attempts)
+        return record_landing(first, attempts)
     print("land: failed once — fetching, rebasing and retrying ONCE, per push_conflict_rule")
     second = _land_once(branch)
     attempts += 1
     if second != 0:
         print("land: failed twice — escalating rather than retrying: two writers, not a race")
-    return _record_landing(second, attempts)
-
-
-def _record_landing(code: int, attempts: int) -> int:
-    """Record every completed landing operation, including refused and exhausted attempts."""
-    import agents  # noqa: PLC0415
-
-    agents.field("field_landed", {"armed": code == 0, "result_code": code, "attempts": attempts})
-    return code
+    return record_landing(second, attempts)
 
 
 def _suite_host_free(wait: float = 1800.0) -> bool:

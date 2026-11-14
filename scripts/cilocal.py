@@ -395,6 +395,46 @@ def fan_out(workflow: str, units: dict[str, list[str]], head: str, runner_temp: 
     return 1 if failed else 0
 
 
+# WHY A LANDING NEEDS A HAND, declared (field ledger 2026-11: 47 of 182 landings exited 65, cause unrecorded,
+# so no fix could be ranked). Every 65 in branchstate._land_once names one; one that names none is "unattributed".
+LAND_REFUSALS = ("uninspectable", "diverged", "rebase", "merge", "gate", "replay", "post_ci")
+refusal: dict[str, str] = {}  # this landing's cause; record_landing consumes it, so none reaches the next landing
+
+
+def refuse(reason: str, refused: str = "") -> int:
+    """Name the cause of a 65 for this landing's field_landed event, and return 65."""
+    if reason not in LAND_REFUSALS:
+        raise ValueError(f"land: undeclared refusal reason {reason!r}; declare it in LAND_REFUSALS")
+    refusal.clear()
+    refusal.update({"reason": reason, **({"gate": gate_name(refused)} if reason == "gate" else {})})
+    return 65
+
+
+def gate_name(refused: str) -> str:
+    """The gate's identity from a refusal: its script and arguments, never its output or a machine path.
+
+    The refusal text carries the gate's output tail, and the ledger records what ran, never what it printed.
+    """
+    quoted = refused.split("`")
+    if len(quoted) < 3 or not quoted[1].split():
+        return "unattributed"
+    argv = quoted[1].split()
+    script = next((i for i, a in enumerate(argv) if a.endswith((".py", ".sh"))), 0)
+    return " ".join([Path(argv[script]).name, *argv[script + 1 :]])[:120]
+
+
+def record_landing(code: int, attempts: int) -> int:
+    """Record every completed landing operation, including refused and exhausted attempts."""
+    import agents  # noqa: PLC0415
+
+    body: dict[str, object] = {"armed": code == 0, "result_code": code, "attempts": attempts}
+    if code == 65:  # the cause of a refusal that needs a hand, so the split by cause is measurable
+        body.update(refusal or {"reason": "unattributed"})
+    refusal.clear()
+    agents.field("field_landed", body)
+    return code
+
+
 def _rescue_prefix(branch: str) -> str:
     return f"lane/{branch.replace('/', '-')}/"
 
