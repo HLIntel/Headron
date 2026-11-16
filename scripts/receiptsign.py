@@ -31,11 +31,11 @@ def signature_path(receipt: Path) -> Path:
     return receipt.with_name(receipt.name + ".sig")
 
 
-def _ssh_keygen(args: list[str], data: bytes) -> tuple[bytes | None, str]:
+def _ssh_keygen(args: list[str], data: bytes, namespace: str = NAMESPACE) -> tuple[bytes | None, str]:
     """Stdout on success, or None and the reason. A tool that cannot run is a refusal, never a pass."""
     try:
         done = subprocess.run(
-            ["ssh-keygen", "-Y", *args, "-n", NAMESPACE],
+            ["ssh-keygen", "-Y", *args, "-n", namespace],
             input=data,
             capture_output=True,
             timeout=TIMEOUT_SECONDS,
@@ -49,32 +49,25 @@ def _ssh_keygen(args: list[str], data: bytes) -> tuple[bytes | None, str]:
     return done.stdout, ""
 
 
-def sign(receipt: Path, key: Path) -> list[str]:
-    """Write <receipt>.sig. A receipt that does not verify is not signed."""
-    data = receipt.read_bytes()
-    findings = verify_bytes(data)
-    if findings:
-        return findings
-    signature, reason = _ssh_keygen(["sign", "-f", str(key)], data)
+def sign_detached(data: bytes, key: Path, out: Path, namespace: str) -> list[str]:
+    """Write a detached signature over exactly `data` to `out`, bound to `namespace`."""
+    signature, reason = _ssh_keygen(["sign", "-f", str(key)], data, namespace)
     if signature is None:
         return [f"not signed: {reason}"]
-    signature_path(receipt).write_bytes(signature)
+    out.write_bytes(signature)
     return []
 
 
-def verify_signed(receipt: Path, signed_by: str, trust: Path, revoked: Path | None = None) -> list[str]:
-    """Findings, empty only when the receipt is intact and this identity's listed, unrevoked key signed these bytes.
+def verify_detached(
+    data: bytes, signature: Path, signed_by: str, trust: Path, revoked: Path | None, namespace: str
+) -> list[str]:
+    """Findings, empty only when this identity's listed, unrevoked key signed exactly `data` under `namespace`.
 
     revoked names an ssh-keygen revocation list. A named list that is missing is a refusal: a reader who asked for
     the revocation check must not get a pass without it.
     """
-    data = receipt.read_bytes()
-    findings = verify_bytes(data)
-    if findings:
-        return findings
-    signature = signature_path(receipt)
     if not signature.is_file():
-        return [f"{signature.name} is missing, so this receipt is unsigned"]
+        return [f"{signature.name} is missing, so these bytes are unsigned"]
     if not trust.is_file():
         return [f"trust list {trust} is missing"]
     if revoked is not None and not revoked.is_file():
@@ -82,5 +75,22 @@ def verify_signed(receipt: Path, signed_by: str, trust: Path, revoked: Path | No
     args = ["verify", "-f", str(trust), "-I", signed_by, "-s", str(signature)]
     if revoked is not None:
         args += ["-r", str(revoked)]
-    _, reason = _ssh_keygen(args, data)
+    _, reason = _ssh_keygen(args, data, namespace)
     return [f"signature refused for {signed_by!r}: {reason}"] if reason else []
+
+
+def sign(receipt: Path, key: Path) -> list[str]:
+    """Write <receipt>.sig. A receipt that does not verify is not signed."""
+    data = receipt.read_bytes()
+    return verify_bytes(data) or sign_detached(data, key, signature_path(receipt), NAMESPACE)
+
+
+def verify_signed(receipt: Path, signed_by: str, trust: Path, revoked: Path | None = None) -> list[str]:
+    """Findings, empty only when the receipt is intact and this identity's listed, unrevoked key signed these bytes."""
+    data = receipt.read_bytes()
+    findings = verify_bytes(data)
+    if findings:
+        return findings
+    if not signature_path(receipt).is_file():
+        return [f"{signature_path(receipt).name} is missing, so this receipt is unsigned"]
+    return verify_detached(data, signature_path(receipt), signed_by, trust, revoked, NAMESPACE)

@@ -70,6 +70,26 @@ shape the ledger does not hold; `agentrun.py` prints each shape's tell, and the 
 `agent_success_patterns` entry names, before the gates and records the list in the audit stream. What an agent reads is what it checks its next step against, so the lesson is
 part of the task rather than a page read once.
 
+## What a finished program carries: the `.ron` bundle
+
+A `.headron` program says what a task may do; a `.ron` bundle carries what it proved. It is a
+directory: `manifest.json` names every other file by sha256 and digests itself into a `bundle_id`;
+`contract.json` is the task's obligations as the ledger (`scripts/obligations.py`) folded them;
+`receipts/` holds the `headron verify --receipt` files, each re-checked; `evidence/` holds the rest;
+`signatures/manifest.json.sig` is an optional ssh-keygen signature under the `headron-ron` namespace,
+so it never passes as a receipt signature.
+
+```bash
+python scripts/ronbundle.py pack <task> auth-refactor.ron --receipt verify.json --evidence pytest.log --key ~/.ssh/id_ed25519
+python scripts/ronbundle.py verify auth-refactor.ron --signed-by you@example.com --trust allowed_signers --tree
+```
+
+Verify prints INTEGRITY and STANDING apart: an intact bundle is not a finished task. Exit 0 means
+intact and every obligation proven on the tree read; 1 means a byte, a receipt or the signature
+failed; 3 means the bundle is intact but an obligation is open or its evidence covers another tree.
+An agent asks the same question as a microprogram, `headron mind --micro ron.verify <bundle>`: ok,
+refused (a finding or an open obligation) or unknown (proven, but on another tree).
+
 ## The places a program can work in
 
 Every task contract names `allowed_paths`, so every task already works in terms of PLACES — and

@@ -302,9 +302,65 @@ class MemoryValidate:
         )
 
 
+class RonVerify:
+    """Whether a .ron bundle (scripts/ronbundle.py) proves its task done: intact, then every obligation in its
+    contract proven on the tree read. context: {"bundle": path} (or the CLI's first arg), optional "tree" to read
+    against; the default is the tree the bundle was packed on.
+
+    refused when the bundle has an integrity finding or an obligation is still open, naming the first; unknown
+    when every obligation is proven but on another tree; ok only when intact and all proven on this tree. The
+    signature is not read here: authorship is `python scripts/ronbundle.py verify --signed-by`.
+    """
+
+    name = "ron.verify"
+    version = "1"
+    timeout_s = 30.0  # one directory walk and a digest per file
+
+    def run(self, context: Mapping[str, Any]) -> MicroResult:
+        import ronbundle  # noqa: PLC0415
+
+        bundle = str(context.get("bundle") or next(iter(context.get("args") or ()), "")).strip()
+        if not bundle:
+            return MicroResult(
+                self.name, self.version, "refused", evidence_refs=("no bundle named",), next="pass a .ron path"
+            )
+        findings, contract = ronbundle.verify(Path(bundle))
+        if contract is None:  # verify returns no contract whenever it has a finding
+            return MicroResult(
+                self.name,
+                self.version,
+                "refused",
+                evidence_refs=tuple(findings) or ("no contract read",),
+                next="repack it from the ledger; a bundle with a finding proves nothing",
+            )
+        rows = contract["obligations"]
+        now = str(context.get("tree") or contract["tree"])
+        proven, first_open = ronbundle.standing(rows, now)
+        refs = (f"task {contract['task']}", f"{proven}/{len(rows)} proven on {now}")
+        if not first_open:
+            output = {"task": contract["task"], "tree": now, "proven": proven}
+            return MicroResult(self.name, self.version, "ok", output, evidence_refs=refs)
+        unproven = next((row["id"] for row in rows if row["state"] != "proven"), "")
+        status = "refused" if unproven else "unknown"
+        next_step = (
+            f"prove {unproven}, close it, then pack a new bundle"
+            if unproven
+            else f"every obligation is proven, but not on {now}: re-prove them there, then pack a new bundle"
+        )
+        return MicroResult(self.name, self.version, status, evidence_refs=(*refs, f"open {first_open}"), next=next_step)
+
+
 REGISTRY: dict[str, MicroProgram] = {
     program.name: program
-    for program in (Classify(), Search(), EdgeDomains(), ContextCredit(), TaskObligations(), MemoryValidate())
+    for program in (
+        Classify(),
+        Search(),
+        EdgeDomains(),
+        ContextCredit(),
+        TaskObligations(),
+        MemoryValidate(),
+        RonVerify(),
+    )
 }
 
 

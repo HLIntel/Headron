@@ -107,6 +107,7 @@ def wrapper_cases(module: ModuleType) -> None:
         "context.credit",
         "task.obligations",
         "memory.validate",
+        "ron.verify",
     }:
         raise SystemExit(f"FAIL micro registry: {sorted(microprogram.REGISTRY)} has a program no case here plants")
     module.CASES.append(
@@ -503,6 +504,68 @@ def stats_cases(module: ModuleType) -> None:
     print("  ok    micro run counts statuses per program")
 
 
+def ron_cases(module: ModuleType) -> None:
+    """ron.verify is ok only for an intact bundle whose obligations are all proven on the tree read: a finding or
+    an open obligation is refused, evidence on another tree is unknown, and no bundle named is refused."""
+    import os
+    import shutil
+    import tempfile
+    from pathlib import Path
+
+    import microprogram
+    import obligations
+    import ronbundle
+
+    def ask(bundle: Path | str, tree: str = "") -> microprogram.MicroResult:
+        return microprogram.run("ron.verify", {"bundle": str(bundle), "tree": tree})
+
+    with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"HEADRON_HOME": home}):
+        top = Path(home)
+        log = top / "pytest.log"
+        log.write_text("3 passed\n", encoding="utf-8")
+        obligations.add("lane-done", "tests", "the suite passes", "pytest")
+        obligations.close("lane-done", "tests", "evidence/pytest.log", at="t1")
+        obligations.add("lane-open", "docs", "the docs say so", "headron check")
+        done, open_bundle, edited = top / "done.ron", top / "open.ron", top / "edited.ron"
+        packs = [
+            ronbundle.pack("lane-done", done, [], [log], at="t1"),
+            ronbundle.pack("lane-open", open_bundle, [], [], at="t1"),
+        ]
+        shutil.copytree(done, edited)
+        (edited / "evidence" / "pytest.log").write_text("0 passed\n", encoding="utf-8")
+        said = {
+            "done": ask(done),
+            "done on t1": ask(done, "t1"),
+            "stale": ask(done, "t2"),
+            "dirty": ask(done, "t1+dirty"),
+            "open": ask(open_bundle),
+            "edited": ask(edited),
+            "missing": ask(top / "nowhere.ron"),
+            "none": ask(""),
+        }
+    want = {
+        "done": "ok",
+        "done on t1": "ok",
+        "stale": "unknown",
+        "dirty": "unknown",
+        "open": "refused",
+        "edited": "refused",
+        "missing": "refused",
+        "none": "refused",
+    }
+    got = {key: result.status for key, result in said.items()}
+    if any(packs) or got != want or "docs" not in (said["open"].next or ""):
+        raise SystemExit(f"FAIL micro ron.verify: packs {packs}, answered {got}, want {want}")
+    module.CASES.append(
+        (
+            "ron.verify is ok only for an intact bundle proven on this tree; a finding or open obligation is refused, "
+            "another tree is unknown",
+            "a bundle read as done with an edited file, an open obligation, or evidence for another tree",
+        )
+    )
+    print("  ok    micro ron.verify binds done to an intact bundle proven on this tree")
+
+
 def run(module: ModuleType) -> None:
     for cases in (
         result_contract_cases,
@@ -516,5 +579,6 @@ def run(module: ModuleType) -> None:
         credit_cases,
         obligation_cases,
         memory_cases,
+        ron_cases,
     ):
         cases(module)
