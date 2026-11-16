@@ -750,6 +750,7 @@ def cli_record_cases() -> None:
         "shell": [["shell", "--json", "ls -la"]],
         "inspect": [["inspect", str(tmp / "book.xlsx"), "--json"]],
         "data": [["data", *a, "--json"] for a in data],
+        "task": [["task", "inspect", "no-such-task", "--json"]],
         "delegate": [["delegate", "--json"]],
         "handoff": [["handoff", here, "--json"]],
         "cadence": [["cadence", "--json"]],

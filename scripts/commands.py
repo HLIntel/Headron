@@ -662,6 +662,16 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         ),
     ),
     (
+        "task",
+        "compile, run, resume or inspect a task image: a .headron contract and its gate results on refs/headron/tasks",
+        "emit the image state as JSON",
+        (
+            _arg("action", choices=["compile", "run", "resume", "inspect"], help="what to do with the image"),
+            _arg("target", help="a .headron or .json contract; for inspect, a task id"),
+            _arg("--execute", **_ON, help="run: run each resolvable gate (default: controls only)"),
+        ),
+    ),
+    (
         "port",
         "route, tier, gates, lessons, next commands for a file or tree",
         "emit the record as JSON",

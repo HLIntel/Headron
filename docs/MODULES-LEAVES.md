@@ -7,7 +7,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
-| [agentrun](../scripts/agentrun.py) | The reference runner: the one caller in this tree that executes anything under the policy | 1 | agentaudit, agenteffects, agentpolicy, headronlang, knowledge, runtime | [agent_test](../scripts/agent_test.py) |
 | [agentvocab](../scripts/agentvocab.py) | The words a task contract may use for WHO does it, WITH WHAT, and IN WHICH LANGUAGES | 1 | headronlang | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [artifacts](../scripts/artifacts.py) | Artifact adapters: structured records and deterministic checks for office and archive files | 1 |  | [artifacts_test](../scripts/artifacts_test.py) |
 | [atlas_cli](../scripts/atlas_cli.py) | Resolve WHICH atlas, then run the contract's CLI against it | 1 | atlas, headron_mcp | [bounds_test](../scripts/bounds_test.py), [cli_test](../scripts/cli_test.py) +1 |
@@ -42,6 +41,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [parsegate](../scripts/parsegate.py) | Every tracked artifact parses: the first thing the contract asks, since nothing after it means… | 1 | headronlang |  |
 | [pipeline](../scripts/pipeline.py) | State-to-action pipeline — finite state machine: INGEST → CLASSIFY → VERIFY → EXIT | 1 | decide, reflex | [pipeline_test](../scripts/pipeline_test.py) |
 | [plantcheck](../scripts/plantcheck.py) | plants_can_still_apply: every mutation anchor in the planted suites still matches the file it aims… | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
+| [privacy_guard](../scripts/privacy_guard.py) | Refuse personal data and secrets before they reach a commit, a push, or the shared history | 1 |  | [privacy_guard_test](../scripts/privacy_guard_test.py) |
 | [processpolicy](../scripts/processpolicy.py) | Declared workflow records and their stopping conditions | 1 | agentpolicy |  |
 | [ronbundle](../scripts/ronbundle.py) | A `.ron` bundle: one task's contract, receipts and evidence as a directory that verifies from its… | 1 | atomicfile, obligations, receipt, receiptsign | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [scoreboard](../scripts/scoreboard.py) | What the benchmarks measure, as a floor that only rises: one row per metric, simple enough to act on | 1 |  |  |
@@ -71,13 +71,13 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [mdshape](../scripts/mdshape.py) | mdshape — every Markdown file has a class, and each class has a rule: bounded, preserved, or… | 0 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [cli_test](../scripts/cli_test.py) |
 | [packprobe](../scripts/packprobe.py) | packprobe — how many of each language pack's DECLARED commands resolve on this machine | 0 | packmanifest |  |
 | [pointers](../scripts/pointers.py) | The pointer table: every name in atlas.yaml that points at something else, in one place, read by… | 0 | knowledge, packmanifest | [pointers_test](../scripts/pointers_test.py) |
-| [privacy_guard](../scripts/privacy_guard.py) | Refuse personal data and secrets before they reach a commit, a push, or the shared history | 0 |  | [privacy_guard_test](../scripts/privacy_guard_test.py) |
 | [propose](../scripts/propose.py) | Propose: a loop that reads what Headron believes, drafts the revision, and never lands it | 0 | atomicfile, claims | [propose_test](../scripts/propose_test.py) |
 | [sandboxgen](../scripts/sandboxgen.py) | Generate the host sandbox a task contract needs, from config/agent-sandbox.json | 0 | headronlang | [atlas_guards_test](../scripts/atlas_guards_test.py) |
 | [schedtargets](../scripts/schedtargets.py) | Every ACTIVE scheduled job's target must exist on THIS host — `headron schedtargets [--root DIR]… | 0 |  | [schedtargets_test](../scripts/schedtargets_test.py) |
 | [seats](../scripts/seats.py) | Attach declared agent, model, chat, and plugin seats on this machine | 0 | atomicfile |  |
 | [staleness](../scripts/staleness.py) | What was edited longest ago, and which worktrees are hung — computed from git, never typed | 0 |  | [atlas_test](../scripts/atlas_test.py), [vanish_test](../scripts/vanish_test.py) |
 | [taskbench](../scripts/taskbench.py) | Does Headron make a model better at work OTHER than routing? Blind against with-Headron, per task… | 0 | abtest, agentpolicy, providers |  |
+| [taskimage](../scripts/taskimage.py) | Task image: one task's contract, gate graph, results, obligations and receipt, kept as a git commit… | 0 | agentpolicy, agentrun, gitobject, headronlang, obligations, privacy_guard | [taskimage_test](../scripts/taskimage_test.py) |
 | [workflow_runner](../scripts/workflow_runner.py) | One task through Connect -> Context -> Gates -> Receipt, with every declared gate's verdict as… | 0 | agentpolicy, agentrun, atlas, obligations, receipt, runtime, verify | [workflow_runner_test](../scripts/workflow_runner_test.py) |
 | [worktree](../scripts/worktree.py) | Worktree-based agent isolation — each session gets its own git worktree | 0 |  |  |
 <!-- END generated: module-leaves -->
