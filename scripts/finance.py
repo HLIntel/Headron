@@ -3,6 +3,10 @@
 proves: supported calculations use declared decimal inputs and refuse incompatible units or periods
 does_not_prove: that a supplied value, source, classification, tax assumption or decision is correct
 closed_by: microprogram_test.py, which checks examples and plants incompatible inputs
+
+See also: finance_capital.py (NPV and payback), finance_catalog.py (instrument lookup),
+finance_knowledge.py (concept and source lookup), calculation.py (base class),
+compute_compose.py (computation routing), domain_reconcile.py (domain validation).
 """
 
 from __future__ import annotations

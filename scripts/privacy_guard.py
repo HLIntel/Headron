@@ -17,7 +17,8 @@ RULES (a finding prints file:line and a redacted value, never the whole value)
   identity  an author or committer email that is not a GitHub noreply address
   email     an email address outside the placeholder domains and noreply addresses
   home      a /Users/<name> or /home/<name> path outside the placeholder names
-  secret    a key shape: AWS, GitHub, Stripe, Slack, Google, Clerk, or a PEM private key
+  secret    a key shape: AWS, GitHub, Stripe, Slack, Google, Clerk, OpenAI, Anthropic,
+            npm, PyPI, Docker, Vercel, generic API keys, or a PEM private key
   name      a term from the personal denylist (see DENYLIST below)
 
 ESCAPE. A line that carries the marker `privacy: allow` is not refused. Use it for a fixture that
@@ -29,17 +30,18 @@ itself the leak. They live in the file named by $HEADRON_PRIVACY_DENY, or else
 the name rule is off, and the guard says so on stderr. The other rules always run.
 
 Exit 0 is clean. Exit 1 names every finding. Exit 2 is a usage or git error.
+
+See also: leaks.py (commit-time leak detection), atlascore.py (shared git_run and ls_files).
 """
 
 from __future__ import annotations
 
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
 
-from atlascore import ls_files, text_of
+from atlascore import git_run, ls_files, text_of
 
 PLACEHOLDER_EMAIL_DOMAINS = {
     "example.com",
@@ -61,20 +63,21 @@ SECRET_SHAPES = [
     ("Google API key", re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b")),
     ("Clerk secret", re.compile(r"\bsk_(?:live|test)_[0-9A-Za-z]{20,}\b")),
     ("PEM private key", re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY")),
+    ("OpenAI key", re.compile(r"\boai-[A-Za-z0-9-_]{20,}\b")),
+    ("Anthropic key", re.compile(r"\bsk-ant-[A-Za-z0-9-_]{20,}\b")),
+    ("Generic API key", re.compile(r"(?:api[_-]?key|apikey)\s*[=:]\s*['\"][A-Za-z0-9_\-]{20,}['\"]")),
+    ("npm token", re.compile(r"\bnpm_[A-Za-z0-9]{36}\b")),
+    ("PyPI token", re.compile(r"\bpypi-AgEIcHlwaS5vcmc[A-Za-z0-9_\-]{50,}\b")),
+    ("Docker token", re.compile(r"\bdckrpat_[A-Za-z0-9_]{20,}\b")),
+    ("Vercel token", re.compile(r"\bvercel_[A-Za-z0-9_]{20,}\b")),
 ]
 EMAIL = re.compile(r"(?<![\w.+-])[A-Za-z0-9._%+-]{2,}@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
 HOME = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)")
 
 
-GIT_TIMEOUT_S = 60
-
-
 def git(*args: str, check: bool = True) -> str:
-    try:
-        done = subprocess.run(["git", *args], capture_output=True, text=True, errors="replace", timeout=GIT_TIMEOUT_S)
-    except subprocess.TimeoutExpired:
-        sys.stderr.write(f"privacy_guard: git {' '.join(args)} timed out after {GIT_TIMEOUT_S}s\n")
-        raise SystemExit(2)
+    """Run git through atlascore's centralized git_run() for consistency."""
+    done = git_run(None, *args)
     if check and done.returncode != 0:
         sys.stderr.write(f"privacy_guard: git {' '.join(args)} failed: {done.stderr.strip()}\n")
         raise SystemExit(2)
@@ -188,13 +191,11 @@ def mode_tree(names: list[re.Pattern[str]] | None, findings: list[str]) -> None:
 
 
 def default_base() -> str | None:
-    try:
-        done = subprocess.run(
-            ["git", "merge-base", "origin/main", "HEAD"], capture_output=True, text=True, timeout=GIT_TIMEOUT_S
-        )
-    except subprocess.TimeoutExpired:
+    """Find the merge base of origin/main and HEAD using centralized git_run()."""
+    done = git_run(None, "merge-base", "origin/main", "HEAD")
+    if done.returncode != 0:
         return None
-    return done.stdout.strip() or None if done.returncode == 0 else None
+    return done.stdout.strip() or None
 
 
 def main(argv: list[str]) -> int:
