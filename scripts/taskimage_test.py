@@ -1,7 +1,7 @@
 """Planted task-image cases (scripts/taskimage.py). Loaded by atlas_guards_test; each plants the defect an image
 could hide: a resume against a contract the image was not recorded for, a node with no result read as a pass, a
-dry run read as a pass, a pass reused on a dirty or different tree, a private path written into a pushable ref,
-and two writers overwriting one another's checkpoint.
+dry run read as a pass, a pass reused on a dirty or different tree, a private path or token written into a pushable
+ref, and two writers overwriting one another's checkpoint.
 """
 
 from __future__ import annotations
@@ -87,6 +87,8 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
         taskimage.run_image(EXAMPLE, False, resume=True, repo=repo)
         reused_arg = runner.call_args.args[2]
     rows = agentrun.run_gates(contract, top / "audit.jsonl", False, {}, frozenset({gates[0]}))
+    every = [{**r, "ran": False, "reused": True, "exit_code": 0} for r in rows]
+    verdicts = (agentrun.run_status(rows, []), agentrun.run_status(every, []))
     after, _ = taskimage.inspect(task, repo)
     passed = {"tree": tree, "order": gates, "nodes": {gates[0]: {"state": "PASS"}}}
 
@@ -96,6 +98,9 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
     leaky.write_text(EXAMPLE.read_text().replace('objective "', f'objective "{home} privacy: allow ', 1))
     leak = _refused(lambda: taskimage.compile_image(leaky, repo))
     leak_head = _git(repo, "rev-parse", taskimage.PREFIX + task)
+    token = top / "token.headron"
+    token.write_text(EXAMPLE.read_text().replace('objective "', 'objective "' + "gh" + "p_" + "A" * 36 + " ", 1))
+    secret = _refused(lambda: taskimage.compile_image(token, repo))
 
     # Another writer's checkpoint is not overwritten: a write expecting an older commit is refused.
     lost = _refused(lambda: taskimage.write(task, {"x": b"y\n"}, "task x: compile", None, repo))
@@ -128,14 +133,19 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
             and taskimage.reusable(passed, tree + "+dirty") == frozenset()
             and taskimage.reusable({**passed, "tree": tree + "+dirty"}, tree + "+dirty") == frozenset()
             and taskimage.reusable(passed, "other") == frozenset()
+            and verdicts == ("controls_verified", "verified")
             and after["checkpoints"] == 3,
-            (reused_arg, after["checkpoints"]),
+            (reused_arg, verdicts, after["checkpoints"]),
         ),
         (
-            "a task image refuses a home path, a full digest in its message, and a ref another writer moved",
-            "a pushable ref that publishes a private path, or two runs silently overwriting one another",
-            "home path" in leak and leak_head == after["commit"] and "update-ref" in lost and "digest" in digest,
-            (leak, lost, digest),
+            "a task image refuses a home path, a token, a full digest, and a ref another writer moved",
+            "a pushable ref that publishes a private path or a secret, or two runs silently overwriting one another",
+            "home path" in leak
+            and "privacy_guard" in secret
+            and leak_head == after["commit"]
+            and "update-ref" in lost
+            and "digest" in digest,
+            (leak, secret, lost, digest),
         ),
         (
             "task inspect reads the ref alone, with the working tree gone",

@@ -180,6 +180,18 @@ def run_gates(
     return rows
 
 
+def run_status(rows: list[dict], denials: list[dict]) -> str:
+    """THE ONLY STATUS A DRY RUN MAY CLAIM is controls_verified. `verified` means every gate passed on this
+    tree: it RAN, or a resume REUSED a pass recorded for this same clean tree (taskimage.reusable). A run that
+    exercised every control and no gate says exactly that and not one word more, because the word it would
+    otherwise borrow is the one a reader acts on."""
+    if denials:
+        return "refused"
+    if any(r["ran"] and r["exit_code"] != 0 for r in rows):
+        return "failed"
+    return "controls_verified" if any(not r["ran"] and not r.get("reused") for r in rows) else "verified"
+
+
 def execute_contract(path: Path, execute: bool, reuse: frozenset[str] = frozenset()) -> tuple[dict, int]:
     """Validate, resolve, run under the controls, and write the outcome into the same record."""
     contract = headronlang.load_contract(path)
@@ -226,12 +238,7 @@ def execute_contract(path: Path, execute: bool, reuse: frozenset[str] = frozense
         for r in rows
         if "control" in r
     ]
-    failed = [r for r in rows if r["ran"] and r["exit_code"] != 0]
-    unran = [r for r in rows if not r["ran"] and not r.get("reused")]
-    # THE ONLY STATUS A DRY RUN MAY CLAIM. `verified` means the gates RAN and passed; a run that
-    # exercised every control and no gate says exactly that and not one word more, because the
-    # word it would otherwise borrow is the one a reader acts on.
-    status = "refused" if denials else "failed" if failed else "verified" if not unran else "controls_verified"
+    status = run_status(rows, denials)
     from runtime import resolve  # noqa: PLC0415
 
     agent = resolve(contract.get("agent") if isinstance(contract.get("agent"), str) else None)
