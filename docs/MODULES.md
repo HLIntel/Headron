@@ -3,7 +3,7 @@
 Part of [HEADRON](HEADRON.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-122 modules and 379 imports between them, read from the source; 64 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 91 modules use it. These 55 rows are the modules at least 2 others use; the other 67, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+123 modules and 381 imports between them, read from the source; 64 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 92 modules use it. These 55 rows are the modules at least 2 others use; the other 68, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -37,7 +37,7 @@ flowchart LR
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
-| [atlascore](../scripts/atlascore.py) | Atlas primitives: the declared rosters, the file readers and the router | 91 | agentpolicy, atlas, treeformat, verify | [agent_test](../scripts/agent_test.py), [agents_test](../scripts/agents_test.py) +14 |
+| [atlascore](../scripts/atlascore.py) | Atlas primitives: the declared rosters, the file readers and the router | 92 | agentpolicy, atlas, treeformat, verify | [agent_test](../scripts/agent_test.py), [agents_test](../scripts/agents_test.py) +14 |
 | [agentpolicy](../scripts/agentpolicy.py) | The agent execution policy: six verdicts, decided from a declaration rather than from prose | 27 | agenteffects, agentvocab, dirscope, headronlang, packmanifest, processpolicy, shellsplit | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +7 |
 | [knowledge](../scripts/knowledge.py) | Where a fact may live, how it is retrieved, and the asymmetries underneath both | 15 | agentaudit, agentpolicy, agents, agreement, atlas, boundedinput, contextcost, hostshape, port, runtime, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +3 |
 | [atlas](../scripts/atlas.py) | Atlas router + repository contract | 9 | agentpolicy, agreement, atlasgen, atlasindex, atlasinv, branchstate, cidrift, commands, consumergates, contextcost, dateclaims, decide, decide_cli, declcheck, dirscope, doctor, gateplace, headronlang, identity, knowledge, onboard, packmanifest, parsegate, roster, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_guards_test](../scripts/atlas_guards_test.py) +7 |

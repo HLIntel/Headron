@@ -239,8 +239,41 @@ class ContextCredit:
         return MicroResult(self.name, self.version, "ok", credits, evidence_refs=tuple(sorted(credits)))
 
 
+class TaskObligations:
+    """Whether a task may be called done: every obligation in its ledger (scripts/obligations.py) is proven on
+    the tree being read. context: {"task": slug} (or the CLI's first arg), optional "root" (the repo, default
+    cwd) or "tree" to read against.
+
+    ok when all are proven on this tree; refused when one is pending or not-run, naming the first open one and
+    its procedure; unknown when only stale-tree evidence stands, nothing is recorded, or the ledger is corrupt.
+    """
+
+    name = "task.obligations"
+    version = "1"
+    timeout_s = 30.0  # two git calls and one file read
+
+    def run(self, context: Mapping[str, Any]) -> MicroResult:
+        import obligations  # noqa: PLC0415
+
+        task = str(context.get("task") or next(iter(context.get("args") or ()), "")).strip()
+        if not task:
+            return MicroResult(
+                self.name, self.version, "refused", evidence_refs=("no task named",), next="pass the task slug"
+            )
+        try:
+            root = Path(context["root"]) if context.get("root") else None
+            now = str(context.get("tree") or obligations.tree(root))
+            status, rows, next_step = obligations.report(task, now)
+        except obligations.LedgerError as error:
+            return MicroResult(
+                self.name, self.version, "unknown", evidence_refs=(str(error),), next="repair the ledger line it names"
+            )
+        refs = tuple(f"{row['state']} {oid}" for oid, row in rows.items()) + (f"tree {now}",)
+        return MicroResult(self.name, self.version, status, rows, evidence_refs=refs, next=next_step or None)
+
+
 REGISTRY: dict[str, MicroProgram] = {
-    program.name: program for program in (Classify(), Search(), EdgeDomains(), ContextCredit())
+    program.name: program for program in (Classify(), Search(), EdgeDomains(), ContextCredit(), TaskObligations())
 }
 
 
@@ -357,7 +390,7 @@ def cli(name: str, args: list[str], as_json: bool) -> int:
         rows = [{"name": p.name, "version": p.version} for p in REGISTRY.values()]
         print(json.dumps(rows) if as_json else "\n".join(f"{r['name']} {r['version']}" for r in rows))
         return 0
-    result = run(name, {"files": args, "query": " ".join(args)})
+    result = run(name, {"files": args, "query": " ".join(args), "args": args})
     if as_json:
         print(json.dumps(result.to_dict(), default=str))
     else:
