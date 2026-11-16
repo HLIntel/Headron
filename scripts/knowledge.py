@@ -830,6 +830,7 @@ COMMANDS = {
     "shell": lambda a: shell_hook(read_stdin()) if a.hook else shell_check(" ".join(a.cmd), a.json),
     "brainstorm": lambda a: __import__("brainstorm").main([*(["--new"] if a.new else []), *a.record, *(["--json"] if a.json else [])]),
     "inspect": lambda a: __import__("artifacts").cli(a.files, a.json),
+    "task": lambda a: __import__("taskimage").cli(a.action, a.target, a.execute, a.json),
     "data": lambda a: __import__("datakit").cli(a.action, a.files, a.schema, a.source, a.limit, a.json, a.formula),
     "port": lambda a: edit_guard_hook(read_stdin()) if a.guard else port_hook(read_stdin()) if a.hook else __import__("port").main([a.target, *(["--lens", a.lens] if a.lens else []), "--frame", a.frame,
                                                *(["--runtime", a.runtime] if a.runtime else []),
@@ -843,9 +844,7 @@ COMMANDS = {
         [a.path, *(["--task", a.task] if a.task else []), "--change", a.change, *(["--json"] if a.json else [])]),
     "cadence": lambda a: __import__("cadence").main([*(["--minutes", str(a.minutes)] if a.minutes else []), *(["--json"] if a.json else [])]),
     "schedtargets": lambda a: __import__("schedtargets").main([*(["--root", a.root] if a.root else []), *(["--platform", a.platform] if a.platform else [])]),
-    "intake": lambda a: __import__("intake").main(
-        [*a.prompt, *(["--json"] if a.json else []), *(["--brief"] if a.brief else [])]
-    ),
+    "intake": lambda a: __import__("intake").main([*a.prompt, *(["--json"] if a.json else []), *(["--brief"] if a.brief else [])]),
     "mind": lambda a: __import__("mind").main([*(["--classify"] if a.classify else []), *([f"--search={a.search}"] if getattr(a, "search", None) else []), *([f"--micro={a.micro}"] if getattr(a, "micro", None) else []), *(["--plan"] if a.plan else []), *(["--route"] if a.route else []), *(["--direct"] if getattr(a, "direct", False) else []), *(["--health"] if a.health else []), *(["--receipts"] if getattr(a, "receipts", False) else []), *(["--limit", str(a.limit)] if a.limit is not None else []), *(a.files if getattr(a, "files", None) else []), *(["--json"] if a.json else [])]),
     "find": lambda a: __import__("atlasindex").find_main([
         *(["--limit", str(a.limit)] if a.limit else []), *(["--exact"] if a.exact else []),

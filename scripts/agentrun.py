@@ -122,12 +122,17 @@ def plan_drift(contract: dict) -> list[str]:
     return problems
 
 
-def run_gates(contract: dict, stream: Path, execute: bool, budget: dict) -> list[dict]:
+def run_gates(
+    contract: dict, stream: Path, execute: bool, budget: dict, reuse: frozenset[str] = frozenset()
+) -> list[dict]:
     """One row per PLANNED gate, including every one that did not run and why.
 
     `execute` is off by default. A runner that shells out on every pull request would make this
     gate depend on 35 toolchains being present; with it off the rows still say what WOULD run,
     which is the part that rots. An absent tool is reported, never skipped.
+
+    `reuse` names gates a task image recorded as passing on this same clean tree (scripts/taskimage.py).
+    Such a row still meets every control and budget; it is marked `reused`, and `ran` stays False.
     """
     rows: list[dict] = []
     for gate in agentpolicy.required_gates(contract):
@@ -154,6 +159,8 @@ def run_gates(contract: dict, stream: Path, execute: bool, budget: dict) -> list
                 row["command"] = f"refused: {reason}"
                 row["control"] = verdict.control if not verdict.allowed else "budget"
                 agentaudit.append(stream, "policy_denied", {"gate": gate, "reason": reason})
+            elif gate in reuse:
+                row.update({"reused": True, "exit_code": 0})
             elif execute:
                 agentaudit.append(stream, "command_started", {"gate": gate, "argv": agentaudit.digest(argv)})
                 done = subprocess.run(argv, cwd=ROOT, capture_output=True, check=False, timeout=600)
@@ -173,7 +180,7 @@ def run_gates(contract: dict, stream: Path, execute: bool, budget: dict) -> list
     return rows
 
 
-def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
+def execute_contract(path: Path, execute: bool, reuse: frozenset[str] = frozenset()) -> tuple[dict, int]:
     """Validate, resolve, run under the controls, and write the outcome into the same record."""
     contract = headronlang.load_contract(path)
     problems = agentpolicy.contract_errors(contract)
@@ -194,7 +201,7 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
     environment = environment_fingerprint()
     budget: dict[str, int] = {"tool_calls": 0}
     started = time.monotonic()
-    rows = run_gates(contract, stream, execute, budget)
+    rows = run_gates(contract, stream, execute, budget, reuse)
     touched = changed_files()
     exercised = sorted(
         {
@@ -220,7 +227,7 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
         if "control" in r
     ]
     failed = [r for r in rows if r["ran"] and r["exit_code"] != 0]
-    unran = [r for r in rows if not r["ran"]]
+    unran = [r for r in rows if not r["ran"] and not r.get("reused")]
     # THE ONLY STATUS A DRY RUN MAY CLAIM. `verified` means the gates RAN and passed; a run that
     # exercised every control and no gate says exactly that and not one word more, because the
     # word it would otherwise borrow is the one a reader acts on.

@@ -429,6 +429,8 @@ instrument_roster:
     calculation.py: 'shared calculation result and refusal handling; its proof is microprogram_test.py'
     obligations.py: 'the Task Obligation Ledger: a task''s requirements kept on disk under HEADRON_HOME, each bound to its procedure and to the tree its evidence covers; read by the task.obligations microprogram; its proof is microprogram_test.py (obligation_cases)'
     microprogram_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    taskimage.py: 'task images on refs/headron/tasks/<id>: the compiled contract, its gate nodes, outcome, receipt and obligation ledger as one git commit, never a tracked file; dispatched as `headron task`; its proof is taskimage_test.py'
+    taskimage_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     sweep.py: 'the fast semantic sweep engine (tiers, shards, pointers, tunnels); dispatched through knowledge.py as ; its proof is sweep_test.py'
     sweep_test.py: 'a case module for the sweep engine; its proof and limits are that instrument''s'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1483,7 +1485,7 @@ port:
   menus:
     narrow: [gate, plan, route, steps, failures, successes, shell, do, learn, compile]
     code: [brainstorm, md, process, decide, decide-engine, judge, revise, propose, model, pick, why, role, delegate, handoff, cadence, schedtargets, index-search, inspect, data, mind, find]
-    codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline, sweep]
+    codebase: [check, verify, proof, resume, intake, landed, invariants, doctor, index, commands, links, slot, init, pipeline, sweep, task]
   hooks:
     shell: 'headron shell --json "<cmd>"'
     edit: 'headron port <file> --line'

@@ -105,9 +105,101 @@
     },
     {
       "$ref": "#/$defs/propose"
+    },
+    {
+      "$ref": "#/$defs/task"
     }
   ],
   "$defs": {
+    "task": {
+      "type": "object",
+      "description": "`headron task compile|run|resume|inspect --json`: a task image read from refs/headron/tasks/<id>: the contract hash it binds, the tree it ran on, and each gate node PASS, FAIL, REUSED, REFUSED or NOT RUN. A refusal carries `refused` and no state.",
+      "required": [
+        "schema",
+        "command",
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "headron-task/1"
+        },
+        "command": {
+          "const": "task"
+        },
+        "action": {
+          "enum": [
+            "compile",
+            "run",
+            "resume",
+            "inspect"
+          ]
+        },
+        "refused": {
+          "type": "string"
+        },
+        "task_id": {
+          "type": "string"
+        },
+        "contract": {
+          "type": "string"
+        },
+        "tree": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "order": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nodes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "state"
+            ],
+            "properties": {
+              "state": {
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  "REUSED",
+                  "REFUSED",
+                  "NOT RUN"
+                ]
+              },
+              "exit_code": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "tree": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "commit": {
+          "type": "string"
+        },
+        "checkpoints": {
+          "type": "integer"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "data": {
       "type": "object",
       "description": "`headron data read|check|trace|calc --json`: tables with cell locations, a schema check, a report's numbers traced to sources, or workbook formulas recomputed; sealed with a receipt.",
