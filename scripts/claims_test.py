@@ -53,7 +53,7 @@ def unit_cases(module: ModuleType) -> None:
                     "atlas:gate_tools/formatter/adopted_by",
                 ]
             ),
-            "top": _claim(dependents=["file:style.cfg"]),
+            "top": _claim(dependents=["file:style.cfg"], validity={"source_commit": "abc1234", "scope": ["style.cfg"]}),
             "old": _claim(status="refuted", label="INFERRED", superseded_by="base"),
         }
         assert claims.claim_errors(good, root) == [], claims.claim_errors(good, root)
@@ -84,6 +84,11 @@ def unit_cases(module: ModuleType) -> None:
                 },
                 "names no holding superseded_by",
             ),
+            (
+                {"base": _claim(validity={"source_commit": "HEAD", "scope": ["style.cfg"]})},
+                "names no source_commit sha",
+            ),
+            ({"base": _claim(validity={"source_commit": "abc1234", "scope": []})}, "names no scope paths"),
             ({}, "holds no claims"),
         ]
         for records, needle in planted:
@@ -92,11 +97,11 @@ def unit_cases(module: ModuleType) -> None:
     module.CASES.append(
         (
             "claims: a missing field, a bad label or status, every unresolved ref kind, a refuted claim "
-            "still holding or carrying dependents and a bad successor are refused",
+            "still holding or carrying dependents, a bad successor and a malformed validity envelope are refused",
             "a belief no one can check",
         )
     )
-    print("  ok    claims: 15 planted records refused, the complete record passes")
+    print("  ok    claims: 17 planted records refused, the complete record passes")
 
 
 def revise_cases(module: ModuleType) -> None:

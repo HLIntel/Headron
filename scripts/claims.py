@@ -12,6 +12,10 @@ MEASURED ON fix/gate-adoption: "an .editorconfig adopts no formatter" was false.
 configured by `switch_case_indent`, and only a full suite run after the edit found it. With that belief
 recorded as a claim, `revise --on symbol:gateplace.unadopted` names it before the edit.
 
+`memory.validate` (claims.validity) answers whether a claim may be served as a fact NOW. A claim may carry
+`validity: {source_commit, scope}`, and is then valid only while its scope is unchanged since that commit;
+a claim that cannot be shown to hold reads as unknown (rediscover), never as a served fact.
+
 An adaptation (docs/systems/adaptations.yaml) is a change that says it made Headron better. It carries its
 proof: hypothesis, intervention, expected gain, required proof, experiment, evidence, uncertainty, rollback
 and validity scope, and rests on no refuted claim. The land runs `atlas check`, so a record that drops one is
@@ -22,7 +26,9 @@ proves: every claim is complete, every ref it names resolves, an instrument-refu
   every proof field, evidence that resolves, and claims that hold
 does_not_prove: that a claim marked holds is true, or that an adaptation's gain was real. Only a claim with
   `refuted_if` is checked against the tree, and an adaptation's evidence is checked to exist, not re-run
-closed_by: claims_test.py, which plants each defect, the .editorconfig refutation and each adaptation defect
+closed_by: claims_test.py, which plants each defect, the .editorconfig refutation and each adaptation defect;
+  microprogram_test.py (memory_cases), which plants a changed scope, an unreadable commit, a refuted claim, a
+  reported-only claim, a corrupt record and broken evidence against memory.validate
 """
 
 from __future__ import annotations
@@ -32,7 +38,7 @@ import json
 import re
 from pathlib import Path
 
-from atlascore import ROOT, atlas, strict_yaml, text_of
+from atlascore import ROOT, atlas, ls_files, strict_yaml, text_of
 
 REGISTRY = "docs/systems/claims.yaml"
 LABELS = ("CONFIRMED", "REPORTED", "INFERRED", "UNCERTAIN")
@@ -137,6 +143,12 @@ def claim_errors(claims: dict | None = None, root: Path = ROOT) -> list[str]:
             errors.append(f"claim {name} status {spec.get('status')!r} is not holds or refuted")
         refs = [*(spec.get("evidence") or []), *(spec.get("dependents") or [])]
         errors += [f"claim {name}: {why}" for r in refs if (why := unresolved(r, claims, root))]
+        if "validity" in spec:
+            envelope = spec.get("validity") or {}
+            if not isinstance(envelope, dict) or not SHA.fullmatch(str(envelope.get("source_commit", ""))):
+                errors.append(f"claim {name} validity names no source_commit sha")
+            elif not isinstance(envelope.get("scope"), list) or not envelope["scope"]:
+                errors.append(f"claim {name} validity names no scope paths")
         if (refuted := refuted_by(spec, root)) and spec.get("status") == "holds":
             errors.append(f"claim {name} is refuted ({refuted}) and still says it holds: `headron revise {name}`")
         if standing(spec, root) == "refuted":
@@ -146,6 +158,68 @@ def claim_errors(claims: dict | None = None, root: Path = ROOT) -> list[str]:
             if successor not in claims or standing(claims[successor] or {}, root) != "holds":
                 errors.append(f"claim {name} is refuted and names no holding superseded_by claim")
     return errors
+
+
+SHA = re.compile(r"[0-9a-f]{7,40}")
+
+
+def validity(name: str, claims: dict | None = None, root: Path = ROOT) -> tuple[str, str, str]:
+    """(status, why, next) for serving claim `name` as a fact now: ok only while it can be shown to still hold.
+
+    A claim may carry `validity: {source_commit: <sha>, scope: [<path>, ...]}`, the commit it was learned on
+    and the paths it is about. It is then valid only while none of those paths changed since that commit
+    (`git diff --quiet <sha> -- <scope>`, the working tree and untracked files included). Without an envelope, the checks are
+    the registry's own: the record is complete, its evidence resolves, it holds, and it was checked rather
+    than reported. Anything that cannot be established is unknown, so a stale memory reads as rediscover,
+    never as a served fact.
+    """
+    claims = records(root) if claims is None else claims
+    spec = claims.get(name)
+    if spec is None:
+        return "refused", f"{name!r} names no claim in {REGISTRY}", f"pick a claim from {REGISTRY}"
+    if not isinstance(spec, dict) or (missing := [f for f in FIELDS if not spec.get(f)]):
+        missing = FIELDS if not isinstance(spec, dict) else missing
+        return "unknown", f"claim {name} declares no {', '.join(missing)}", f"repair claim {name}: `atlas check`"
+    if spec.get("label") not in LABELS or spec.get("status") not in STATUSES:
+        return "unknown", f"claim {name} has an undeclared label or status", f"repair claim {name}: `atlas check`"
+    if standing(spec, root) == "refuted":
+        successor = str(spec.get("superseded_by") or "")
+        why = f"claim {name} is refuted" + (f" ({hit})" if (hit := refuted_by(spec, root)) else "")
+        return "refused", why, (f"serve claim {successor} instead" if successor else f"rediscover what {name} said")
+    if broken := [why for ref in spec.get("evidence") or [] if (why := unresolved(ref, claims, root))]:
+        return "unknown", f"claim {name}: {broken[0]}", f"rediscover {name}: its evidence no longer resolves"
+    if spec["label"] in ("REPORTED", "UNCERTAIN"):
+        return "unknown", f"claim {name} is {spec['label']}, not checked", f"check {name} and relabel it"
+    envelope = spec.get("validity")
+    if envelope is None:
+        return "ok", f"claim {name} holds; its evidence resolves", ""
+    sha, scope = str((envelope or {}).get("source_commit", "")), list((envelope or {}).get("scope") or [])
+    if not SHA.fullmatch(sha) or not scope:
+        return "unknown", f"claim {name} validity names no source_commit sha and scope", f"repair claim {name}"
+    import subprocess  # noqa: PLC0415 — only an envelope needs git
+
+    try:
+        diff = subprocess.run(
+            ["git", "diff", "--quiet", sha, "--", *map(str, scope)],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return "unknown", f"claim {name}: git diff did not answer ({error})", f"rediscover {name}"
+    if diff.returncode == 1:
+        return "unknown", f"claim {name}: {', '.join(map(str, scope))} changed since {sha}", f"rediscover {name}"
+    if diff.returncode:
+        return "unknown", f"claim {name}: source_commit {sha} is not readable here", f"rediscover {name}"
+    try:  # git diff never sees an untracked file: a path created in the scope since is a change too
+        created = ls_files(root, *map(str, scope), flags=("--others", "--exclude-standard"))
+    except (OSError, subprocess.TimeoutExpired, SystemExit) as error:
+        return "unknown", f"claim {name}: git ls-files did not answer ({error})", f"rediscover {name}"
+    if created:
+        return "unknown", f"claim {name}: {created[0]} is new in its scope since {sha}", f"rediscover {name}"
+    return "ok", f"claim {name} holds; its scope is unchanged since {sha}", ""
 
 
 def adaptation_errors(adaptations: dict | None = None, claims: dict | None = None, root: Path = ROOT) -> list[str]:

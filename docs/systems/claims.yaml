@@ -3,6 +3,8 @@
 # A claim: statement · label (CONFIRMED | REPORTED | INFERRED | UNCERTAIN) · evidence (refs) · provenance ·
 # status (holds | refuted) · dependents (refs that rest on it) · optional refuted_if {file, matches} that an
 # instrument checks against the tree. A refuted claim carries no dependent and names a holding superseded_by.
+# An optional validity {source_commit: <sha>, scope: [paths]} makes `headron mind --micro memory.validate
+# <claim>` read the claim as unknown once a scope path changed since that sha.
 # A ref is claim:<id> · decision:<id> · judgment:<id> · atlas:<key/key/...> · file:<path> · symbol:<module.name>.
 #
 # Before an edit: `headron revise --on <ref>` names the claims it rests on. After a refutation:
