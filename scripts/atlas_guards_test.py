@@ -561,7 +561,7 @@ def verify_cases() -> None:
     with mutated("atlas.yaml", lambda t: t.replace("  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract], env: [HEADRON_PRIVATE_TERMS]}\n",
                  "  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract], env: [HEADRON_PRIVATE_TERMS]}\n  - {id: orphan, argv: [python, scripts/nothing_runs_me.py], mutates: false, machine_dependent: false, depends_on: [contract]}\n", 1)):
         case("a done-set gate no workflow runs FAILS ci_enforces_contract",
-             "a gate verify runs locally and nothing runs on a pull request", True, "nothing runs it on a pull request", by='inv:ci_enforces_contract')
+             "a gate verify runs locally and nothing runs on a pull request", True, "verify runs it locally and `headron ci` does not", by='inv:ci_enforces_contract')
     # PER-GATE PROOF SCOPE: a declared gate's PASS survives an edit to a file it does not name; a gate
     # with no inputs, a bad declaration, or the landing's strict proof stays whole-tree.
     repo = Path(tempfile.mkdtemp(prefix="headron-scope-"))
@@ -784,7 +784,7 @@ def flag_feed_cases() -> None:
     with mutated("atlas.yaml", lambda s: s.replace("  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract], env: [HEADRON_PRIVATE_TERMS]}\n",
                  "  - {id: invariants, argv: [python, scripts/atlas.py, invariants], mutates: false, machine_dependent: false, depends_on: [contract], env: [HEADRON_PRIVATE_TERMS]}\n  - {id: orphan, argv: [python, scripts/none.py], mutates: false, machine_dependent: false, depends_on: [contract]}\n", 1)):
         record = json.loads(subprocess.run(atlas_py, cwd=ROOT, capture_output=True, text=True, timeout=600, check=False).stdout)
-    if record["exit"] != 1 or not any(f["severity"] == "error" and "nothing runs it" in f["message"] for f in record["findings"]):
+    if record["exit"] != 1 or not any(f["severity"] == "error" and "`headron ci` does not" in f["message"] for f in record["findings"]):
         raise SystemExit(f"FAIL check --json did not carry the finding with its severity: {record['findings'][:2]}")
     marker = safeedit._git_path("headron-last-verify.json")
     before = marker.read_bytes() if marker.is_file() else None
@@ -898,7 +898,7 @@ def role_cases() -> None:
     with mutated("pyproject.toml", lambda s: s.replace('Issues = "', 'Homepage = "x"\nIssues = "', 1)):
         case("a tracked TOML file that does not parse FAILS", "a duplicate key that hides in a file only one tool reads",
              True, "is not valid TOML", by="parse_errors")
-    with mutated("ci/polyglot.yml", lambda s: s.replace("jobs:", "jobs: [", 1)):
+    with mutated(".github/workflows/release.yml", lambda s: s.replace("jobs:", "jobs: [", 1)):
         case("a tracked YAML file that does not parse FAILS", "a workflow the forge drops with no run", True, "not valid YAML", by="parse_errors")
     with mutated(".githooks/pre-commit", lambda s: s.replace("#!/bin/sh\n", "#!/bin/sh\nif then\n", 1)):
         case("a tracked hook that does not parse FAILS", "a hook that dies and never gates a commit", True, "not valid sh", by="parse_errors")

@@ -120,8 +120,8 @@
     {
       "id": "test_continuous_integration",
       "answer": "Met",
-      "evidence": "ci/atlas-ci.yml",
-      "note": "the local replay defines the required jobs; the required status reports a run, not proof every job ran"
+      "evidence": "scripts/cipipeline.py",
+      "note": "the native CI declares the required jobs as Python steps; the required status reports a run, not proof every job ran"
     },
     {
       "id": "tests_are_added",
@@ -162,8 +162,8 @@
     {
       "id": "static_analysis",
       "answer": "Met",
-      "evidence": "ci/atlas-ci.yml",
-      "note": "the local verification jobs declare static-analysis gates; hosted CodeQL is not required"
+      "evidence": "scripts/cipipeline.py",
+      "note": "the native CI jobs declare static-analysis gates; hosted CodeQL is not required"
     },
     {
       "id": "static_analysis_fixed",

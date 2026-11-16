@@ -37,6 +37,10 @@ from a developer or an agent.
 holds those checks; the commit hook and CI report `PASS`, `FAIL`, `SKIP` or `NOT RUN`. The hosted
 [Mind API](https://headron.tech/mind-api.html) plans a declared change through `headron mind`.
 
+Headron's own CI is native: `headron ci` runs the jobs [`scripts/cipipeline.py`](scripts/cipipeline.py)
+declares, Python steps run as one graph of bounded checks. No hosted runner gates a pull request; a
+landing posts the `local-ci` commit status from that run.
+
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
 <p align="center">
@@ -93,14 +97,14 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **841** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **842** declared planted cases |
 | Failure ledger | 128 shapes, 220 sightings; 104 in-tree guarded, 24 host-only |
 | Field ledger | 940 verifications (136 clean); 1133 refusals; 394 landings; 711 lessons; 394 sessions |
 | Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,627 tokens. The 213 documents (715 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,627 tokens. The 212 documents (715 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -120,9 +124,9 @@ Entry context: ~1,627 tokens. The 213 documents (715 KiB) load on demand; instal
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠2 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟190 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟193 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟218 ⠿4 ⠁1 │ → headron check
+○ . │ ⠟221 ⠿4 ⠁1 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -156,7 +160,7 @@ Generated on every build; `check` refuses drift.
 - **368** agreement edges — each a file tied to the declaration it answers for
 - **95** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **188** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **191** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.63.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->

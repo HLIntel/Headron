@@ -186,8 +186,8 @@ def executed_path_errors(sources: dict[str, str] | None = None) -> list[str]:
         sources = {
             r: text_of(ROOT / r)
             for r in rels
-            if (r.startswith((".github/workflows/", "ci/", ".githooks/")) and not r.endswith(".md"))
-            or r == ".claude-plugin/plugin.json"
+            if (r.startswith((".github/workflows/", ".githooks/")) and not r.endswith(".md"))
+            or r in (".claude-plugin/plugin.json", "scripts/cipipeline.py")
         }
     tops = sorted({r.split("/")[0] for r in rels if "/" in r})
     under = re.compile(r"(?<![\w$/.{-])((?:%s)/[\w./*-]*[\w*-])" % "|".join(map(re.escape, tops)))

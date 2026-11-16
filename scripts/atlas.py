@@ -265,7 +265,7 @@ def required_path_errors() -> list[str]:
         "docs/patterns/ANTI-ORPHANS.md", "docs/patterns/ANTI-MUTATION.md", "docs/patterns/BOUNDARY-BREAKAGE.md",
         "docs/patterns/ANTI-BLOBS.md", ".github/copilot-instructions.md",
         ".github/pull_request_template.md", ".github/CODEOWNERS", "SECURITY.md", "config/github-labels.json",
-        ".editorconfig", ".gitattributes", ".gitignore", "ci/atlas-ci.yml", "tools/README.md",
+        ".editorconfig", ".gitattributes", ".gitignore", "scripts/cipipeline.py", "tools/README.md",
         "tools/tools.schema.json", "LICENSE", "llms.txt", "CLAUDE.md", "AGENTS.md",
         "config/github-controls.json", "docs/CONSUMING.md",
         "tools/agent-task.schema.json", "tools/agent-task.example.json", "scripts/agentpolicy.py",

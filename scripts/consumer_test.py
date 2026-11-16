@@ -253,7 +253,7 @@ def documented_install_cases(module: ModuleType) -> None:
             "an install line in a document that nothing executes",
         ),
         (
-            "ci/atlas-ci.yml",
+            "scripts/cipipeline.py",
             "python scripts/cli_test.py --install",
             "true",
             "a documented install with no CI job running it",

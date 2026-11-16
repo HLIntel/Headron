@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Planted workflows through cilocal's public CLI: each translator is observed by what a real step saw."""
+"""Headron's native CI through its public CLI: planted pipelines, run as a real graph, observed by what ran."""
 
 from __future__ import annotations
 
@@ -7,150 +7,55 @@ import os
 import subprocess
 import sys
 import tempfile
-import textwrap
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
-from unittest.mock import patch
+from types import ModuleType
 
+import ci
+import cidrift
 import cilocal
+import cipipeline
+import micrograph
+from cipipeline import Job, Step
+from micrograph import Node
+from microprogram import MicroResult
 from seats_test import _case
 
 ROOT = Path(__file__).resolve().parents[1]
 
-WORKFLOW = """
-jobs:
-  up:
-    strategy:
-      matrix:
-        k: [a, b]
-    env:
-      JOB: job-${{ matrix.k }}
-    steps:
-      - name: see the matrix
-        env:
-          K: ${{ matrix.k }}
-        run: echo "$JOB $K ${{ matrix.k }}" >> "$RUNNER_TEMP/seen" && echo "$K" > "${{ runner.temp }}/edge-$K.txt"
-      - name: share it
-        uses: actions/upload-artifact@v9
-        with:
-          name: edge-${{ matrix.k }}
-          path: ${{ runner.temp }}/edge-${{ matrix.k }}.txt
-          if-no-files-found: error
-  down:
-    needs: [up]
-    steps:
-      - uses: actions/download-artifact@v9
-        with:
-          pattern: edge-*
-          path: ${{ runner.temp }}/joined
-          merge-multiple: true
-      - name: join
-        run: cat "$RUNNER_TEMP/joined/edge-a.txt" "$RUNNER_TEMP/joined/edge-b.txt" > "$RUNNER_TEMP/union"
-  incomplete:
-    steps:
-      - name: unknown
-        run: echo "${{ github.sha }}"
-  action:
-    steps:
-      - uses: example/unknown@v1
-  setup_valid:
-    steps:
-      - uses: actions/checkout@v9
-      - uses: actions/setup-python@v9
-        with:
-          python-version: "PYTHON_VERSION"
-  setup:
-    steps:
-      - uses: actions/setup-python@v9
-        with:
-          python-version: "99.1"
-      - uses: astral-sh/setup-uv@v9
-      - uses: actions/checkout@v9
-        with:
-          ref: other-branch
-      - uses: actions/checkout@v9
-        if: github.event_name == 'push'
-        with:
-          ref: other-branch
-  gates:
-    steps:
-      - name: unknown
-        run: echo "${{ github.sha }}" > "$RUNNER_TEMP/unknown"
-      - name: odd condition
-        if: github.event_name == 'push'
-        run: touch "$RUNNER_TEMP/odd"
-      - name: root install
-        run: |
-          curl --version > /dev/null
-          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
-      - name: breaks
-        run: exit 3
-      - name: after a failure
-        run: touch "$RUNNER_TEMP/after"
-      - name: cleanup
-        if: ${{ always() }}
-        run: touch "$RUNNER_TEMP/always"
-  contract:
-    needs: [down]
-    steps:
-      - run: "true"
-"""
+# A PLANTED DECLARATION: the real Job and Step types, three contract jobs (one sharded), and three that must
+# never read as a pass: a hung step, a missing tool, a step only a hosted runner can answer.
+PIPELINE = '''
+from cipipeline import Job, Step
 
-
-FANOUT = """
-jobs:
-  first:
-    steps:
-      - name: see the tree
-        run: |
-          cat dirty.txt >> "$SHARED/dirty" || true
-          [ "$PLANT" != first ] || exit 3
-  pair:
-    needs: [first]
-    strategy:
-      matrix:
-        k: [a, b]
-    steps:
-      - name: meet the other row
-        run: |
-          echo "start ${{ matrix.k }}"
-          touch "mine-${{ matrix.k }}" "$SHARED/${{ matrix.k }}"
-          MEET
-          [ "$(ls mine-*)" = "mine-${{ matrix.k }}" ] || exit 8
-          rm "mine-${{ matrix.k }}"
-          echo "${{ matrix.k }}" > "$RUNNER_TEMP/edge-${{ matrix.k }}.txt"
-          echo "end ${{ matrix.k }}"
-      - name: share it
-        uses: actions/upload-artifact@v9
-        with:
-          name: edge-${{ matrix.k }}
-          path: ${{ runner.temp }}/edge-${{ matrix.k }}.txt
-          if-no-files-found: error
-  join:
-    needs: [pair]
-    steps:
-      - uses: actions/download-artifact@v9
-        with:
-          pattern: edge-*
-          path: ${{ runner.temp }}/joined
-          merge-multiple: true
-      - name: join
-        run: cat "$RUNNER_TEMP/joined/edge-a.txt" "$RUNNER_TEMP/joined/edge-b.txt" > "$SHARED/union"
-  contract:
-    needs: [join]
-    steps:
-      - run: "true"
-"""
+CONTRACT = ("first", "pair", "join")
+JOBS = (
+    Job("first", "atlas", 30, (Step("see the tree", """cat dirty.txt >> "$SHARED/dirty" || true
+case "${PLANT:-}" in first) exit 3 ;; kill) kill -9 $PPID; sleep 5 ;; esac""", 20),)),
+    Job("pair", "atlas", 30, (Step("meet the other shard", """echo "start $HEADRON_CI_SHARD"
+touch "mine-$HEADRON_CI_SHARD" "$SHARED/$HEADRON_CI_SHARD"
+MEET
+[ "$(ls mine-*)" = "mine-$HEADRON_CI_SHARD" ] || exit 8
+rm "mine-$HEADRON_CI_SHARD"
+echo "$HEADRON_CI_SHARD" > "$HEADRON_CI_ARTIFACTS/edge-$HEADRON_CI_SHARD"
+echo "end $HEADRON_CI_SHARD"
+""", 20),), needs=("first",), shards=("a", "b")),
+    Job("join", "atlas", 30, (Step("union", 'cat "$HEADRON_CI_ARTIFACTS"/edge-* > "$SHARED/union"', 20),), needs=("pair",)),
+    Job("slow", "extra", 5, (Step("hang", "sleep 30", 1),)),
+    Job("toolless", "extra", 10, (Step("need a tool", "touch \\"$SHARED/ran\\"", 5, tools=("no-such-tool-zq",)),)),
+    Job("hosted", "extra", 10, (Step("attest", "touch \\"$SHARED/ran\\"", 5, unavailable="a hosted runner's OIDC token"),)),
+)
+'''
 TOGETHER = """for _ in $(seq 100); do [ -e "$SHARED/a" ] && [ -e "$SHARED/b" ] && break; sleep 0.1; done; [ -e "$SHARED/a" ] && [ -e "$SHARED/b" ] || exit 9"""  # noqa: E501
 ALONE = 'mkdir "$SHARED/busy" || exit 7; sleep 0.5; rmdir "$SHARED/busy"'
 
 
-def _replay_repo(base: Path, name: str, workflow: str, meet: str = TOGETHER) -> tuple[Path, Path]:
-    """A committed repository whose ci-local.sh is the real replay, as a fan-out child runs it."""
+def _repo(base: Path, name: str, meet: str = TOGETHER) -> tuple[Path, Path]:
+    """A committed repository whose ci-local.sh is the real runner, as a fanned-out child runs it."""
     repo, shared = base / name, base / f"{name}-shared"
     (repo / ".github").mkdir(parents=True)
+    (repo / "scripts").mkdir()
     shared.mkdir()
-    (repo / "ci.yml").write_text(workflow.replace("MEET", meet), encoding="utf-8")
+    (repo / "scripts" / "cipipeline.py").write_text(PIPELINE.replace("MEET", meet), encoding="utf-8")
     script = repo / ".github" / "ci-local.sh"
     script.write_text(
         '#!/bin/bash\ncd "$(git rev-parse --show-toplevel)"\n'
@@ -166,17 +71,9 @@ def _replay_repo(base: Path, name: str, workflow: str, meet: str = TOGETHER) -> 
     return repo, shared
 
 
-def _replay(repo: Path, shared: Path, *argv: str, **env: str) -> subprocess.CompletedProcess[str]:
+def _ci(repo: Path, shared: Path, *argv: str, **env: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [
-            sys.executable,
-            str(ROOT / "scripts" / "cilocal.py"),
-            "--workflow",
-            "ci.yml",
-            "--runner-temp",
-            str(shared / "rt"),
-        ]
-        + list(argv),
+        [sys.executable, str(ROOT / "scripts" / "cilocal.py"), "--runner-temp", str(shared / "rt"), *argv],
         cwd=repo,
         env={
             **os.environ,
@@ -189,114 +86,278 @@ def _replay(repo: Path, shared: Path, *argv: str, **env: str) -> subprocess.Comp
         capture_output=True,
         text=True,
         check=False,
-        timeout=60,
+        timeout=120,
     )
 
 
-def fan_out_cases(module: ModuleType, base: Path) -> None:
-    completed = SimpleNamespace(poll=lambda: 0)
-    with (
-        patch.object(cilocal, "_start_unit", return_value=completed),
-        patch.object(cilocal, "_finish_unit"),
-        patch.object(cilocal, "wait_until") as wait,
-    ):
-        result = cilocal.fan_out("ci.yml", {"first": [], "next": ["first"]}, "head", base / "instant", 2)
+class _Fake:
+    """A started node on an injected clock: it answers `answer` once the clock reaches `at`."""
+
+    def __init__(self, now: list[float], at: float, answer: MicroResult, live: list[str]) -> None:
+        self.now, self.at, self.answer, self.live, self.stopped = now, at, answer, live, False
+        live.append(answer.program)
+
+    def poll(self) -> MicroResult | None:
+        if self.now[0] < self.at:
+            return None
+        self.live.remove(self.answer.program)
+        return self.answer
+
+    def stop(self) -> None:
+        self.stopped = True
+
+
+def _answer(name: str, status: str = "ok") -> MicroResult:
+    return MicroResult(name, "1", status, next=None if status == "ok" else "fix it")
+
+
+def _graph(nodes: list[Node], at: dict[str, float], status: dict[str, str] | None = None, **kwargs: object):
+    """Run `nodes` on a fake clock; returns (results, handles, the most nodes ever live at once)."""
+    now, live, handles, peak = [0.0], [], {}, [0]
+
+    def start(node: Node, timeout_s: float) -> _Fake:
+        handles[node.name] = _Fake(
+            now, now[0] + at[node.name], _answer(node.name, (status or {}).get(node.name, "ok")), live
+        )
+        peak[0] = max(peak[0], len(live))
+        return handles[node.name]
+
+    def wait(seconds: float) -> None:
+        now[0] += seconds
+
+    results = micrograph.run(
+        nodes,
+        start,
+        clock=lambda: now[0],
+        wait=wait,
+        poll_s=1.0,
+        **{"budget_s": 1000.0, **kwargs},  # type: ignore[arg-type]
+    )
+    return results, handles, peak[0]
+
+
+def graph_cases(module: ModuleType) -> None:
+    """micrograph alone, on an injected clock: every way a node that did not finish must not read as ok."""
     _case(
         module,
-        "completed units immediately release their dependents without an empty wait",
-        "a scheduler that waits for a child after all children have exited",
-        result == 0 and not wait.called,
+        "a cycle is named, so a graph that can never finish is refused before anything starts",
+        "a scheduler that spins forever on two nodes each waiting for the other",
+        any(p.startswith("cycle:") for p in micrograph.problems([Node("a", ("b",), 1), Node("b", ("a",), 1)])),
     )
-    repo, shared = _replay_repo(base, "whole", FANOUT)
-    with patch.dict(os.environ, {"CI_LOCAL_WORKERS": "1"}):
-        whole = _replay(repo, shared)
+    results, handles, _ = _graph([Node("a", (), 10), Node("b", ("a",), 10)], {"a": 0, "b": 0}, {"a": "refused"})
+    _case(
+        module,
+        "a node whose need did not answer ok answers unknown, blocked by that need, and never starts",
+        "edge coverage paid for, or passed, after a mutation shard failed",
+        results["b"].status == "unknown" and "blocked by a" in results["b"].evidence_refs[0] and "b" not in handles,
+    )
+    results, handles, _ = _graph([Node("a", (), 10)], {"a": 50})
+    _case(
+        module,
+        "a node past its own timeout is stopped and answers unknown, never ok",
+        "a hung suite read as a pass because it never exited non-zero",
+        results["a"].status == "unknown" and "timed out" in results["a"].evidence_refs[0] and handles["a"].stopped,
+    )
+    results, handles, _ = _graph([Node("a", (), 100), Node("b", ("a",), 100)], {"a": 50, "b": 0}, budget_s=30.0)
+    _case(
+        module,
+        "once the total budget is spent, the running node is stopped and the waiting one answers unknown",
+        "a run that outlives its budget, or a node never started read as ok",
+        [results[n].status for n in "ab"] == ["unknown", "unknown"]
+        and handles["a"].stopped
+        and "not started" in results["b"].evidence_refs[0],
+    )
+    together = _graph([Node("a", (), 10), Node("b", (), 10)], {"a": 5, "b": 5}, width=2)
+    alone = _graph([Node("a", (), 10), Node("b", (), 10)], {"a": 5, "b": 5}, width=2, admit=lambda: False)
+    _case(
+        module,
+        "width caps how many run at once, and past the first a start needs admit(): a loaded machine runs one",
+        "three suites started on a machine with no spare cores",
+        together[2] == 2 and alone[2] == 1 and all(r.actionable for r in alone[0].values()),
+    )
+    contract = cipipeline.nodes(cipipeline.selected([]))
+    shards = [n.name for n in contract if n.name.startswith("mutation:")]
+    blocked = []
+    for shard in shards:
+        results, _, _ = _graph(contract, {n.name: 0 for n in contract}, {shard: "refused"}, width=3)
+        blocked.append(results["edge-coverage"].status == "unknown")
+    _case(
+        module,
+        "in the real declaration, any one mutation shard that is not ok blocks edge-coverage",
+        "edge coverage judged over two shards' ledgers because only the first shard was a need",
+        len(shards) == 3 and all(blocked),
+    )
+    _case(
+        module,
+        "a refusal outranks the unknowns it blocked: the exit is 1; undecided alone is 2; all ok is 0",
+        "a run whose fast job failed reported as merely undecided, or an unknown reported as a pass",
+        cilocal.verdict([_answer("a", "refused"), _answer("b", "unknown")]) == 1
+        and cilocal.verdict([_answer("a"), _answer("b", "unknown")]) == 2
+        and cilocal.verdict([_answer("a")]) == 0,
+    )
+
+
+def declaration_cases(module: ModuleType) -> None:
+    """cipipeline.problems: the real declaration is clean, and each planted defect is named."""
+    step = Step("s", "true", 10)
+    cycle = [Job("a", "p", 10, (step,), needs=("b",)), Job("b", "p", 10, (step,), needs=("a",))]
+    _case(
+        module,
+        "the real declaration is a DAG of bounded steps, and a planted cycle is refused",
+        "a declaration edit that can never finish, found only when a land hangs",
+        cipipeline.problems() == [] and any("cycle" in p for p in cipipeline.problems(cycle)),
+    )
+    found = cipipeline.problems(
+        [
+            Job("a", "p", 10, (Step("s", "true", 20),), needs=("ghost",)),
+            Job("b", "p", 10, (Step("s", "x", 5, env={"SHARD": "${HEADRON_CI_SHARD}"}),)),
+            Job("c", "p", 10, ()),
+        ]
+    )
+    _case(
+        module,
+        "an undeclared need, a step longer than its job, an empty job and a $ in an env value are each refused",
+        "env SHARD='${HEADRON_CI_SHARD}' reaching the step as those characters, so every shard ran the whole suite",
+        any("undeclared job 'ghost'" in p for p in found)
+        and any("timeout_s 20" in p for p in found)
+        and any("c has no steps" in p for p in found)
+        and any("holds a $" in p for p in found),
+    )
+
+
+def drift_cases(module: ModuleType) -> None:
+    """cidrift reads the native steps: a script only a native step runs must still be a gate or named CI-only."""
+    native = [step.run for job in cipipeline.JOBS for step in job.steps]
+    undeclared, stale = cidrift.drift(["python scripts/zz_unnamed.py", *native], [], {"scripts/zz_gone.py": "x"})
+    _case(
+        module,
+        "a script a native step runs that no gate names is undeclared, and a CI-only entry no step runs is stale",
+        "a script added to cipipeline.py that runs only in CI, judged locally by nothing",
+        "scripts/zz_unnamed.py" in undeclared
+        and stale == ["scripts/zz_gone.py"]
+        and set(cidrift.drift(cidrift.run_texts(), [], {})[0]) >= {"scripts/agentrun.py", "scripts/bench.py"},
+    )
+
+
+def run_cases(module: ModuleType, base: Path) -> None:
+    """The real runner over a planted declaration, through its CLI."""
+    repo, shared = _repo(base, "plan")
+    plan = _ci(repo, shared, "--plan")
+    picked = _ci(repo, shared, "--plan", CI_LOCAL_JOBS="join")
+    _case(
+        module,
+        "with no job named, the plan is every unit of the CONTRACT jobs, each after its needs",
+        "a hand-kept job list that drops a unit the local-ci status waits on",
+        plan.returncode == 0 and plan.stdout.split() == ["first", "pair:a", "pair:b", "join"],
+    )
+    _case(
+        module,
+        "CI_LOCAL_JOBS picks exactly those jobs, as ~/.claude/bin/ci-local -j exports it",
+        "a named job that silently pays for every job it needs first",
+        picked.returncode == 0 and picked.stdout.split() == ["join"],
+    )
+    repo, shared = _repo(base, "whole")
+    with_env = {"CI_LOCAL_WORKERS": "2"}
+    whole = _ci(repo, shared, **with_env)
     lines = whole.stdout.splitlines()
-    _case(
-        module,
-        "a clean whole replay runs ready rows together, each in its own tree, and joins them through one store",
-        "two shards chained, or planting defects into one tree, or a union that never sees a shard's ledger",
-        whole.returncode == 0 and (shared / "union").read_text(encoding="utf-8").split() == ["a", "b"],
-    )
-    _case(
-        module,
-        "one unit's output prints whole, so rows running together never interleave",
-        "a log nobody can read because two shards share one stream",
-        lines.index("end a") - lines.index("start a") == 1 and lines.index("end b") - lines.index("start b") == 1,
-    )
     trees = subprocess.run(
         ["git", "worktree", "list"], cwd=repo, capture_output=True, text=True, check=True, timeout=60
     )
     _case(
         module,
-        "every unit's worktree is gone when the replay ends",
-        "a worktree per row left behind by every land",
+        "a clean whole run starts ready shards together, each in its own tree, joined through one artifact store",
+        "two shards chained, or planting defects into one tree, or a union that never sees a shard's ledger",
+        whole.returncode == 0 and (shared / "union").read_text(encoding="utf-8").split() == ["a", "b"],
+    )
+    _case(
+        module,
+        "one unit's output prints whole, so shards running together never interleave",
+        "a log nobody can read because two shards share one stream",
+        "start a" in lines
+        and lines.index("end a") - lines.index("start a") == 1
+        and lines.index("end b") - lines.index("start b") == 1,
+    )
+    _case(
+        module,
+        "every unit's worktree is gone when the run ends",
+        "a worktree per shard left behind by every land",
         len(trees.stdout.splitlines()) == 1,
     )
-    repo, shared = _replay_repo(base, "broken", FANOUT)
-    broken = _replay(repo, shared, PLANT="first")
+    repo, shared = _repo(base, "broken")
+    broken = _ci(repo, shared, PLANT="first")
     _case(
         module,
-        "a failed unit fails the replay and SKIPs what needs it, transitively",
+        "a refused unit makes the run exit 1 and blocks what needs it, transitively",
         "a mutation suite paid for after fast failed, or a green because the failed child's exit was dropped",
         broken.returncode == 1
-        and "SKIP unit pair[k=a]" in broken.stdout
-        and "SKIP unit join" in broken.stdout
+        and "blocked by first" in broken.stdout
+        and "blocked by pair:a" in broken.stdout
         and not (shared / "a").exists(),
     )
-    repo, shared = _replay_repo(
-        base, "open", FANOUT.replace("cat dirty.txt >>", "echo ${{ github.sha }}; cat dirty.txt >>")
-    )
-    still_open = _replay(repo, shared)
+    repo, shared = _repo(base, "killed")
+    killed = _ci(repo, shared, PLANT="kill")
     _case(
         module,
-        "an unresolved step in a child leaves the whole replay incomplete and unsuccessful",
-        "a SKIP inside a fanned-out unit reported as a green land",
-        still_open.returncode == 1 and "${{ github.sha }}" in still_open.stdout and "1 skipped" in still_open.stdout,
+        "a child killed by a signal is unknown, never ok: the run exits 2 and blocks what needs it",
+        "a negative or 137 exit mapped to a pass because only 1 was read as failure",
+        killed.returncode == 2 and "child exit -9" in killed.stdout and "blocked by first" in killed.stdout,
     )
-    repo, shared = _replay_repo(base, "absent", FANOUT.replace("pattern: edge-*", "pattern: absent-*"))
-    absent = _replay(repo, shared)
-    _case(
-        module,
-        "a download with no matching artifact fails the replay",
-        "edge coverage judged over no ledger, and passed",
-        absent.returncode == 1 and "no artifact matches absent-*" in absent.stdout,
-    )
-    repo, shared = _replay_repo(base, "dirty", FANOUT, ALONE)
+    repo, shared = _repo(base, "dirty", ALONE)
     (repo / "dirty.txt").write_text("edited\n", encoding="utf-8")
-    dirty = _replay(repo, shared)
+    dirty = _ci(repo, shared)
     _case(
         module,
-        "a dirty tree replays in place, one at a time, so its edits are what gets judged",
+        "a dirty tree runs in place, one unit at a time, so its edits are what gets judged",
         "a green for HEAD reported on a tree whose edits never ran",
         dirty.returncode == 0 and "edited" in (shared / "dirty").read_text(encoding="utf-8"),
     )
-    repo, shared = _replay_repo(base, "serial", FANOUT, ALONE)
-    serial = _replay(repo, shared, CI_LOCAL_WORKERS="1")
+    repo, shared = _repo(base, "serial", ALONE)
+    serial = _ci(repo, shared, CI_LOCAL_WORKERS="1")
     _case(
         module,
-        "width 1 replays in place through the same steps",
+        "width 1 runs in place through the same steps",
         "no way to take the fan-out away when it is the suspect",
         serial.returncode == 0 and "::: started" not in serial.stdout,
     )
-    repo, shared = _replay_repo(base, "loaded", FANOUT, ALONE)
-    loaded = _replay(repo, shared, HEADRON_SLOT_LOAD="0")
+    repo, shared = _repo(base, "loaded", ALONE)
+    loaded = _ci(repo, shared, HEADRON_SLOT_LOAD="0")
     _case(
         module,
         "on a machine with no spare cores, units run one at a time and still pass",
         "three suites on a loaded machine: the starved desktop and timed-out suites slot.py measured",
         loaded.returncode == 0 and "::: started pair" in loaded.stdout,
     )
-    repo, shared = _replay_repo(base, "picked", FANOUT, ALONE)
-    picked = _replay(repo, shared, "pair[k=a]")
-    unknown = _replay(repo, shared, "pair[k=z]")
+    repo, shared = _repo(base, "unit", ALONE)
+    one = _ci(repo, shared, "--unit", "pair:a")
+    nothing = _ci(repo, shared, "--unit", "pair:z")
     _case(
         module,
-        "a named row runs only that row, and a row nothing declares is incomplete, never an empty pass",
-        "both shards in every shard's unit, or a typo'd unit passing by running nothing",
-        picked.returncode == 0
-        and "start a" in picked.stdout
-        and "start b" not in picked.stdout
-        and unknown.returncode == 1,
+        "--unit runs that one unit alone, and a unit nothing declares is refused, never an empty pass",
+        "both shards in every shard's child, or a typo'd unit passing by running nothing",
+        one.returncode == 0 and "start a" in one.stdout and "start b" not in one.stdout and nothing.returncode == 1,
+    )
+    slow, toolless, hosted = (_ci(repo, shared, job) for job in ("slow", "toolless", "hosted"))
+    _case(
+        module,
+        "a hung step, a missing tool and a hosted-only step each answer unknown (exit 2), and the last two never run",
+        "a timeout or a skipped step reported as a pass",
+        (slow.returncode, toolless.returncode, hosted.returncode) == (2, 2, 2)
+        and "timed out after 1s" in slow.stdout
+        and "no-such-tool-zq not on PATH" in toolless.stdout
+        and "OIDC token" in hosted.stdout
+        and not (shared / "ran").exists(),
+    )
+    outside = base / "outside"
+    outside.mkdir()
+    bare = subprocess.run(["git", "init", "-q", str(base / "bare")], check=True, timeout=60)
+    _case(
+        module,
+        "`headron ci` runs the checkout's own CI, and refuses outside a checkout or in one that declares none",
+        "an installed headron judging a lane by main's jobs, or a blind run that exits 0",
+        isinstance(ci.shim(repo), Path)
+        and "not inside a git checkout" in str(ci.shim(outside))
+        and "declares no native CI" in str(ci.shim(base / "bare"))
+        and bare.returncode == 0,
     )
 
 
@@ -397,134 +458,9 @@ def rescue_tag_cases(module: ModuleType, base: Path) -> None:
 def run(module: ModuleType) -> None:
     with tempfile.TemporaryDirectory(prefix="headron-cilocal-") as directory:
         base = Path(directory)
-        workflow = base / "ci.yml"
-        version = f"{sys.version_info.major}.{sys.version_info.minor}"
-        workflow.write_text(textwrap.dedent(WORKFLOW).replace("PYTHON_VERSION", version), encoding="utf-8")
-        # THE HOST'S `python` IS NOT ASSUMED: the adapter asks `python --version`, and a host with only
-        # python3 on PATH answered "unavailable" where the case expects a version mismatch. The version
-        # above is this interpreter's, so `python` is made to be this interpreter.
-        shim = base / "bin"
-        shim.mkdir()
-        (shim / "python").symlink_to(sys.executable)
-        path = os.pathsep.join((str(shim), os.environ.get("PATH", "")))
-
-        def call(*argv: str, env: dict[str, str] | None = None, temp: str = "rt") -> subprocess.CompletedProcess[str]:
-            return subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / "scripts" / "cilocal.py"),
-                    "--workflow",
-                    str(workflow),
-                    "--runner-temp",
-                    str(base / temp),
-                    *argv,
-                ],
-                cwd=base,
-                env={**os.environ, "PATH": path, **(env or {})},
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=60,
-            )
-
-        plan = call("--plan", env={"CI_LOCAL_JOBS": ""})
-        _case(
-            module,
-            "with no job named, the plan is the contract job's needs, each after its own",
-            "a hand-kept job list that drops a job the required check waits on",
-            plan.returncode == 0 and plan.stdout.split() == ["up", "down"],
-        )
-        picked = call("--plan", env={"CI_LOCAL_JOBS": "down"})
-        _case(
-            module,
-            "CI_LOCAL_JOBS picks the jobs, as ~/.claude/bin/ci-local -j exports it",
-            "a -j subset that silently runs the full default set",
-            picked.stdout.split() == ["down"],
-        )
-
-        joined = call("up", "down")
-        rt = base / "rt"
-        seen = (rt / "seen").read_text(encoding="utf-8").split("\n") if (rt / "seen").exists() else []
-        _case(
-            module,
-            "a matrix runs once per value with job env, step env and the run text all translated",
-            "env: blocks ignored, or a raw ${{ matrix }} handed to bash as a bad substitution",
-            joined.returncode == 0 and seen[:2] == ["job-a a a", "job-b b b"],
-        )
-        _case(
-            module,
-            "an upload and a download join the shards through RUNNER_TEMP",
-            "edge-coverage never replayed, so a local green is not the required check's green",
-            (rt / "union").read_text(encoding="utf-8") == "a\nb\n" if (rt / "union").exists() else False,
-        )
-        setup = call("setup", temp="setup")
-        valid = call("setup_valid", temp="setup-valid")
-        with patch.object(cilocal.shutil, "which", return_value=None):
-            unpinned_without_tools = cilocal._setup("astral-sh/setup-uv", {})
-        _case(
-            module,
-            "untranslated setup and its condition cannot produce a successful replay",
-            "a setup action silently passed over despite a mismatched version or unsupported condition",
-            setup.returncode != 0
-            and "host tool version does not match 99.1" in setup.stdout
-            and "tool version is unpinned" in setup.stdout
-            and unpinned_without_tools == "tool version is unpinned or unavailable"
-            and "checkout options are not translated" in setup.stdout
-            and "the condition" in setup.stdout,
-        )
-        _case(
-            module,
-            "default checkout and matching Python use narrow local adapters",
-            "valid local setup rejected or silently passed without checking the version",
-            valid.returncode == 0 and valid.stdout.count("local setup adapter") == 2,
-        )
-
-        incomplete = call("incomplete", temp="incomplete")
-        _case(
-            module,
-            "an unresolved required step cannot produce a successful replay",
-            "a skipped required step reported as a green local check",
-            incomplete.returncode != 0 and "SKIP incomplete: unknown" in incomplete.stdout,
-        )
-
-        unknown_action = call("action", temp="action")
-        _case(
-            module,
-            "an unknown action cannot produce a successful replay",
-            "an unimplemented action silently treated as toolchain setup",
-            unknown_action.returncode != 0 and "action is not translated" in unknown_action.stdout,
-        )
-
-        gates = call("gates", temp="gt")
-        gt = base / "gt"
-        _case(
-            module,
-            "an expression nothing answers is SKIP with its text, never PASS and never run",
-            "a step run with ${{ github.sha }} left raw",
-            "SKIP gates: unknown — unresolved ${{ github.sha }}" in gates.stdout and not (gt / "unknown").exists(),
-        )
-        _case(
-            module,
-            "an untranslated if: is SKIP with the condition, not run",
-            "a condition dropped, so a push-only step runs on every replay",
-            "the condition \"github.event_name == 'push'\" is not translated" in gates.stdout
-            and not (gt / "odd").exists(),
-        )
-        _case(
-            module,
-            "a step that needs sudo is SKIP: root installs are runner-only, never a password prompt FAIL",
-            "the pinned scanner install failing locally on sudo and cascading success() skips over the job",
-            "SKIP gates: root install — needs sudo" in gates.stdout,
-        )
-        _case(
-            module,
-            "after a failure, success() steps are skipped, always() steps run, and the exit is 1",
-            "every step replayed after a failure as if if: did not exist",
-            gates.returncode == 1
-            and not (gt / "after").exists()
-            and (gt / "always").exists()
-            and "ci-local.sh: 1 failed" in gates.stdout,
-        )
-        fan_out_cases(module, base)
+        graph_cases(module)
+        declaration_cases(module)
+        drift_cases(module)
+        run_cases(module, base)
         rescue_tag_cases(module, base)
         hook_cases(module, base)

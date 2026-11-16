@@ -45,7 +45,7 @@ DROPPED = ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT", "VIRTUAL_ENV", "PYTHONPATH")
 INSTALLS_HEADRON = re.compile(
     r"(pip|pipx|uv)\s+install\b.*(Headron|headron-software|headron-harness|HLIntel/(Headron|headron-software)|--editable ~/headron)"
 )
-CI = "ci/atlas-ci.yml"
+CI = "scripts/cipipeline.py"
 RUNNER = "python scripts/cli_test.py --install"
 
 

@@ -84,16 +84,19 @@ Each one names, in `atlas.yaml/instruments`, what it does **not** prove and who 
 
 ## Running CI locally, and what CI skips
 
-`.github/ci-local.sh` replays the `run:` steps of the jobs in `ci/atlas-ci.yml`, in
-order, in a throwaway virtualenv. It reads the workflow, so it cannot drift from it.
+`headron ci` (the same as `.github/ci-local.sh`) runs the jobs `scripts/cipipeline.py` declares:
+Python steps, each a bounded microprogram, run as one graph in a throwaway virtualenv. No YAML
+is translated and no hosted runner starts them; a landing posts the `local-ci` status from this run.
 
 ```bash
 .github/ci-local.sh                  # fast, exercises, mutation: everything `Contract` waits on
 .github/ci-local.sh fast             # lint, format, type check, workflow lint and audit, `atlas.py check`
+.github/ci-local.sh --pipeline polyglot   # the example packs; `--pipeline fuzz` runs the atheris campaign
+.github/ci-local.sh --plan           # the units a run would start, in order; runs nothing
 .github/ci-local.sh --install-hook   # opt-in pre-push hook running `fast`; --uninstall-hook removes it
 ```
 
-The hook is never installed for you. A step whose tool is not on PATH prints SKIP, never PASS.
+The hook is never installed for you. A step whose tool is not on PATH answers unknown with what to do, never PASS.
 
 In CI, `Contract` is the required check. It runs no gate itself: it passes only when `Fast checks`,
 `Mutation suite`, `Exercises` and `Edge coverage` all passed. `Fast checks` and `Exercises` start
