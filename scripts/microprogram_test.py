@@ -100,7 +100,7 @@ def wrapper_cases(module: ModuleType) -> None:
     clean = microprogram.run("graph.edges", {"graph": graph.Graph()})
     if refused.status != "refused" or len(refused.evidence_refs) != 2 or clean.status != "ok":
         raise SystemExit(f"FAIL micro graph.edges: planted {refused.to_dict()}, empty {clean.status}")
-    if set(microprogram.REGISTRY) != {"classify", "search", "graph.edges", "context.credit"}:
+    if set(microprogram.REGISTRY) != {"classify", "search", "graph.edges", "context.credit", "task.obligations"}:
         raise SystemExit(f"FAIL micro registry: {sorted(microprogram.REGISTRY)} has a program no case here plants")
     module.CASES.append(
         (
@@ -184,6 +184,100 @@ def credit_cases(module: ModuleType) -> None:
         )
     )
     print("  ok    micro context.credit scores the verdict an item changed")
+
+
+def obligation_cases(module: ModuleType) -> None:
+    """task.obligations is ok only when every obligation is proven on the tree read; stale evidence is unknown, an
+    open one is refused with its procedure, and the ledger outlives the process that wrote it."""
+    import json
+    import os
+    import subprocess
+    import sys
+    import tempfile
+    from pathlib import Path
+
+    import microprogram
+    import obligations
+
+    def ask(tree: str) -> microprogram.MicroResult:
+        return microprogram.run("task.obligations", {"task": "lane-a", "tree": tree})
+
+    with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"HEADRON_HOME": home}):
+        if ask("t1").status != "unknown":
+            raise SystemExit("FAIL micro obligations: an empty ledger answered something other than unknown")
+        for statement, check in (("tests pass", ""), ("", "pytest")):
+            try:
+                obligations.add("lane-a", "tests", statement, check)
+            except obligations.LedgerError:
+                continue
+            raise SystemExit(
+                f"FAIL micro obligations: recorded an obligation with statement={statement!r} check={check!r}"
+            )
+        obligations.add("lane-a", "tests", "the suite passes", "headron verify")
+        obligations.add("lane-a", "docs", "README names the ledger", "grep -q obligations README.md")
+        try:
+            obligations.close("lane-a", "tests", "", at="t1")
+            raise SystemExit("FAIL micro obligations: a done claim with no evidence was recorded as proven")
+        except obligations.LedgerError:
+            pass
+        for nowhere in (obligations.UNKNOWN_TREE, "t1+dirty"):
+            try:
+                obligations.close("lane-a", "tests", "receipt:abc", at=nowhere)
+                raise SystemExit(f"FAIL micro obligations: evidence on {nowhere} was recorded as proven")
+            except obligations.LedgerError:
+                pass
+        if obligations.tree(Path(home)) != obligations.UNKNOWN_TREE:
+            raise SystemExit("FAIL micro obligations: a directory outside any git tree named a tree")
+        here = Path.cwd()
+        try:
+            os.chdir(home)  # the default root is the repo the task is in, not Headron's checkout
+            if obligations.tree() != obligations.UNKNOWN_TREE:
+                raise SystemExit("FAIL micro obligations: tree() outside any git tree read another repo's tree")
+        finally:
+            os.chdir(here)
+        legacy = {"state": "proven", "tree": obligations.UNKNOWN_TREE}  # a row written before close refused it
+        if obligations.standing(legacy, obligations.UNKNOWN_TREE) != "unknown":
+            raise SystemExit("FAIL micro obligations: evidence on an unknown tree read proven on an unknown tree")
+        obligations.close("lane-a", "tests", "receipt:abc", at="t1")
+        opened = ask("t1")
+        if opened.status != "refused" or "docs" not in (opened.next or "") or "grep -q" not in (opened.next or ""):
+            raise SystemExit(
+                f"FAIL micro obligations: an open obligation answered {opened.to_dict()}, not refused with its check"
+            )
+        obligations.close("lane-a", "docs", "commit:def", at="t1")
+        if ask("t1").status != "ok":
+            raise SystemExit("FAIL micro obligations: every obligation proven on t1 did not answer ok on t1")
+        for stale in ("t2", "t1+dirty", obligations.UNKNOWN_TREE):
+            if ask(stale).status != "unknown":
+                raise SystemExit(
+                    f"FAIL micro obligations: evidence for t1 answered {ask(stale).status} on {stale}, not unknown"
+                )
+        # SURVIVES COMPACTION: a fresh process, which shares no memory with this one, reads the same state.
+        fresh = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import json, obligations; print(json.dumps(obligations.report('lane-a', 't1')[0]))",
+            ],
+            cwd=Path(obligations.__file__).parent,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+        if fresh.returncode or json.loads(fresh.stdout or "null") != "ok":
+            raise SystemExit(f"FAIL micro obligations: a fresh process read {fresh.stdout!r} {fresh.stderr[-300:]!r}")
+        store = obligations.path("lane-a")
+        store.write_text(store.read_text(encoding="utf-8") + "{not json\n", encoding="utf-8")
+        if ask("t1").status != "unknown":
+            raise SystemExit("FAIL micro obligations: a corrupt ledger line was skipped, not refused")
+    module.CASES.append(
+        (
+            "task.obligations is ok only when all are proven on this tree; stale is unknown, open is refused, corrupt is unknown",
+            "a task called done on evidence for another tree, an obligation with no procedure, or a dropped ledger line",
+        )
+    )
+    print("  ok    micro task.obligations binds done to evidence on this tree")
 
 
 def next_step_cases(module: ModuleType) -> None:
@@ -333,5 +427,6 @@ def run(module: ModuleType) -> None:
         elapsed_cases,
         stats_cases,
         credit_cases,
+        obligation_cases,
     ):
         cases(module)
