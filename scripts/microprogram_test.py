@@ -94,7 +94,7 @@ def wrapper_cases(module: ModuleType) -> None:
     clean = microprogram.run("graph.edges", {"graph": graph.Graph()})
     if refused.status != "refused" or len(refused.evidence_refs) != 2 or clean.status != "ok":
         raise SystemExit(f"FAIL micro graph.edges: planted {refused.to_dict()}, empty {clean.status}")
-    if set(microprogram.REGISTRY) != {"classify", "search", "graph.edges"}:
+    if set(microprogram.REGISTRY) != {"classify", "search", "graph.edges", "context.credit"}:
         raise SystemExit(f"FAIL micro registry: {sorted(microprogram.REGISTRY)} has a program no case here plants")
     module.CASES.append(
         (
@@ -124,6 +124,65 @@ def cli_cases(module: ModuleType) -> None:
     print("  ok    micro cli fails closed")
 
 
+def credit_cases(module: ModuleType) -> None:
+    """context.credit scores each item by the verdict it changed, refuses an unpaired item, and reads an
+    errored run as unknown, never as unsolved."""
+    import json
+    import os
+    import tempfile
+    from pathlib import Path
+
+    import microprogram
+
+    def runs(*solved: bool, error_seed: int | None = None) -> list[dict]:
+        return [{"seed": s, "solved": v, "agent_error": s == error_seed} for s, v in enumerate(solved)]
+
+    full = runs(True, True, False)
+    without = {
+        "helps.py": runs(False, False, False),
+        "noise.py": runs(True, True, False),
+        "hurts.py": runs(True, True, True),
+    }
+    scored = microprogram.run("context.credit", {"shape": "bugfix:py", "full": full, "without": without})
+    credits = scored.output or {}
+    want = {"helps.py": (2, 0, 2 / 3), "noise.py": (0, 0, 0.0), "hurts.py": (0, 1, -1 / 3)}
+    got = {item: (row["helped"], row["hurt"], row["credit"]) for item, row in credits.items()}
+    if scored.status != "ok" or got != want or credits["noise.py"]["p"] != 1.0:
+        raise SystemExit(f"FAIL micro credit: planted helped/hurt/credit {want}, got {scored.status} {got}")
+    if [round(microprogram.mcnemar_exact(*bc), 4) for bc in ((6, 0), (5, 0), (2, 2))] != [0.0312, 0.0625, 1.0]:
+        raise SystemExit("FAIL micro credit: exact McNemar p is not 2*sum C(n,i)/2^n over the discordant pairs")
+
+    # The trap: agentbench scores a timeout solved=False; read as a verdict it credits the removed item +1.
+    outage = {"helps.py": runs(False, True, False, error_seed=0)}
+    errored = microprogram.run("context.credit", {"shape": "bugfix:py", "full": full, "without": outage})
+    if errored.status != "unknown" or errored.output is not None or "helps.py seed 0" not in errored.evidence_refs[0]:
+        raise SystemExit(f"FAIL micro credit: an errored run answered {errored.to_dict()}, not unknown")
+    for bad in ({"helps.py": runs(False, False)}, {"helps.py": [*runs(False, False, False), runs(True)[0]]}, {}):
+        unpaired = microprogram.run("context.credit", {"shape": "bugfix:py", "full": full, "without": bad})
+        if unpaired.status != "refused":
+            raise SystemExit(f"FAIL micro credit: unpaired runs {bad} answered {unpaired.status}, not refused")
+
+    with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"HEADRON_HOME": home}):
+        store = Path(home) / "context-credit.jsonl"
+        context = {"shape": "bugfix:py", "full": full, "without": without, "record": True}
+        microprogram.run("context.credit", context)
+        first = store.read_bytes()
+        microprogram.run("context.credit", context)
+        lines = store.read_text(encoding="utf-8").splitlines()
+        if len(lines) != 6 or not store.read_bytes().startswith(first) or json.loads(lines[0])["shape"] != "bugfix:py":
+            raise SystemExit(f"FAIL micro credit: the log is not append-only, {len(lines)} lines after two records")
+    module.CASES.append(
+        (
+            "context.credit scores helped/hurt per item, refuses an unpaired item, reads an errored run as unknown, appends only",
+            "an outage credited to the removed item, or a credit log rewritten over earlier measurements",
+        )
+    )
+    print("  ok    micro context.credit scores the verdict an item changed")
+
+
 def run(module: ModuleType) -> None:
-    for cases in (result_contract_cases, run_never_raises_cases, wrapper_cases, cli_cases):
-        cases(module)
+    result_contract_cases(module)
+    run_never_raises_cases(module)
+    wrapper_cases(module)
+    cli_cases(module)
+    credit_cases(module)

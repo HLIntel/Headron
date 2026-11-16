@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol
 
 # THE STATUSES, AND WHAT A CALLER MAY DO WITH EACH. Only "ok" may be acted on; the other three
@@ -123,7 +124,84 @@ class EdgeDomains:
         )
 
 
-REGISTRY: dict[str, MicroProgram] = {program.name: program for program in (Classify(), Search(), EdgeDomains())}
+def mcnemar_exact(helped: int, hurt: int) -> float:
+    """Two-sided exact McNemar p over the discordant pairs; no discordant pair is p 1.0, not a pass."""
+    from math import comb  # noqa: PLC0415
+
+    pairs = helped + hurt
+    if pairs == 0:
+        return 1.0
+    return min(1.0, 2 * sum(comb(pairs, i) for i in range(min(helped, hurt) + 1)) / 2**pairs)
+
+
+def credit_store() -> Path:
+    """The append-only credit log. Under HEADRON_HOME, never in the tree: a measurement is derived output."""
+    from atlascore import headron_home  # noqa: PLC0415
+
+    return headron_home() / "context-credit.jsonl"
+
+
+class ContextCredit:
+    """Counterfactual credit per handed-in context item: solved with every item minus solved without that one.
+
+    context: {"shape": task shape, "full": [run], "without": {item: [run]}, "record": bool}. A run is what
+    agentbench.run returns plus its "seed". Relevance chose the items; this scores whether each one changed
+    the verdict (MemCredit's U(m, s) = R(M) - R(M minus m)). Pure over recorded runs: it never starts an agent.
+    """
+
+    name = "context.credit"
+    version = "1"
+
+    def run(self, context: Mapping[str, Any]) -> MicroResult:
+        shape, full = str(context.get("shape", "")).strip(), list(context.get("full", ()))
+        without: Mapping[str, list[Mapping[str, Any]]] = context.get("without") or {}
+        if not shape or not full or not without:
+            return MicroResult(
+                self.name, self.version, "refused", evidence_refs=("needs a shape, full runs and without runs",)
+            )
+        # AN ERRORED RUN IS NOT AN UNSOLVED RUN: agentbench scores a timeout solved=False, so reading it as a
+        # verdict would credit the removed item +1 for an outage.
+        errored = [f"full seed {r.get('seed')}" for r in full if r.get("agent_error")] + [
+            f"{item} seed {r.get('seed')}" for item, runs in without.items() for r in runs if r.get("agent_error")
+        ]
+        if errored:
+            return MicroResult(
+                self.name, self.version, "unknown", evidence_refs=tuple(f"agent error: {e}" for e in errored)
+            )
+        solved = {r["seed"]: bool(r["solved"]) for r in full}
+        credits: dict[str, dict[str, Any]] = {}
+        for item, runs in without.items():
+            dropped = {r["seed"]: bool(r["solved"]) for r in runs}
+            if set(dropped) != set(solved) or len(runs) != len(dropped) or len(full) != len(solved):
+                return MicroResult(
+                    self.name,
+                    self.version,
+                    "refused",
+                    evidence_refs=(f"{item}: seeds {sorted(dropped)} do not pair once each with {sorted(solved)}",),
+                )
+            helped = sum(solved[s] and not dropped[s] for s in solved)  # McNemar b: solved only with the item
+            hurt = sum(dropped[s] and not solved[s] for s in solved)  # McNemar c: solved only without it
+            credits[item] = {
+                "credit": (helped - hurt) / len(solved),
+                "helped": helped,
+                "hurt": hurt,
+                "pairs": len(solved),
+                "p": mcnemar_exact(helped, hurt),
+            }
+        if context.get("record"):
+            import json  # noqa: PLC0415
+
+            store = credit_store()
+            store.parent.mkdir(parents=True, exist_ok=True)
+            with store.open("a", encoding="utf-8") as log:  # append, never rewrite: earlier credits stay as measured
+                for item, row in credits.items():
+                    log.write(json.dumps({"item": item, "shape": shape, "version": self.version, **row}) + "\n")
+        return MicroResult(self.name, self.version, "ok", credits, evidence_refs=tuple(sorted(credits)))
+
+
+REGISTRY: dict[str, MicroProgram] = {
+    program.name: program for program in (Classify(), Search(), EdgeDomains(), ContextCredit())
+}
 
 
 def run(name: str, context: Mapping[str, Any] | None = None) -> MicroResult:
