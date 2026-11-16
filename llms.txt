@@ -1,6 +1,6 @@
 # Headron Software by HLIntel LLC (contract v3.63.0)
 
-> Rules and build checks for AI coding agents.
+> Command line tool and rule contract for AI coding agents: each changed file maps to the checks it owes, and a commit whose file fails is refused.
 
 <!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->
 
