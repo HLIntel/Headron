@@ -55,6 +55,7 @@ def _repo(base: Path, name: str, meet: str = TOGETHER) -> tuple[Path, Path]:
     (repo / ".github").mkdir(parents=True)
     (repo / "scripts").mkdir()
     shared.mkdir()
+    (repo / ".gitignore").write_text("__pycache__/\n*.pyc\n", encoding="utf-8")
     (repo / "scripts" / "cipipeline.py").write_text(PIPELINE.replace("MEET", meet), encoding="utf-8")
     script = repo / ".github" / "ci-local.sh"
     script.write_text(
