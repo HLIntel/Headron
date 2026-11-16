@@ -4394,10 +4394,10 @@ drift_review:
 # from pyproject.toml and init's file list from scripts/onboard.py, so neither is typed here.
 glance:
   is: a rule contract and CLI mapping changed files to checks. Hooks are optional; `headron verify` runs done gates.
-  is_not: a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
+  is_not: 'a coding agent or model. An unrun check reports SKIP or NOT RUN, never a pass; hooks allow missing local tools (override: `--strict`), CI verifies all.'
   needs: No account or key. A package install fetches its matching release from GitHub on first run.
-  init: Use `--no-wiring` to skip hooks and configuration; `headron enforce uninstall` restores a displaced hook.
-  mind: hosted, paid, needs a key; plans a declared change. The command line works without it.
+  init: '`--dry-run` previews; `--no-wiring` skips hooks/config; `headron enforce uninstall` restores hooks.'
+  mind: optional hosted verifier. CLI and local MCP work 100% offline and free with no key or account.
 
 intents:
   use:
@@ -6031,6 +6031,7 @@ declared_inputs:
   HEADRON_SLOT_WAIT: {why: 'seconds a planted suite or a gate queues for the machine slot before it gives up as BUSY; the queue wait is taken before the gate timer starts, so it never spends the gate timeout', set_by: 'the operator, or a test (0 refuses at once)', absent: '3600'}
   HEADRON_SLOT_WORKERS: {why: 'the worker cap headron slot gives go, vitest, pytest-xdist and cargo', set_by: the operator, absent: '2'}
   HEADRON_ENFORCE_WORKERS: {why: 'the thread count enforce.py checks files on; each file waits on its own compiler, and 1 is the serial path whose output the parallel one must match', set_by: 'the operator, or a test', absent: 'min(8, cores)'}
+  HEADRON_ENFORCE_STRICT: {why: 'when 1, enforce fails closed on missing toolchains', set_by: 'operator, CI, or --strict', absent: 'missing toolchains report SKIP'}
   GOFLAGS: {why: 'Go reads its flags here; headron slot appends -p=<workers> to what the caller set', set_by: 'the caller', absent: 'only -p=<workers>'}
   CLAUDE_CODE_SESSION_ID: {why: 'the runtime session a field event belongs to, so a re-fire and a recovery join within one session', set_by: 'the agent runtime', absent: 'the event is counted but joins nothing, and the unjoined share is printed'}
   HEADRON_TASK_ID: {why: 'the task a scheduler ran this session for, so a field event joins its run outcome', set_by: 'the launcher that starts the agent', absent: 'no task is recorded on the event'}

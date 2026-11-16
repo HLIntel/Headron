@@ -3,9 +3,9 @@
 > For chat assistants with or without tools. GENERATED from `atlas.yaml/chat` by `python scripts/atlas.py index --write`. Do not edit.
 
 - **Is:** a rule contract and CLI mapping changed files to checks. Hooks are optional; `headron verify` runs done gates.
-- **Is not:** a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
-- **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .cursor/mcp.json, .git/hooks/pre-commit. Use `--no-wiring` to skip hooks and configuration; `headron enforce uninstall` restores a displaced hook.
-- **Mind API:** hosted, paid, needs a key; plans a declared change. The command line works without it.
+- **Is not:** a coding agent or model. An unrun check reports SKIP or NOT RUN, never a pass; hooks allow missing local tools (override: `--strict`), CI verifies all.
+- **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .cursor/mcp.json, .git/hooks/pre-commit. `--dry-run` previews; `--no-wiring` skips hooks/config; `headron enforce uninstall` restores hooks.
+- **Mind API:** optional hosted verifier. CLI and local MCP work 100% offline and free with no key or account.
 
 **Start with the task.** Use the smallest relevant context, route changed files to their declared checks, and run checks when tools are available and authorized. Otherwise state what remains unverified and give the next actionable step.
 

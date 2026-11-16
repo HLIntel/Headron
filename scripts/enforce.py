@@ -269,7 +269,7 @@ def _verdict(path: Path) -> tuple[str, str]:
     return state, detail
 
 
-def check(paths: list[Path]) -> int:
+def check(paths: list[Path], strict: bool = False) -> int:
     counts = {"PASS": 0, "FAIL": 0, "SKIP": 0}
     absent = 0
     # EACH FILE WAITS ON ITS OWN COMPILER, so they run as a pool. `map` keeps input order, and the refusals below
@@ -292,6 +292,10 @@ def check(paths: list[Path]) -> int:
         f"of {len(paths)} file(s) — {absent} skipped for a toolchain this machine does not have, so a "
         f"clean pass here is not a clean pass everywhere"
     )
+    if strict and (counts["FAIL"] or absent):
+        if absent and not counts["FAIL"]:
+            print(f"headron enforce: REFUSED under strict mode — {absent} skipped for missing toolchain(s)")
+        return 1
     return 1 if counts["FAIL"] else 0
 
 
@@ -479,12 +483,14 @@ def measure(root: Path, record: bool = False) -> int:
 
 
 def main(argv: list[str]) -> int:
-    if argv[:1] == ["check"]:
-        if argv[1:] == ["--staged"]:
-            return check(staged())  # zero staged files is a real, honest zero
-        if argv[1:] == ["--tracked"]:
-            return check(tracked_here())  # the caller's whole tree, which is what a GATE must sweep
-        if not argv[1:]:
+    strict = "--strict" in argv or os.environ.get("HEADRON_ENFORCE_STRICT") == "1"
+    clean_argv = [a for a in argv if a != "--strict"]
+    if clean_argv[:1] == ["check"]:
+        if clean_argv[1:] == ["--staged"]:
+            return check(staged(), strict=strict)  # zero staged files is a real, honest zero
+        if clean_argv[1:] == ["--tracked"]:
+            return check(tracked_here(), strict=strict)  # the caller's whole tree, which is what a GATE must sweep
+        if not clean_argv[1:]:
             # A BARE `check` SWEPT NOTHING AND EXITED 0 — a vacuous pass, and the one shape this
             # repository refuses everywhere else: refusing 0 of 0 and 0 of many print the same 0.
             print(
@@ -492,15 +498,15 @@ def main(argv: list[str]) -> int:
                 "--tracked to sweep the whole tree."
             )
             return 2
-        return check([Path(p) for p in argv[1:]])
-    if argv[:1] == ["install"]:
+        return check([Path(p) for p in clean_argv[1:]], strict=strict)
+    if clean_argv[:1] == ["install"]:
         return install()
-    if argv[:1] == ["uninstall"]:
+    if clean_argv[:1] == ["uninstall"]:
         return uninstall()
-    if argv[:1] == ["measure"]:
-        return measure(HERE.parent, record="--record" in argv)
+    if clean_argv[:1] == ["measure"]:
+        return measure(HERE.parent, record="--record" in clean_argv)
     print((__doc__ or "").split("\n\n", 1)[0])
-    print("usage: enforce.py check <files>|--staged|--tracked · install · uninstall · measure")
+    print("usage: enforce.py check <files>|--staged|--tracked [--strict] · install · uninstall · measure")
     return 2
 
 

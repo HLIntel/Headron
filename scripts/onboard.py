@@ -16,7 +16,7 @@ Wiring is idempotent and marker-delimited: a second run changes no byte, and tex
 Exit 0 when the repository is set up (a failing check on today's code is information, not a setup failure);
 1 when it is not a git repository.
 
-  headron init [--no-wiring] [--no-run] [--json]
+  headron init [--dry-run] [--no-wiring] [--no-run] [--json]
 """
 
 from __future__ import annotations
@@ -231,7 +231,12 @@ def build(tree: Path, wiring: bool, run: bool) -> dict:
 
 
 def text(rec: dict, hooks: str) -> str:
-    out = [f"headron init: {rec['repository']}", "", "1. This machine"]
+    headline = (
+        f"headron init: {rec['repository']} (DRY RUN — preview only, no files or hooks modified)"
+        if rec.get("dry_run")
+        else f"headron init: {rec['repository']}"
+    )
+    out = [headline, "", "1. This machine"]
     out += [f"   {'found  ' if m['found'] else 'MISSING'} {m['tool']}" for m in rec["machine"]]
     if not all(m["found"] for m in rec["machine"]):
         out.append("   A check whose tool is missing reports NOT RUN until you install it.")
@@ -254,10 +259,12 @@ def text(rec: dict, hooks: str) -> str:
             out.append("   These already fail or cannot run today: a change of yours did not cause them.")
     if "NOT RUN" in "\n".join(out):
         out += ["", "NOT RUN: the check could not run here, so it proves nothing; it is never counted as a pass."]
-    out += [
-        "",
-        f"Set up in {rec['seconds']}s. Next: change a file, then `headron verify` and `headron proof <file> --verify`.",
-    ]
+    next_step = (
+        f"DRY RUN completed in {rec['seconds']}s. Run `headron init` to write files and wire hooks."
+        if rec.get("dry_run")
+        else f"Set up in {rec['seconds']}s. Next: change a file, then `headron verify` and `headron proof <file> --verify`."
+    )
+    out += ["", next_step]
     return "\n".join(out)
 
 
@@ -269,15 +276,22 @@ def main(args: argparse.Namespace) -> int:
         print("headron init: run it inside a git repository (`git init` first, then commit once)")
         return 1
     tree = Path(top.strip()).resolve()
-    wiring = not getattr(args, "no_wiring", False)
-    hooks = activate_hooks(tree) if wiring else "skipped (--no-wiring)"
+    dry_run = getattr(args, "dry_run", False)
+    wiring = not getattr(args, "no_wiring", False) and not dry_run
+    hooks = (
+        "skipped (--dry-run: preview only)"
+        if dry_run
+        else (activate_hooks(tree) if wiring else "skipped (--no-wiring)")
+    )
     if is_atlas_checkout(tree):  # Headron's own repository is set up by its contract, never wired by this
         note = f"this is Headron's own repository; it is already set up (`headron verify` checks it). Hooks: {hooks}"
         empty = {"machine": [], "languages": {}, "checks": [], "wiring": [], "first_run": [], "seconds": 0.0}
         rec = {"schema": 1, "command": "init", "atlas_version": str(atlas().get("version")), "repository": tree.name}
         print(json.dumps(rec | empty | {"note": note, "exit": 0}, indent=2) if args.json else f"headron init: {note}")
         return 0
-    rec = build(tree, wiring, not getattr(args, "no_run", False))
+    rec = build(tree, wiring, not getattr(args, "no_run", False) and not dry_run)
     rec["hooks"] = hooks
+    if dry_run:
+        rec["dry_run"] = True
     print(json.dumps(rec, indent=2) if args.json else text(rec, hooks))
     return rec["exit"]

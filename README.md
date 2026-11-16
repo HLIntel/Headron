@@ -17,9 +17,9 @@
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
 
 - **Is:** a rule contract and CLI mapping changed files to checks. Hooks are optional; `headron verify` runs done gates.
-- **Is not:** a coding agent, model, test framework, or proof code is correct. A check that cannot run reports SKIP or NOT RUN, never a pass; the hook lets that commit through.
-- **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .cursor/mcp.json, .git/hooks/pre-commit. Use `--no-wiring` to skip hooks and configuration; `headron enforce uninstall` restores a displaced hook.
-- **Mind API:** hosted, paid, needs a key; plans a declared change. The command line works without it.
+- **Is not:** a coding agent or model. An unrun check reports SKIP or NOT RUN, never a pass; hooks allow missing local tools (override: `--strict`), CI verifies all.
+- **`headron init` writes:** AGENTS.md, CLAUDE.md, .mcp.json, .codex/config.toml, .cursor/mcp.json, .git/hooks/pre-commit. `--dry-run` previews; `--no-wiring` skips hooks/config; `headron enforce uninstall` restores hooks.
+- **Mind API:** optional hosted verifier. CLI and local MCP work 100% offline and free with no key or account.
 
 Agents: [llms.txt](llms.txt). Chats: [CHAT.md](CHAT.md). [Evidence](#recorded-results).
 
@@ -77,7 +77,7 @@ git clone --depth 1 --branch v3.63.0 https://github.com/HLIntel/Headron ~/headro
 In your repository:
 
 ```bash
-cd path/to/your-repo && headron init   # finds your checks, wires your agents, installs the commit hook, runs once
+cd path/to/your-repo && headron init   # finds checks, wires agents, installs hook, runs once (--dry-run previews)
 headron verify && headron proof <file> --verify   # after a change: verdicts, then a file's proof
 ```
 
@@ -104,7 +104,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,639 tokens. The 214 documents (733 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,634 tokens. The 214 documents (733 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -131,7 +131,7 @@ $ headron port . --line
 
 <!-- END generated: port-example -->
 
-- **Discover:** `headron find <query>` searches paths, symbols and vocabulary; `headron sweep` maps topology. Search does not guarantee semantic recall.
+- **Discover:** `headron find <query>` does deterministic symbol and BM25 search over paths, symbols and terms; `headron sweep` maps topology.
 - **Route:** `headron port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
 - **Processes:** `headron process [<id>] --json` lists workflows; with an id, its steps and gates.
 - **Mind:** `headron mind --route <file>` routes; `headron mind --receipts` summarizes the latest local verification record.

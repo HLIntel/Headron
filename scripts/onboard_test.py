@@ -220,6 +220,27 @@ def commit_hook_cases(top: Path, env: dict, headron: list[str]) -> None:
     )
     told = json.loads(done.stdout)["hooks"]  # the framework's entry must not break the one JSON record
     assert "headron enforce check" in told and not (framework / ".git/hooks/pre-commit").exists(), told
+    dry = top / "dry-run"
+    dry.mkdir()
+    _git(dry, "init", "-q")
+    _git(dry, "commit", "-q", "--allow-empty", "-m", "base")
+    (dry / "main.py").write_text("x = 1\n", encoding="utf-8")
+    _git(dry, "add", "-A")
+    _git(dry, "commit", "-qm", "add main.py")
+    done = subprocess.run(
+        [*headron, "init", "--dry-run", "--json"],
+        cwd=dry,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=BUDGET,
+    )
+    assert done.returncode == 0, "--dry-run exited non-zero"
+    assert not (dry / ".git/hooks/pre-commit").exists(), "--dry-run wrote a hook"
+    assert not (dry / "AGENTS.md").exists(), "--dry-run wrote AGENTS.md"
+    assert not (dry / "CLAUDE.md").exists(), "--dry-run wrote CLAUDE.md"
+    assert not (dry / ".mcp.json").exists(), "--dry-run wrote .mcp.json"
 
 
 def proof_case(repo: Path, env: dict, headron: list[str]) -> None:
