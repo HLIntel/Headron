@@ -124,9 +124,9 @@ Entry context: ~1,634 tokens. The 214 documents (733 KiB) load on demand; instal
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠2 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟205 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟210 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟233 ⠿4 ⠁1 │ → headron check
+○ . │ ⠟238 ⠿4 ⠁1 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -160,7 +160,7 @@ Generated on every build; `check` refuses drift.
 - **368** agreement edges — each a file tied to the declaration it answers for
 - **95** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **203** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **208** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.63.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->

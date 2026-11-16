@@ -54,6 +54,8 @@ class MicroResult:
     next: str | None = None
     # Wall-clock latency in milliseconds. Stamped by run(), never by the program: a value set here is replaced.
     elapsed_ms: float | None = None
+    # Computation receipt binding inputs, version, outputs, and verification results.
+    receipt: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if self.status not in STATUSES:
@@ -70,7 +72,7 @@ class MicroResult:
         return self.status == ACTIONABLE
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "program": self.program,
             "version": self.version,
             "status": self.status,
@@ -80,6 +82,9 @@ class MicroResult:
             "next": self.next,
             "elapsed_ms": self.elapsed_ms,
         }
+        if self.receipt is not None:
+            result["receipt"] = self.receipt
+        return result
 
 
 class MicroProgram(Protocol):
@@ -381,8 +386,31 @@ _COUNTS: dict[str, dict[str, int]] = {}
 _LATENCY_MS: dict[str, dict[str, float]] = {}
 
 
-def _record(key: str, result: MicroResult, started: float) -> MicroResult:
+def _record(key: str, result: MicroResult, started: float, context: Mapping[str, Any] | None = None) -> MicroResult:
     stamped = replace(result, elapsed_ms=round((time.perf_counter() - started) * 1000, 3))
+    if stamped.receipt is None:
+        import receipt as receipt_mod  # noqa: PLC0415
+
+        stamped = replace(
+            stamped,
+            receipt=receipt_mod.build_computation_receipt(
+                program=stamped.program or key,
+                version=stamped.version or "1",
+                inputs=context or {},
+                outputs=stamped.output,
+                status=stamped.status,
+                verification={
+                    "status": "PASS" if stamped.status == "ok" else "FAIL",
+                    "checks": [
+                        {
+                            "id": f"{stamped.program or key}.status",
+                            "state": "PASS" if stamped.status == "ok" else "FAIL",
+                        }
+                    ],
+                },
+                evidence_refs=stamped.evidence_refs,
+            ),
+        )
     elapsed = stamped.elapsed_ms or 0.0
     with _STATS_LOCK:
         by_status = _COUNTS.setdefault(key, dict.fromkeys(STATUSES, 0))
@@ -462,7 +490,7 @@ def run(name: str, context: Mapping[str, Any] | None = None) -> MicroResult:
             evidence_refs=(f"no program {name!r}; registered: {sorted(REGISTRY)}",),
             next="run `headron mind --micro list` and pass a registered name",
         )
-        return _record(UNREGISTERED, refused, started)
+        return _record(UNREGISTERED, refused, started, context=context)
     try:
         result = _bounded(program, context or {})
     except Exception as exc:  # noqa: BLE001 - the contract turns every raise into a declared status
@@ -473,7 +501,7 @@ def run(name: str, context: Mapping[str, Any] | None = None) -> MicroResult:
             evidence_refs=(f"{type(exc).__name__}: {exc}",),
             next=f"read the exception, fix its cause in {program.name}'s wrapped function, then rerun",
         )
-    return _record(program.name, result, started)
+    return _record(program.name, result, started, context=context)
 
 
 def cli(name: str, args: list[str], as_json: bool) -> int:

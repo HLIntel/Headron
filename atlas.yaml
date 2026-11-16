@@ -313,6 +313,10 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    economic_benchmark.py: 'analytical instrument comparing empirical agent performance across quality, time, tokens, and cost; its proof is economic_benchmark_test.py'
+    economic_benchmark_test.py: 'case module for economic benchmark metrics; run by its own cases'
+    workflow_runner.py: 'end-to-end verified agent workflow connecting context, execution, and cryptographic receipts; its proof is workflow_runner_test.py'
+    workflow_runner_test.py: 'case module for workflow runner; run by its own cases'
     verifyinputs.py: 'verification input identity for evidence reuse; verified by verifyrun_test.py'
     consumerimpact.py: 'base Python import candidates for consumer deletion checks; static analysis is incomplete and consumer_test.py verifies its limits'
     parsegate.py: 'the first step of `atlas check` and of every staged case, with no command of its own; its proof and limits are that instrument''s'
@@ -417,6 +421,7 @@ instrument_roster:
     compute_compose_test.py: 'focused cases for bounded computation composition, run by microprogram_test.py'
     computation_contract.py: 'calculation request contracts, enforced by calculation.py'
     computation_contract_test.py: 'contract cases, run by microprogram_test.py'
+    computation_receipt_test.py: 'case module for computation receipts (execution-to-evidence chain); run by its own cases and microprogram_test.py'
     calculation.py: 'shared calculation result and refusal handling; its proof is microprogram_test.py'
     obligations.py: 'the Task Obligation Ledger: a task''s requirements kept on disk under HEADRON_HOME, each bound to its procedure and to the tree its evidence covers; read by the task.obligations microprogram; its proof is microprogram_test.py (obligation_cases)'
     microprogram_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -6155,6 +6160,8 @@ pointers:
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions:
+  scripts/economic_benchmark.py: 'analytical economic benchmark engine comparing assisted vs unassisted agents; run on demand'
+  scripts/workflow_runner.py: 'end-to-end verified agent workflow connecting context, execution, and cryptographic receipts; run on demand'
   testgroups.scrub_git_env: the case harness every test module takes it from; a test is its only caller by design
   testgroups.run_counted: the case harness a test module runs its cases under; a test is its only caller by design
   testgroups.micro_shreds: the case harness that splits a test module's cases; a test is its only caller by design
