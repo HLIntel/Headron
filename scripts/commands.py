@@ -524,6 +524,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg("--route", **_ON, help="select an authorized agent"),
             _arg("--direct", **_ON, help="synthesize one-shot orchestration directive"),
             _arg("--search", default=None, help="search codebase via fast index"),
+            _arg("--micro", default=None, help="run one registered microprogram (`list` names them)"),
             _arg("--health", **_ON, help="show health telemetry"),
             _arg("--receipts", **_ON, help="gather and verify audit receipts over time"),
             _arg("--limit", type=int, default=None, help="maximum receipts to return (1 to 100)"),

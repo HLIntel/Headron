@@ -885,6 +885,7 @@ def main(argv: list[str] | None = None) -> int:
         "--direct", action="store_true", help="one-shot directive combining classify, plan, route, and search"
     )
     parser.add_argument("--search", type=str, default=None, help="search codebase via fast index")
+    parser.add_argument("--micro", type=str, default=None, help="run one registered microprogram (`list` names them)")
     parser.add_argument("--health", action="store_true", help="show health telemetry")
     parser.add_argument("--receipts", action="store_true", help="summarize the latest local verification record")
     parser.add_argument("--limit", type=int, default=None, help="maximum receipts to return (1 to 100)")
@@ -896,6 +897,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--limit requires --receipts and must be between 1 and 100")
     as_json = args.json
 
+    if args.micro:
+        import microprogram  # noqa: PLC0415 - microprogram imports mind
+
+        return microprogram.cli(args.micro, args.files or [], as_json)
     if args.search:
         return _cli_search(args.search, as_json)
     if args.direct:
