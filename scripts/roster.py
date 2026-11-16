@@ -23,6 +23,7 @@ from __future__ import annotations
 import functools
 import sys
 
+import cipipeline
 from atlascore import ROOT, atlas, nodes_of, parsed_python, rel, text_of
 from cidrift import workflow_files
 from importgraph import imported_names
@@ -131,7 +132,7 @@ def instrument_reach_errors() -> list[str]:
     MEASURED at 3.31.0: four of the declared instruments were reachable by neither, and not one of
     them said so anywhere — an unshipped arm reads as covered, which is the shape this repository
     refuses in every other roster. The seeds are the gates themselves plus the scripts named in a
-    workflow, so the closure is derived and cannot narrow by hand.
+    workflow or a native CI step (scripts/cipipeline.py), so the closure is derived and cannot narrow by hand.
     """
     errors: list[str] = []
     policy = atlas().get("verification_policy") or {}
@@ -141,8 +142,9 @@ def instrument_reach_errors() -> list[str]:
             text = str(token)
             if text.startswith("scripts/"):
                 seeds.add(text.rsplit("/", 1)[-1].rsplit(".", 1)[0])
-    for workflow in workflow_files(ROOT):
-        for line in text_of(workflow).splitlines():
+    native = [step.run for job in cipipeline.JOBS for step in job.steps]
+    for text in [text_of(workflow) for workflow in workflow_files(ROOT)] + native:
+        for line in text.splitlines():
             for word in line.replace("'", " ").replace('"', " ").split():
                 # A WORKFLOW MAY PREFIX A CHECKOUT DIRECTORY: `.atlas-checkout/scripts/atlasci.py` is
                 # the same instrument as `scripts/atlasci.py`, and requiring the prefix missed it.

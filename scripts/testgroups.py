@@ -141,7 +141,7 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # own checkout, so their plants never meet. CORE_CASES and each of GUARD_PARTS is measured by running that shard
 # alone, never intended or derived; only the sums are derived, so a new case moves exactly one literal.
 SHARDS = ("all", "core", "guards", "guards-0", "guards-1")
-CORE_CASES = 161
+CORE_CASES = 162
 GUARD_PARTS = (231, 300)
 GUARDS_CASES = sum(GUARD_PARTS)
 

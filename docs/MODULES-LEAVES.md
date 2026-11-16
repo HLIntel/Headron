@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-67 modules that at most one other module imports: 27 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+67 modules that at most one other module imports: 28 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -30,7 +30,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [intake](../scripts/intake.py) | A user's prompt, digested into a task — or into the questions that make it one | 1 | agentpolicy, codexbrief, commands, knowledge | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [langbar](../scripts/langbar.py) | What the language bar will say, computed from the tree rather than predicted | 1 | contextcost |  |
 | [leaks](../scripts/leaks.py) | The public-repository rule, ENFORCED: no private path, address, internal host or runtime store is tracked | 1 | importgraph | [agents_test](../scripts/agents_test.py), [cli_test](../scripts/cli_test.py) +2 |
-| [microprogram](../scripts/microprogram.py) | The one microprogram contract: a named, versioned step that answers a context with a MicroResult | 1 | claims, graph, mind, obligations, ronbundle | [microprogram_test](../scripts/microprogram_test.py) |
 | [mind_verifier](../scripts/mind_verifier.py) | Optional entitlement verification for customer-controlled Mind execution, and the Action's key activation | 1 |  | [mind_action_test](../scripts/mind_action_test.py) |
 | [model](../scripts/model.py) | `headron model` — which rung answers each typed judgment, read from the attached student bundle | 1 | modelpack | [model_test](../scripts/model_test.py) |
 | [modelpack](../scripts/modelpack.py) | modelpack — the student rung's loader: read a verified micro-pack bundle and answer from it | 1 |  | [model_test](../scripts/model_test.py) |
@@ -54,6 +53,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [bench](../scripts/bench.py) | Does using the atlas actually help? Measured where it can be, and REFUSED where it cannot | 0 | agentpolicy | [atlas_test](../scripts/atlas_test.py) |
 | [brainstorm](../scripts/brainstorm.py) | brainstorm — a strategic brainstorm as a record a program can refuse: diverge, pre-mortem, converge, prove | 0 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [cadence](../scripts/cadence.py) | The time-boxed session, declared once and printed as a clock — `headron cadence [--minutes N]` | 0 |  | [atlas_guards_test](../scripts/atlas_guards_test.py) |
+| [ci](../scripts/ci.py) | `headron ci`: run THIS checkout's CI, the jobs its own scripts/cipipeline.py declares | 0 |  | [cilocal_test](../scripts/cilocal_test.py) |
 | [claude_hook](../scripts/claude_hook.py) | Claude Code PreToolUse adapter: refuses the pushes and bypasses the repository forbids, before they run | 0 | boundedinput, gitobject | [claude_hook_test](../scripts/claude_hook_test.py) |
 | [datakit](../scripts/datakit.py) | Data kit: read tables from data files, check them against a schema, trace a report's numbers | 0 | artifacts, formula | [datakit_test](../scripts/datakit_test.py) |
 | [freshness](../scripts/freshness.py) | Which parts of this tree have not been re-examined lately — measured in CONTRACT VERSIONS | 0 |  | [handoff_test](../scripts/handoff_test.py) |

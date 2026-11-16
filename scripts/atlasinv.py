@@ -48,7 +48,7 @@ from atlascore import (
 )
 from atlasgen import BLOCKS, _begin
 from callshape import blind_skip_errors, forbidden_call_errors, oid_literal_errors
-from cidrift import workflow_files
+from cidrift import NATIVE_CI, workflow_files
 from contextcost import entry_cost_errors, footprint, measure, per_turn_errors, skill_cost_errors
 from declcheck import declaration_errors
 from failureledger import key_errors, signature_errors
@@ -79,11 +79,11 @@ def _inv_workflows_run_the_contract() -> str | None:
     """
     # THIS repository's CI, not any workflow: a reusable one for consumers names the same commands and
     # would satisfy the check while the pull-request workflow ran none of them.
-    ci = read("ci/atlas-ci.yml")
+    ci = read(NATIVE_CI)
     done = [" ".join(g["argv"]).replace("python ", "", 1) for g in
             ((atlas().get("verification_policy") or {}).get("done_set") or [])]
     missing = [c for c in done + ["agentrun.py", "bench.py", "atlasindex.py"] if c not in ci]
-    return (f"atlas-ci.yml does not run: {', '.join(missing)} — verify runs it locally and nothing runs it on a pull request"
+    return (f"{NATIVE_CI} runs no step for: {', '.join(missing)} — verify runs it locally and `headron ci` does not"
             if missing else None if done else "verification_policy/done_set is empty, so CI is held to nothing")
 
 
@@ -276,6 +276,9 @@ def _inv_explicit_deadlines() -> str | None:
                 for call in re.findall(r"urlopen\((?:[^()]|\([^()]*\))*\)", str(step.get("run") or "")):
                     if "timeout" not in call:
                         return f"{rel(wf)} job '{job}' calls {call} with no timeout"
+    for call in re.findall(r"urlopen\((?:[^()]|\([^()]*\))*\)", read(NATIVE_CI)):  # a step is shell text, no AST
+        if "timeout" not in call:
+            return f"{NATIVE_CI} runs a step that calls {call} with no timeout"
     for source in (p for p in tracked() if p.suffix == ".py" and p.is_file()):
         tree = parsed_python(text_of(source, errors="replace"), rel(source))
         for call in nodes_of(tree, ast.Call) if tree else ():
@@ -299,17 +302,16 @@ def _inv_independent_verification() -> str | None:
     """The contract is checked by a second artifact, on a second machine."""
     if not (ROOT / "scripts" / "atlas_test.py").exists():
         return "scripts/atlas_test.py is absent: the harness verifies only itself"
-    ci = read("ci/atlas-ci.yml")
-    if "atlas_test.py" not in ci:
-        return "CI does not run the harness test, so verification is local only"
+    if "atlas_test.py" not in read(NATIVE_CI):
+        return f"{NATIVE_CI} runs no step for the harness test, so nothing re-checks the contract"
     return None
 
 
 def _inv_ide_is_not_enforcement() -> str | None:
     """No CI gate may depend on an editor file. This IS assertable, negatively."""
-    for wf in workflow_files(ROOT):
-        if ".vscode" in text_of(wf):
-            return f"{rel(wf)} references .vscode — an IDE convenience became a gate"
+    for name, text in [(rel(wf), text_of(wf)) for wf in workflow_files(ROOT)] + [(NATIVE_CI, read(NATIVE_CI))]:
+        if ".vscode" in text:
+            return f"{name} references .vscode — an IDE convenience became a gate"
     return None
 
 

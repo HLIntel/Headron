@@ -44,6 +44,32 @@ STALE_NAME_ROWS = (
 )
 
 
+# The native CI pipeline is Python, so its plants are string edits to scripts/cipipeline.py.
+NATIVE_CI_ROWS = (
+    (
+        "scripts/cipipeline.py",
+        '"python scripts/exrun.py --jobs 4"',
+        "\"python -c 'urlopen(url)'; python scripts/exrun.py --jobs 4\"",
+        "explicit_deadlines",
+        "one network call with no deadline spending the whole job on a socket",
+    ),
+    (
+        "scripts/cipipeline.py",
+        '"python scripts/astshape.py"',
+        '"VSCODE_SETTINGS=.vscode python scripts/astshape.py"',
+        "ide_is_not_enforcement",
+        "a native CI step depending on an editor configuration",
+    ),
+    (
+        "scripts/cipipeline.py",
+        "atlas_test.py",
+        "atlas_mock.py",
+        "independent_verification",
+        "CI does not run the harness test, so verification is local only",
+    ),
+)
+
+
 def promoted_invariant_cases() -> None:
     """Each invariant whose enforcement lives in its own check promoted to a planted case."""
     promoted = [  # a check that cannot fail is worse than a declaration: it reads as coverage
@@ -69,18 +95,11 @@ def promoted_invariant_cases() -> None:
             "a private parser that re-parses and fails its own way",
         ),
         (
-            "ci/atlas-ci.yml",
-            "    timeout-minutes: 14",
+            ".github/workflows/release.yml",
+            "    timeout-minutes: 15",
             "    # no timeout",
             "explicit_deadlines",
             "a CI job that hangs until GitHub kills it",
-        ),
-        (
-            "ci/polyglot.yml",
-            "run: python scripts/exrun.py",
-            "run: python -c 'urlopen(url)'; python scripts/exrun.py",
-            "explicit_deadlines",
-            "one network call with no deadline spending the whole job on a socket",
         ),
         (
             "scripts/exrun.py",
@@ -90,7 +109,7 @@ def promoted_invariant_cases() -> None:
             "one toolchain download with no deadline spending the whole job on a socket",
         ),
         (
-            "ci/atlas-ci.yml",
+            ".github/workflows/release.yml",
             "          persist-credentials: false\n",
             "",
             "least_privilege",
@@ -147,9 +166,9 @@ def promoted_invariant_cases() -> None:
             "a machine-read file that no longer parses",
         ),
         (
-            "ci/atlas-ci.yml",
-            "name: Atlas CI",
-            "name: Atlas CI\n# .vscode",
+            ".github/workflows/release.yml",
+            "name: Release",
+            "name: Release\n# .vscode",
             "ide_is_not_enforcement",
             "a CI gate depending on an editor configuration",
         ),
@@ -182,18 +201,11 @@ def promoted_invariant_cases() -> None:
             "staleness discipline entry missing authority",
         ),
         (
-            "ci/atlas-ci.yml",
+            ".github/workflows/release.yml",
             "runs-on: ubuntu-24.04",
             "runs-on: ubuntu-latest",
             "immutable_first",
             "a CI job running on a moving -latest image",
-        ),
-        (
-            "ci/atlas-ci.yml",
-            "atlas_test.py",
-            "atlas_mock.py",
-            "independent_verification",
-            "CI does not run the harness test, so verification is local only",
         ),
         (
             "atlas.yaml",
@@ -224,6 +236,7 @@ def promoted_invariant_cases() -> None:
             "orphan_exemptions/dummy_symbol names no reason",
         ),
         *STALE_NAME_ROWS,
+        *NATIVE_CI_ROWS,
         (
             "atlas.yaml",
             "  baseline_rule:",

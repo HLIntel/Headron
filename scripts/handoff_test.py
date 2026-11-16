@@ -130,12 +130,10 @@ def ci_ruff_case(module: ModuleType) -> None:
 
     case_total_pin_case()
 
-    ci = (Path(branchstate._tree()) / "ci" / "atlas-ci.yml").read_text(encoding="utf-8")
+    ci = (Path(branchstate._tree()) / "scripts" / "cipipeline.py").read_text(encoding="utf-8")
     steps = [
         tuple(m.split())
-        for m in re.findall(
-            r"^\s*(?:run:\s*)?((?:uvx --from ruff==\S+ )?ruff (?:check \.|format --check \.))(?:\s|$)", ci, re.M
-        )
+        for m in re.findall(r"\"((?:uvx --from ruff==\S+ )?ruff (?:check \.|format --check \.))(?:\s|\")", ci)
     ]
     gates = list(branchstate.CLEAN_GATES)
     # atlas_test.py was removed from local gates (3.58.0); all gates are now the pre-suite set

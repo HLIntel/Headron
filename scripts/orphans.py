@@ -47,7 +47,6 @@ RUNS_CODE = (
     "action.yml",
     "install.sh",
     "Makefile",
-    "ci/",
     "config/",
     "hooks/",
     ".github/",

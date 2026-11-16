@@ -402,6 +402,9 @@ instrument_roster:
     mind_test.py: 'a case module for the Mind API; its proof and limits are that instrument''s'
     mind_verifier.py: 'optional key entitlement verification used by the MCP route, and the key activation step action.yml runs; exercised by mcp_test.py and mind_action_test.py'
     mind_action_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    cipipeline.py: 'Headron''s CI jobs declared once in Python; cilocal.py refuses to run a declaration its problems() names (a cycle, an undeclared need, an empty job, a step longer than its job, a $ in an env value); its proof is cilocal_test.py'
+    cilocal_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    micrograph.py: 'the DAG runner under `headron ci`: a node starts once its needs answered ok, and a blocked, timed-out or over-budget node answers unknown; imported by cilocal.py; its proof is cilocal_test.py'
     microprogram.py: 'the one microprogram contract (MicroResult, its declared statuses, the registry wrapping classify, search, the graph edge-domain check, context.credit, task.obligations and memory.validate); dispatched as `headron mind --micro`; its proof is microprogram_test.py'
     obligations.py: 'the Task Obligation Ledger: a task''s requirements kept on disk under HEADRON_HOME, each bound to its procedure and to the tree its evidence covers; read by the task.obligations microprogram; its proof is microprogram_test.py (obligation_cases)'
     microprogram_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -484,20 +487,20 @@ instruments:
     closed_by: atlas_guards_test.py, which runs the planted harness inside the counted suite
   'cilocal.py':
     script: scripts/cilocal.py
-    options: [--workflow, --runner-temp, --plan, --install-hook, --uninstall-hook]
-    proves: .github/ci-local.sh replays every run step of the jobs the required contract job needs, in needs order,
-      with matrix.<k> and runner.temp expressions, job and step env, success/always/failure conditions, a plain list
-      matrix, timeout-minutes and the upload/download-artifact pair translated; anything else is SKIP with its reason.
-      --install-hook and --uninstall-hook touch only a pre-push hook this wrote, and never beside a set core.hooksPath.
-      A whole clean replay runs each job or matrix row in its own worktree of HEAD, once its needs passed, under load
-    does_not_prove: that this machine's toolchain matches the runner's, or any job outside the contract's needs
-    closed_by: cilocal_test.py, which replays a planted workflow through the CLI and reads what each step saw
-  'cilocal_test.py':
-    script: scripts/cilocal_test.py
-    proves: the plan is the contract's needs, CI_LOCAL_JOBS picks jobs, a matrix fans out with env and run text
-      translated, artifacts join shards, toolchain steps pass over, and unknown expressions and conditions SKIP
-    does_not_prove: that the real atlas-ci.yml replays green; .github/ci-local.sh is that run
-    closed_by: atlas_guards_test.py, which runs the planted harness inside the counted suite
+    options: [--pipeline, --declared, --unit, --runner-temp, --plan, --install-hook, --uninstall-hook]
+    proves: .github/ci-local.sh runs the jobs scripts/cipipeline.py declares as a micrograph DAG, each step a bounded
+      bash command whose exit is its answer; a missing tool, a hosted-only step, a timeout or a signal answers
+      unknown, never ok; a unit whose need was not ok is blocked. A whole clean run starts each ready unit in its own
+      worktree of HEAD under load; a dirty tree or width 1 runs in place. --install-hook and --uninstall-hook touch
+      only a pre-push hook this wrote, and never beside a set core.hooksPath
+    does_not_prove: that any declared step checks what its name says; each step's own instrument is that proof
+    closed_by: cilocal_test.py, which runs planted pipelines through the CLI and reads what each unit saw
+  'ci.py':
+    script: scripts/ci.py
+    proves: the `headron ci` command runs the CI the current checkout declares through that tree's .github/ci-local.sh, or refuses
+      outside a checkout and in one that declares no native CI; it never runs another tree's jobs
+    does_not_prove: that any job passes; that is .github/ci-local.sh and the steps it runs
+    closed_by: cilocal_test.py, which runs it outside a checkout and in one that declares no native CI
   'codexbrief.py':
     script: scripts/codexbrief.py
     proves: a bounded machine-readable context packet resolves from Headron's existing route, scope, task/change gates, labels and local failure traps without duplicating those declarations
@@ -1192,8 +1195,8 @@ instruments:
       tagged as the release, installs Headron and leaves `headron doctor` at exit 0
     does_not_prove: a real install on another platform — CI runs it on one OS; nor the package index
       route, which no install_commands row names; nor uncommitted edits, since --install clones HEAD
-    closed_by: atlas_test.py, which runs it inside its own counted main; the Documented install job in
-      atlas-ci.yml, which runs --install on every pull request
+    closed_by: atlas_test.py, which runs it inside its own counted main; the install job in
+      scripts/cipipeline.py, which `headron ci` runs with --install
   'packmanifest.py':
     script: scripts/packmanifest.py
     proves: every languages/*/tools.yaml conforms to tools/tools.schema.json, through ONE reader,
@@ -1250,7 +1253,7 @@ example_runners:
   sql:        {steps: [[sqlite3, ':memory:', ".read '{file}'"]]}
   # RUN, NOT COMPILED: both toolchains are present on the standard CI runner, so these need no
   # setup step and cost the gate nothing. A pack whose toolchain needs installing belongs in the
-  # scheduled polyglot workflow (ci/polyglot.yml), where the install is paid once.
+  # polyglot pipeline (scripts/cipipeline.py, `headron ci --pipeline polyglot`), where the install is paid once.
   haskell:    {steps: [[runghc, '{file}']]}
   fsharp:     {steps: [[dotnet, fsi, '{file}']]}
   rust:       {steps: [[rustc, --edition, '2021', -D, warnings, '{file}', -o, '{out}'], ['{out}']]}
@@ -1812,7 +1815,7 @@ context_policy:
       slack_bytes: 2048
 
 verification_policy:
-  # CI-ONLY SCRIPTS (verify-align): each runs only in ci/atlas-ci.yml, with the reason it cannot run here.
+  # CI-ONLY SCRIPTS (verify-align): each runs only as a step in scripts/cipipeline.py, with the reason no done step runs it.
   ci_only:
     scripts/agentrun.py: 'CI runs it on the PR base SHA to write the run receipt; needs the base checkout'
     scripts/bench.py: 'CI benchmark job on the runner; its timing is machine-dependent, so no local pass means anything'
@@ -4867,12 +4870,6 @@ directory_scopes:
     proves: [contract]
     never: [.github/workflows]
     traps: [a_verdict_printed_and_not_gated, a_pushed_lane_nothing_will_merge, a_local_green_read_as_a_verdict]
-  ci:
-    is: the job definitions .github/ci-local.sh replays on the maintainer's machine — the contract jobs, the polyglot packs, the fuzz campaign; no GitHub runner starts them
-    label: area/ci
-    proves: [contract]
-    never: [ci]
-    traps: [a_verdict_printed_and_not_gated, a_local_green_read_as_a_verdict]
   .githooks:
     is: the checks that run on this machine before a commit or a push leaves it
     label: area/ci
@@ -5984,9 +5981,9 @@ delegation_contract:
 # Names only; a value never enters this tree. `set_by` says who supplies it, so an absent one is diagnosable.
 declared_inputs:
   HEADRON_PRIVACY_DENY: {why: 'the file of personal terms privacy_guard.py refuses; the terms stay outside the repository', set_by: 'a test, or the operator', absent: '~/.config/headron/privacy-deny.txt; with no file the name rule is off and says so on stderr'}
-  CI_LOCAL_WORKERS: {why: 'how many jobs or matrix rows a whole clean replay runs at once; 1 replays in place, one after another', set_by: 'the operator', absent: 'cilocal.WIDTH, and a unit past the first only while the machine has spare cores'}
-  HEADRON_CI_ARTIFACTS: {why: 'the artifact store a replay unit shares with the units beside it', set_by: 'cilocal.py, for the replays it fans out', absent: 'the replay own RUNNER_TEMP'}
-  CI_LOCAL_JOBS: {why: 'the job ids cilocal.py replays, as ~/.claude/bin/ci-local -j exports them', set_by: 'the ci-local launcher, or the operator', absent: 'every job the required contract job needs'}
+  CI_LOCAL_WORKERS: {why: 'how many CI units a whole clean `headron ci` run starts at once; 1 runs them in place, one after another', set_by: 'the operator', absent: 'cilocal.WIDTH, and a unit past the first only while the machine has spare cores'}
+  HEADRON_CI_ARTIFACTS: {why: 'the artifact store a CI unit shares with the units beside it', set_by: 'cilocal.py, for the units it fans out', absent: 'the run own runner temp'}
+  CI_LOCAL_JOBS: {why: 'the job names `headron ci` runs, as ~/.claude/bin/ci-local -j exports them', set_by: 'the ci-local launcher, or the operator', absent: 'every unit of the CONTRACT jobs in scripts/cipipeline.py'}
   HEADRON_REPLAY_DIR: {why: 'the directory providers.py reads and writes recorded vendor responses to', set_by: 'a test, or the operator', absent: '~/.cache/headron/replay'}
   HEADRON_PROVIDERS_LIVE: {why: 'set to 1 to let providers.py call the live vendor; unset replays the recorded fixtures, so CI and reruns need no key and stay deterministic', set_by: 'the operator, for a deliberate live run', absent: 'replay: recorded responses only, no network'}
   HEADRON_APP_RUN_OWNERS: {why: 'the owners whose repositories and PR heads the GitHub App executes verify on; a head is code the host runs', set_by: 'the App host operator', absent: 'nobody: every head is a neutral NOT RUN that says why'}

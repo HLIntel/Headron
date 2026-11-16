@@ -16,10 +16,12 @@ def runner_pin_case(module: ModuleType) -> None:
 
     if atlasinv._inv_immutable_first():
         raise SystemExit(f"FAIL immutable_first fires on the pinned tree: {atlasinv._inv_immutable_first()}")
-    with module.mutated("ci/polyglot.yml", lambda s: s.replace("runs-on: macos-15", "runs-on: macos-latest", 1)):
+    with module.mutated(
+        ".github/workflows/release.yml", lambda s: s.replace("runs-on: ubuntu-24.04", "runs-on: ubuntu-latest", 1)
+    ):
         planted = atlasinv._inv_immutable_first()
     if "moving image" not in str(planted):
-        raise SystemExit(f"FAIL a macos-latest runner was not refused: {planted}")
+        raise SystemExit(f"FAIL an ubuntu-latest runner was not refused: {planted}")
     module.CASES.append(("a CI job on a -latest runner is refused", "an image that moves under a green build"))
     print("  ok    immutable_first: a -latest runner is refused, the pinned tree passes")
 
