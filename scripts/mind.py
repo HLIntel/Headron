@@ -753,6 +753,10 @@ def _health_snapshot() -> dict:
     except (ImportError, OSError, ValueError):
         # No slot module, or an unreadable or torn slot file: the snapshot omits slot telemetry.
         pass
+    import microprogram  # noqa: PLC0415 - microprogram imports mind
+
+    # Per-program status counts and latency for the microprograms run() in THIS process; a fresh CLI shows none.
+    snap["micro"] = microprogram.stats()
     return snap
 
 
@@ -833,6 +837,9 @@ def _cli_health(as_json: bool) -> int:
             f"receipts gathered: {health.get('receipts_gathered', 0)}"
             f"{v_speedup}"
         )
+        for program, row in health["micro"].items():
+            counts = " ".join(f"{status}={n}" for status, n in row["counts"].items())
+            print(f"  micro {program}: {counts}, total {row['total_ms']} ms, max {row['max_ms']} ms")
     return 0
 
 

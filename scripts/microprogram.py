@@ -5,15 +5,22 @@ A microprogram wraps an existing engine function (classify, search, the graph's 
 without rewriting it, so every step reports the same four things: what it answered, how sure it is,
 what it rests on, and whether it may be acted on. Reached as `headron mind --micro <name>`.
 
-proves: every registered program answers with a declared status, and none of them raises
+Every result that may not be acted on names the next step to try (`next`); every step has a stop
+condition (`timeout_s`, enforced by run()); and run() stamps each result's latency and counts each
+program's statuses, so a caller can see which step is slow or keeps refusing.
+
+proves: every registered program answers with a declared status within its timeout, and none of them raises
 does_not_prove: that a program's answer is right; that is the wrapped function's own instrument
-closed_by: microprogram_test.py, which plants an undeclared status, a raising program and each wrapper's refusal
+closed_by: microprogram_test.py, which plants an undeclared status, a raising program, each wrapper's refusal,
+    a refusal with no next step, a hung step, a self-stamped latency and the status counters
 """
 
 from __future__ import annotations
 
+import threading
+import time
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -27,11 +34,14 @@ STATUSES: dict[str, str] = {
     "error": "the program raised; evidence names the exception, output is None",
 }
 ACTIONABLE = "ok"
+# A program that declares no timeout_s gets this stop condition; none runs unbounded.
+DEFAULT_TIMEOUT_S = 30.0
 
 
 @dataclass(frozen=True)
 class MicroResult:
-    """One program's answer. Construction refuses an undeclared status or a confidence outside [0, 1]."""
+    """One program's answer. Construction refuses an undeclared status, a confidence outside [0, 1], or a
+    result that may not be acted on but names no next step."""
 
     program: str
     version: str
@@ -40,12 +50,18 @@ class MicroResult:
     # None means the program measures no probability; a wrapper never invents one.
     confidence: float | None = None
     evidence_refs: tuple[str, ...] = field(default_factory=tuple)
+    # What to try next. REQUIRED when status is not ok: a refusal that does not say what to do is a dead end.
+    next: str | None = None
+    # Wall-clock latency in milliseconds. Stamped by run(), never by the program: a value set here is replaced.
+    elapsed_ms: float | None = None
 
     def __post_init__(self) -> None:
         if self.status not in STATUSES:
             raise ValueError(f"undeclared status {self.status!r}; declared: {sorted(STATUSES)}")
         if self.confidence is not None and not 0.0 <= self.confidence <= 1.0:
             raise ValueError(f"confidence {self.confidence!r} is outside [0, 1]")
+        if self.status != ACTIONABLE and not (self.next or "").strip():
+            raise ValueError(f"status {self.status!r} names no next step; every non-ok result says what to try next")
         # frozen does not deep-freeze: a list passed as evidence would stay mutable.
         object.__setattr__(self, "evidence_refs", tuple(str(ref) for ref in self.evidence_refs))
 
@@ -61,12 +77,15 @@ class MicroResult:
             "output": self.output,
             "confidence": self.confidence,
             "evidence_refs": list(self.evidence_refs),
+            "next": self.next,
+            "elapsed_ms": self.elapsed_ms,
         }
 
 
 class MicroProgram(Protocol):
     name: str
     version: str
+    timeout_s: float
 
     def run(self, context: Mapping[str, Any]) -> MicroResult: ...
 
@@ -76,6 +95,7 @@ class Classify:
 
     name = "classify"
     version = "1"
+    timeout_s = 10.0
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
         import mind  # noqa: PLC0415
@@ -87,6 +107,7 @@ class Classify:
             "unknown" if found.unknown else "ok",
             found.to_dict(),
             evidence_refs=found.matched_rules or found.files,
+            next="name the changed files, or add a classifier rule for this path in mind.py" if found.unknown else None,
         )
 
 
@@ -95,13 +116,16 @@ class Search:
 
     name = "search"
     version = "1"
+    timeout_s = 30.0
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
         import mind  # noqa: PLC0415
 
         query = str(context.get("query", "")).strip()
         if not query:
-            return MicroResult(self.name, self.version, "refused", evidence_refs=("no query",))
+            return MicroResult(
+                self.name, self.version, "refused", evidence_refs=("no query",), next="pass a non-blank query"
+            )
         hits = mind.search(query, limit=int(context.get("limit", 5)))
         return MicroResult(
             self.name, self.version, "ok", hits, evidence_refs=tuple(hit.get("path", "") for hit in hits)
@@ -113,6 +137,7 @@ class EdgeDomains:
 
     name = "graph.edges"
     version = "1"
+    timeout_s = 30.0
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
         import graph  # noqa: PLC0415
@@ -120,7 +145,12 @@ class EdgeDomains:
         planted = context.get("graph")  # `is None`, not `or`: an empty Graph may be falsy
         violations = graph.edge_violations(graph.get_graph() if planted is None else planted)
         return MicroResult(
-            self.name, self.version, "refused" if violations else "ok", violations, evidence_refs=tuple(violations)
+            self.name,
+            self.version,
+            "refused" if violations else "ok",
+            violations,
+            evidence_refs=tuple(violations),
+            next="fix or drop each listed edge so its endpoints hold the declared domains" if violations else None,
         )
 
 
@@ -151,13 +181,18 @@ class ContextCredit:
 
     name = "context.credit"
     version = "1"
+    timeout_s = 10.0  # pure arithmetic over recorded runs; the append is the only I/O
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
         shape, full = str(context.get("shape", "")).strip(), list(context.get("full", ()))
         without: Mapping[str, list[Mapping[str, Any]]] = context.get("without") or {}
         if not shape or not full or not without:
             return MicroResult(
-                self.name, self.version, "refused", evidence_refs=("needs a shape, full runs and without runs",)
+                self.name,
+                self.version,
+                "refused",
+                evidence_refs=("needs a shape, full runs and without runs",),
+                next="pass a task shape, the full-context runs and each item's without-runs",
             )
         # AN ERRORED RUN IS NOT AN UNSOLVED RUN: agentbench scores a timeout solved=False, so reading it as a
         # verdict would credit the removed item +1 for an outage.
@@ -166,7 +201,11 @@ class ContextCredit:
         ]
         if errored:
             return MicroResult(
-                self.name, self.version, "unknown", evidence_refs=tuple(f"agent error: {e}" for e in errored)
+                self.name,
+                self.version,
+                "unknown",
+                evidence_refs=tuple(f"agent error: {e}" for e in errored),
+                next="re-run the errored seeds; an outage is not a verdict",
             )
         solved = {r["seed"]: bool(r["solved"]) for r in full}
         credits: dict[str, dict[str, Any]] = {}
@@ -178,6 +217,7 @@ class ContextCredit:
                     self.version,
                     "refused",
                     evidence_refs=(f"{item}: seeds {sorted(dropped)} do not pair once each with {sorted(solved)}",),
+                    next="record one run per full-context seed for this item, then score again",
                 )
             helped = sum(solved[s] and not dropped[s] for s in solved)  # McNemar b: solved only with the item
             hurt = sum(dropped[s] and not solved[s] for s in solved)  # McNemar c: solved only without it
@@ -204,20 +244,104 @@ REGISTRY: dict[str, MicroProgram] = {
 }
 
 
-def run(name: str, context: Mapping[str, Any] | None = None) -> MicroResult:
-    """Run one registered program; never raises.
+# PER-STEP TELEMETRY, this process only: counts[program][status] and latency per program. A name that is not
+# registered counts under UNREGISTERED, so a caller's typos cannot grow the table without bound.
+UNREGISTERED = "(unregistered)"
+_STATS_LOCK = threading.Lock()
+_COUNTS: dict[str, dict[str, int]] = {}
+_LATENCY_MS: dict[str, dict[str, float]] = {}
 
-    proves: an unknown name is refused and a raising program becomes status "error" with its exception named
-    does_not_prove: that the wrapped function's answer is right
-    closed_by: microprogram_test.py, which plants an unknown name and a raising program
+
+def _record(key: str, result: MicroResult, started: float) -> MicroResult:
+    stamped = replace(result, elapsed_ms=round((time.perf_counter() - started) * 1000, 3))
+    elapsed = stamped.elapsed_ms or 0.0
+    with _STATS_LOCK:
+        by_status = _COUNTS.setdefault(key, dict.fromkeys(STATUSES, 0))
+        by_status[stamped.status] += 1
+        latency = _LATENCY_MS.setdefault(key, {"total": 0.0, "max": 0.0})
+        latency["total"] += elapsed
+        latency["max"] = max(latency["max"], elapsed)
+    return stamped
+
+
+def stats() -> dict[str, dict[str, Any]]:
+    """Per-program status counts and latency (total/max ms) for every run() in this process."""
+    with _STATS_LOCK:
+        return {
+            key: {
+                "counts": dict(_COUNTS[key]),
+                "total_ms": round(_LATENCY_MS[key]["total"], 3),
+                "max_ms": round(_LATENCY_MS[key]["max"], 3),
+            }
+            for key in sorted(_COUNTS)
+        }
+
+
+def _bounded(program: MicroProgram, context: Mapping[str, Any]) -> MicroResult:
+    """Run the program on a daemon thread and wait at most its timeout_s.
+
+    A Python thread cannot be killed, so an overrun step is abandoned, not stopped: it is a daemon, so it
+    cannot hold the process open, and it writes only to its own holder, never to the counters.
     """
+    timeout_s = float(getattr(program, "timeout_s", DEFAULT_TIMEOUT_S))
+    holder: dict[str, Any] = {}
+
+    def target() -> None:
+        try:
+            holder["result"] = program.run(context)
+        except BaseException as exc:  # noqa: BLE001 - carried back to the caller, raised nowhere
+            holder["error"] = exc
+
+    worker = threading.Thread(target=target, name=f"micro:{program.name}", daemon=True)
+    worker.start()
+    worker.join(timeout_s)
+    if worker.is_alive():
+        return MicroResult(
+            program.name,
+            program.version,
+            "unknown",
+            evidence_refs=(f"timeout after {timeout_s:g}s",),
+            next=f"retry with a narrower context, or raise {program.name}'s timeout_s if the step is just slow",
+        )
+    if "error" in holder:
+        raise holder["error"]  # run() turns an Exception into status error; SystemExit stays the caller's
+    result = holder.get("result")
+    if not isinstance(result, MicroResult):
+        raise TypeError(f"{program.name} returned {type(result).__name__}, not a MicroResult")
+    return result
+
+
+def run(name: str, context: Mapping[str, Any] | None = None) -> MicroResult:
+    """Run one registered program within its timeout_s; never raises; stamps elapsed_ms and counts the status.
+
+    proves: an unknown name is refused, a raising program becomes status "error" with its exception named, an
+        overrun becomes "unknown" with `timeout after Ns`, each with a next step; every result carries elapsed_ms
+    does_not_prove: that the wrapped function's answer is right, or that an abandoned overrun thread ever ends
+    closed_by: microprogram_test.py, which plants an unknown name, a raising program, a hung step and a
+        self-stamped latency
+    """
+    started = time.perf_counter()
     program = REGISTRY.get(name)
     if program is None:
-        return MicroResult(name, "", "refused", evidence_refs=(f"no program {name!r}; registered: {sorted(REGISTRY)}",))
+        refused = MicroResult(
+            name,
+            "",
+            "refused",
+            evidence_refs=(f"no program {name!r}; registered: {sorted(REGISTRY)}",),
+            next="run `headron mind --micro list` and pass a registered name",
+        )
+        return _record(UNREGISTERED, refused, started)
     try:
-        return program.run(context or {})
+        result = _bounded(program, context or {})
     except Exception as exc:  # noqa: BLE001 - the contract turns every raise into a declared status
-        return MicroResult(program.name, program.version, "error", evidence_refs=(f"{type(exc).__name__}: {exc}",))
+        result = MicroResult(
+            program.name,
+            program.version,
+            "error",
+            evidence_refs=(f"{type(exc).__name__}: {exc}",),
+            next=f"read the exception, fix its cause in {program.name}'s wrapped function, then rerun",
+        )
+    return _record(program.name, result, started)
 
 
 def cli(name: str, args: list[str], as_json: bool) -> int:
@@ -237,6 +361,8 @@ def cli(name: str, args: list[str], as_json: bool) -> int:
     if as_json:
         print(json.dumps(result.to_dict(), default=str))
     else:
-        print(f"{result.program} {result.status}: {STATUSES[result.status]}")
+        print(f"{result.program} {result.status}: {STATUSES[result.status]} ({result.elapsed_ms} ms)")
         print("\n".join(f"  {ref}" for ref in result.evidence_refs[:10]))
+        if result.next:
+            print(f"  next: {result.next}")
     return 0 if result.actionable else 1
