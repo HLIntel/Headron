@@ -374,6 +374,7 @@ instrument_roster:
     bounds_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     receipt_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     receiptsign_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    ronbundle.py: 'a .ron bundle: one task''s contract, receipts and evidence as a directory whose manifest names every file by digest, optionally signed under its own namespace; verified from its bytes with standing kept apart from integrity; its proof is receiptsign_test.py (ron_cases)'
     receiptsign.py: 'who wrote a receipt: a detached signature over its exact bytes, checked against the reader''s trust and revocation lists; receiptsign_test.py plants a rewritten receipt, a wrong signer, a wrong namespace, a revoked key and a missing tool, and it does not prove the checks ran as claimed'
     edit_version_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     vanish_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'

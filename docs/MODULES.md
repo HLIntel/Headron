@@ -3,13 +3,13 @@
 Part of [HEADRON](HEADRON.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-123 modules and 382 imports between them, read from the source; 64 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 92 modules use it. These 55 rows are the modules at least 2 others use; the other 68, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+124 modules and 387 imports between them, read from the source; 64 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 92 modules use it. These 57 rows are the modules at least 2 others use; the other 67, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
   m_agentpolicy["agentpolicy (27)"]
   m_atlas["atlas (9)"]
-  m_atomicfile["atomicfile (9)"]
+  m_atomicfile["atomicfile (10)"]
   m_commands["commands (8)"]
   m_contextcost["contextcost (8)"]
   m_dirscope["dirscope (8)"]
@@ -40,8 +40,8 @@ flowchart LR
 | [atlascore](../scripts/atlascore.py) | Atlas primitives: the declared rosters, the file readers and the router | 92 | agentpolicy, atlas, treeformat, verify | [agent_test](../scripts/agent_test.py), [agents_test](../scripts/agents_test.py) +14 |
 | [agentpolicy](../scripts/agentpolicy.py) | The agent execution policy: six verdicts, decided from a declaration rather than from prose | 27 | agenteffects, agentvocab, dirscope, headronlang, packmanifest, processpolicy, shellsplit | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +7 |
 | [knowledge](../scripts/knowledge.py) | Where a fact may live, how it is retrieved, and the asymmetries underneath both | 15 | agentaudit, agentpolicy, agents, agreement, atlas, boundedinput, contextcost, hostshape, port, runtime, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +3 |
+| [atomicfile](../scripts/atomicfile.py) | Replace one file whole: a reader sees the old bytes or the new ones, never a torn file | 10 |  | [atomicfile_test](../scripts/atomicfile_test.py) |
 | [atlas](../scripts/atlas.py) | Atlas router + repository contract | 9 | agentpolicy, agreement, atlasgen, atlasindex, atlasinv, branchstate, cidrift, commands, consumergates, contextcost, dateclaims, decide, decide_cli, declcheck, dirscope, doctor, gateplace, headronlang, identity, knowledge, onboard, packmanifest, parsegate, roster, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_guards_test](../scripts/atlas_guards_test.py) +7 |
-| [atomicfile](../scripts/atomicfile.py) | Replace one file whole: a reader sees the old bytes or the new ones, never a torn file | 9 |  | [atomicfile_test](../scripts/atomicfile_test.py) |
 | [verify](../scripts/verify.py) | Run the declared checks and return a verdict on their exit codes | 9 | agentpolicy, agents, atlas, branchstate, edges, impact, localtools, receipt, resilience, runtime, safeedit, upstream | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +10 |
 | [commands](../scripts/commands.py) | What Headron answers, in one place: the parser, the roster, and dispatch to declared instruments | 8 |  | [cli_test](../scripts/cli_test.py), [clihelp_test](../scripts/clihelp_test.py) +1 |
 | [contextcost](../scripts/contextcost.py) | What this repository HANDS OVER before it is asked anything — measured, and ratcheted | 8 | importgraph, intake | [deps_test](../scripts/deps_test.py) |
@@ -63,13 +63,13 @@ flowchart LR
 | [atlasinv](../scripts/atlasinv.py) | The hard invariants: one function per promise, and the roster that refuses an unowned one | 4 | agentpolicy, atlasgen, cacheinv, callshape, cidrift, contextcost, declcheck, failureledger, knowledge, langbar, leaks, nativetools, orphans, packmanifest, plantcheck, roster, scoreboard, testgroups, yamlshape | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
 | [graph](../scripts/graph.py) | Knowledge graph module — pointers, links, tags, edges, and tunnels | 4 | claims, exrun | [decide_test](../scripts/decide_test.py), [microprogram_test](../scripts/microprogram_test.py) |
 | [localtools](../scripts/localtools.py) | The tool a project installed for itself, found where its package manager put it | 4 |  | [localtools_test](../scripts/localtools_test.py) |
+| [receipt](../scripts/receipt.py) | Headron receipt v1: one verify run as a record that verifies from its own bytes | 4 | receiptsign, safeedit | [gitobject_test](../scripts/gitobject_test.py), [receipt_test](../scripts/receipt_test.py) +1 |
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind rather than as a path or a command name | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
 | [boundedinput](../scripts/boundedinput.py) | Bounded UTF-8 stdin for hooks and local decision requests | 3 |  | [readiness_test](../scripts/readiness_test.py) |
 | [cidrift](../scripts/cidrift.py) | Drift guard: every script a CI workflow runs is a declared gate, or is named as CI-only | 3 |  |  |
 | [claims](../scripts/claims.py) | Claims: what Headron believes, the evidence for it, and everything that rests on it | 3 |  | [claims_test](../scripts/claims_test.py) |
 | [consumergates](../scripts/consumergates.py) | Consumer gate discovery, shared by landing and verification | 3 | consumerimpact, verify | [consumer_test](../scripts/consumer_test.py) |
 | [mind](../scripts/mind.py) | Headron Mind API — unified orchestration layer for agent workflows | 3 | adaptive, agentpolicy, atlasindex, decide, graph, knowledge, microprogram, mind_diagnostics, port, receipt, reflex, safeedit, slot, sweep, verify | [mcp_test](../scripts/mcp_test.py), [microprogram_test](../scripts/microprogram_test.py) +1 |
-| [receipt](../scripts/receipt.py) | Headron receipt v1: one verify run as a record that verifies from its own bytes | 3 | receiptsign, safeedit | [gitobject_test](../scripts/gitobject_test.py), [receipt_test](../scripts/receipt_test.py) +1 |
 | [reflex](../scripts/reflex.py) | Command classification primitives — single-pass diff and command classification | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |
 | [roster](../scripts/roster.py) | instrument_roster: which scripts are instruments, and which instrument no gate reaches | 3 | cidrift, dirscope, importgraph | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [sweep](../scripts/sweep.py) | Fast semantic sweep: repo-wide understanding, sharding, joint embeddings, edges, pointers, tunnels | 3 | graph, port | [sweep_test](../scripts/sweep_test.py) |
@@ -88,8 +88,10 @@ flowchart LR
 | [headron_mcp](../scripts/headron_mcp.py) | Headron as an MCP server: the same commands `headron` answers, offered as tools over stdio | 2 | agents, atlas, commands, mind_verifier | [agents_test](../scripts/agents_test.py), [atlas_guards_test](../scripts/atlas_guards_test.py) +3 |
 | [impact](../scripts/impact.py) | The runtime test-impact map: which repository files each planted group ACTUALLY loads, keyed on content hashes | 2 | atomicfile, importgraph, safeedit, testgroups, verify | [atlas_rules_test](../scripts/atlas_rules_test.py), [impact_test](../scripts/impact_test.py) |
 | [mind_diagnostics](../scripts/mind_diagnostics.py) | Headron Mind API Diagnostics & Recovery — failure diagnosis and remediation | 2 | adaptive, knowledge, mind |  |
+| [obligations](../scripts/obligations.py) | Task Obligation Ledger: a task's requirements kept outside the model's context, each bound to its proof | 2 |  | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [onboard](../scripts/onboard.py) | `headron init`: the first five minutes in a repository, in one command | 2 | branchstate, consumergates, enforce, localtools, verify |  |
 | [providers](../scripts/providers.py) | Where a measurement may send a prompt: OpenAI-compatible endpoints, their key NAMES, their pace | 2 | atomicfile, resilience | [agent_test](../scripts/agent_test.py) |
+| [receiptsign](../scripts/receiptsign.py) | Who wrote a receipt: a detached SSH signature over its exact bytes | 2 | receipt | [receiptsign_test](../scripts/receiptsign_test.py) |
 | [slot](../scripts/slot.py) | A few heavy suites per MACHINE, across every repository and every agent: `headron slot -- <command>` | 2 | resilience |  |
 | [upstream](../scripts/upstream.py) | THE UPSTREAM COUNT (3.53.0): commits on the default branch that a lane does not carry | 2 |  | [upstream_test](../scripts/upstream_test.py) |
 <!-- END generated: module-map -->

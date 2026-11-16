@@ -1,5 +1,6 @@
 """Planted signing cases: each plants what a signature exists to refuse, the worst being a receipt rewritten with a
-recomputed receipt_id, which verify_bytes accepts by design. Loaded by atlas_guards_test.
+recomputed receipt_id, which verify_bytes accepts by design. ron_cases plant the same refusals on a `.ron` bundle
+(scripts/ronbundle.py), whose manifest is signed under its own namespace. Loaded by atlas_guards_test.
 """
 
 from __future__ import annotations
@@ -8,11 +9,13 @@ import contextlib
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 from types import ModuleType
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 ROWS = [{"id": "contract", "verdict": "PASS"}, {"id": "lint", "verdict": "FAIL"}]
@@ -161,6 +164,212 @@ def run(module: ModuleType) -> None:
                 (cli_genuine, cli_revoked, cli_half, cli_revoked_alone),
             ),
         ]
+    for name, kills, ok, got in cases:
+        if not ok:
+            raise SystemExit(f"FAIL {name}\n  got: {got!r}\n  kills: {kills}")
+        module.CASES.append((name, kills))
+        print(f"  ok    {name}")
+    ron_cases(module)
+
+
+def _redigest(bundle: Path, edit: object = None) -> None:
+    """Recompute every digest and the bundle_id after an edit: the forgery integrity alone cannot see."""
+    import ronbundle  # noqa: PLC0415
+
+    manifest = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
+    files = {rel: ronbundle._sha((bundle / rel).read_bytes()) for rel in manifest["files"] if (bundle / rel).is_file()}
+    body = {**{k: v for k, v in manifest.items() if k != "bundle_id"}, "files": files}
+    if callable(edit):
+        edit(body)
+    (bundle / "manifest.json").write_bytes(ronbundle._dump({**body, "bundle_id": ronbundle.digest(body)}))
+
+
+def ron_cases(module: ModuleType) -> None:
+    """A `.ron` bundle verifies only as packed, refuses anything added, removed, linked or edited, keeps standing
+    apart from integrity, and its signature neither forges nor stands in for a receipt's."""
+    import obligations  # noqa: PLC0415
+    import receipt as receipt_module  # noqa: PLC0415
+    import ronbundle  # noqa: PLC0415
+
+    def verify_says(bundle: Path) -> str:
+        findings, contract = ronbundle.verify(bundle)
+        return "intact" if not findings and contract else " | ".join(findings)
+
+    def cli(*argv: str) -> int:
+        with contextlib.redirect_stdout(io.StringIO()):
+            return ronbundle.main(list(argv))
+
+    with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {"HEADRON_HOME": tmp}):
+        top = Path(tmp)
+        signer, other = _key(top, "signer"), _key(top, "other")
+        ron_trust = _trust_list(top, "signer@example.test", signer, namespace="headron-ron")
+        wrong_trust = _trust_list(top, "signer@example.test", other, namespace="headron-ron")
+        receipt_trust = _trust_list(top, "signer@example.test", signer)
+        receipt_file = top / "run.json"
+        receipt_file.write_text(
+            receipt_module.dumps(
+                receipt_module.build(ROWS, base_commit="a" * 40, policy_digest="b" * 64, input_digest="c" * 64)
+            ),
+            encoding="utf-8",
+        )
+        log = top / "pytest.log"
+        log.write_text("12 passed\n", encoding="utf-8")
+        obligations.add("lane-r", "tests", "the suite passes", "pytest")
+        obligations.close("lane-r", "tests", "receipts/run.json", at="t1")
+        obligations.add("lane-open", "docs", "the docs say so", "headron check")
+        good = top / "good.ron"
+        packed = ronbundle.pack("lane-r", good, [receipt_file], [log], key=signer, at="t1")
+        intact = verify_says(good)
+        signed = ronbundle.verify_detached
+        sig_ok = signed(
+            (good / "manifest.json").read_bytes(),
+            good / ronbundle.SIGNATURE,
+            "signer@example.test",
+            ron_trust,
+            None,
+            ronbundle.NAMESPACE,
+        )
+        sig_as_receipt = signed(
+            (good / "manifest.json").read_bytes(),
+            good / ronbundle.SIGNATURE,
+            "signer@example.test",
+            receipt_trust,
+            None,
+            "headron-receipt",
+        )
+
+        def planted(name: str, plant: object) -> str:
+            bundle = top / f"{name}.ron"
+            shutil.copytree(good, bundle, symlinks=True)
+            if callable(plant):
+                plant(bundle)
+            return verify_says(bundle)
+
+        def tampered_receipt(bundle: Path) -> None:
+            data = json.loads((bundle / "receipts/run.json").read_text(encoding="utf-8"))
+            data["verdict"] = "PASS"
+            (bundle / "receipts/run.json").write_text(json.dumps(data), encoding="utf-8")
+            _redigest(bundle)
+
+        def forged_log(bundle: Path) -> None:
+            (bundle / "evidence/pytest.log").write_text("0 failed\n", encoding="utf-8")
+            _redigest(bundle)
+
+        found = {
+            "edited": planted("edited", lambda b: (b / "evidence/pytest.log").write_text("x", encoding="utf-8")),
+            "unlisted": planted("unlisted", lambda b: (b / "evidence/extra").write_text("x", encoding="utf-8")),
+            "missing": planted("missing", lambda b: (b / "evidence/pytest.log").unlink()),
+            "symlink": planted("symlink", lambda b: (b / "evidence/link").symlink_to(log)),
+            "dotdot": planted("dotdot", lambda b: _redigest(b, lambda m: m["files"].update({"../x": "0" * 64}))),
+            "wrong hash": planted(
+                "wronghash", lambda b: _redigest(b, lambda m: m["files"].update({"contract.json": "0" * 64}))
+            ),
+            "renamed task": planted(
+                "renamed",
+                lambda b: (b / "manifest.json").write_text(
+                    (b / "manifest.json").read_text(encoding="utf-8").replace('"lane-r"', '"lane-x"'), encoding="utf-8"
+                ),
+            ),
+            "receipt": planted("receipt", tampered_receipt),
+        }
+        forged = top / "forged.ron"
+        shutil.copytree(good, forged)
+        forged_log(forged)
+        forged_sig = signed(
+            (forged / "manifest.json").read_bytes(),
+            forged / ronbundle.SIGNATURE,
+            "signer@example.test",
+            ron_trust,
+            None,
+            ronbundle.NAMESPACE,
+        )
+        forged_says = verify_says(forged)
+        wrong_signer = signed(
+            (good / "manifest.json").read_bytes(),
+            good / ronbundle.SIGNATURE,
+            "signer@example.test",
+            wrong_trust,
+            None,
+            ronbundle.NAMESPACE,
+        )
+        rows = json.loads((good / "contract.json").read_text(encoding="utf-8"))["obligations"]
+        trees = ("t1", "t2", "t1+dirty", ronbundle.UNKNOWN_TREE)
+        agree = (
+            ronbundle.STATES == obligations.STATES
+            and ronbundle.UNKNOWN_TREE == obligations.UNKNOWN_TREE
+            and all(
+                (ronbundle.standing([row], now)[1] == "") == (obligations.standing(row, now) == "proven")
+                for row in [*rows, {**rows[0], "state": "unknown"}, *({**rows[0], "tree": tree} for tree in trees)]
+                for now in trees
+            )
+        )
+        refusals = [
+            ronbundle.pack("lane-r", good, [receipt_file], [], at="t1"),  # exists
+            ronbundle.pack("lane-r", top / "plain", [receipt_file], [], at="t1"),  # not .ron
+            ronbundle.pack("lane-none", top / "none.ron", [], [], at="t1"),  # nothing owed
+            ronbundle.pack("lane-r", top / "bad.ron", [log], [], at="t1"),  # not a receipt
+            ronbundle.pack("lane-r", top / "dup.ron", [receipt_file, receipt_file], [], at="t1"),  # same name twice
+        ]
+        open_bundle = top / "open.ron"
+        ronbundle.pack("lane-open", open_bundle, [], [], at="t1")
+        here = Path.cwd()
+        os.chdir(top)  # outside any git tree: --tree reads unknown-tree, which no evidence covers
+        try:
+            exits = (
+                cli("verify", str(good)),
+                cli("verify", str(good), "--signed-by", "signer@example.test", "--trust", str(ron_trust)),
+                cli("verify", str(good), "--signed-by", "signer@example.test", "--trust", str(receipt_trust)),
+                cli("verify", str(top / "edited.ron")),
+                cli("verify", str(open_bundle)),
+                cli("verify", str(good), "--tree"),
+            )
+        finally:
+            os.chdir(here)
+    expect = {
+        "edited": "does not match",
+        "unlisted": "not in manifest",
+        "missing": "listed but missing",
+        "symlink": "symlink",
+        "dotdot": "plain relative path",
+        "wrong hash": "does not match",
+        "renamed task": "bundle_id does not recompute",
+        "receipt": "receipts/run.json",
+    }
+    cases = [
+        (
+            "a packed .ron bundle verifies intact and its manifest signature checks under the headron-ron namespace",
+            "a bundle that refuses its own fresh bytes, or a signature that never verifies",
+            packed == [] and intact == "intact" and sig_ok == [],
+            (packed, intact, sig_ok),
+        ),
+        (
+            "a .ron bundle refuses an edited, unlisted, missing or linked file, a .. path, a wrong digest, an edited "
+            "manifest and a tampered receipt, each by name",
+            "a verifier that checks only the files the manifest lists, or trusts a re-digested receipt",
+            all(expect[k] in found[k] for k in expect),
+            found,
+        ),
+        (
+            "a .ron signature refuses a re-digested forgery and a wrong signer, and never verifies as a receipt signature",
+            "a namespace shared with receipts, a trust list that is not consulted, or integrity taken as authorship",
+            forged_says == "intact" and bool(forged_sig) and bool(wrong_signer) and bool(sig_as_receipt),
+            (forged_says, forged_sig, wrong_signer, sig_as_receipt),
+        ),
+        (
+            "ronbundle.standing agrees with obligations.standing, and pack refuses an existing path, a non-.ron path, "
+            "a task with nothing owed, a receipt that does not verify and two files of one name",
+            "a bundle rule for proven that drifts from the ledger's, or a pack that writes over or around a refusal",
+            agree and all(refusals) and not any((top / name).exists() for name in ("none.ron", "bad.ron", "dup.ron")),
+            (agree, refusals),
+        ),
+        (
+            "ronbundle verify exits 0 intact and proven, 1 on a finding or a wrong-namespace signer, 3 when an obligation "
+            "is open or the current tree is not the one its evidence covers",
+            "an intact bundle read as a finished task, or a stale tree read as proven",
+            exits == (0, 0, 1, 1, 3, 3),
+            exits,
+        ),
+    ]
     for name, kills, ok, got in cases:
         if not ok:
             raise SystemExit(f"FAIL {name}\n  got: {got!r}\n  kills: {kills}")
