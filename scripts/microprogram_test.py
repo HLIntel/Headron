@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Planted cases: the microprogram contract refuses an undeclared status, never raises, and each wrapper
-answers its own refusal with a declared status."""
+answers its own refusal with a declared status; every non-ok result names a next step, every step stops at
+its timeout, and run() stamps latency and counts statuses."""
 
 from __future__ import annotations
 
 import contextlib
 import io
+import threading
+import time
 from types import ModuleType
 from unittest import mock
 
@@ -26,7 +29,10 @@ def result_contract_cases(module: ModuleType) -> None:
     held = microprogram.MicroResult("p", "1", "ok", confidence=None, evidence_refs=["a.py"])  # pyright: ignore[reportArgumentType] - a list must be frozen
     if held.evidence_refs != ("a.py",) or not held.actionable:
         raise SystemExit(f"FAIL micro result: evidence {held.evidence_refs!r} not frozen, or ok not actionable")
-    if any(microprogram.MicroResult("p", "1", status).actionable for status in set(microprogram.STATUSES) - {"ok"}):
+    if any(
+        microprogram.MicroResult("p", "1", status, next="x").actionable
+        for status in set(microprogram.STATUSES) - {"ok"}
+    ):
         raise SystemExit("FAIL micro result: a status other than ok reads actionable, so a refusal could be acted on")
     module.CASES.append(
         (
@@ -180,9 +186,152 @@ def credit_cases(module: ModuleType) -> None:
     print("  ok    micro context.credit scores the verdict an item changed")
 
 
+def next_step_cases(module: ModuleType) -> None:
+    """Every result that may not be acted on says what to try next, from the constructor to each wrapper."""
+    import microprogram
+
+    for status in sorted(set(microprogram.STATUSES) - {"ok"}):
+        for blank in (None, "", "   "):
+            try:
+                microprogram.MicroResult("p", "1", status, next=blank)
+            except ValueError:
+                continue
+            raise SystemExit(f"FAIL micro next: a {status} result with next={blank!r} was admitted, a dead end")
+
+    class Mute:
+        name, version = "mute", "1"
+
+        def run(self, context: object) -> microprogram.MicroResult:
+            return microprogram.MicroResult(self.name, self.version, "refused", evidence_refs=("planted",))
+
+    with mock.patch.dict(microprogram.REGISTRY, {"mute": Mute()}):
+        mute = microprogram.run("mute")
+    if mute.status != "error" or not mute.evidence_refs[0].startswith("ValueError: status 'refused' names no next"):
+        raise SystemExit(f"FAIL micro next: a program refusing with no next step answered {mute.to_dict()}")
+    answers = [
+        microprogram.run("no.such.program"),
+        microprogram.run("classify", {"files": []}),
+        microprogram.run("search", {"query": " "}),
+        mute,
+    ]
+    if any(not (answer.next or "").strip() for answer in answers):
+        raise SystemExit(f"FAIL micro next: a non-ok answer names no next step: {[a.to_dict() for a in answers]}")
+    module.CASES.append(
+        (
+            "a non-ok MicroResult with no next step is refused at construction, and every non-ok answer names one",
+            "a refusal that does not say what to try next, so the caller stops at a dead end",
+        )
+    )
+    print("  ok    micro non-ok results name a next step")
+
+
+def timeout_cases(module: ModuleType) -> None:
+    """A step that overruns its timeout_s is answered unknown with `timeout after Ns`, not waited on."""
+    import microprogram
+
+    release = threading.Event()
+
+    class Hung:
+        name, version, timeout_s = "hung", "1", 0.05
+
+        def run(self, context: object) -> microprogram.MicroResult:
+            release.wait(2)  # bounded, so a mutant without the timeout still finishes and is judged
+            return microprogram.MicroResult(self.name, self.version, "ok")
+
+    started = time.perf_counter()
+    try:
+        with mock.patch.dict(microprogram.REGISTRY, {"hung": Hung()}):
+            hung = microprogram.run("hung")
+        waited = time.perf_counter() - started
+    finally:
+        release.set()
+    if hung.status != "unknown" or hung.evidence_refs != ("timeout after 0.05s",) or not hung.next or waited > 1.0:
+        raise SystemExit(f"FAIL micro timeout: a hung step answered {hung.to_dict()} after {waited:.2f}s")
+    if any(getattr(program, "timeout_s", 0) <= 0 for program in microprogram.REGISTRY.values()):
+        raise SystemExit("FAIL micro timeout: a registered program declares no positive timeout_s")
+    module.CASES.append(
+        (
+            "a step that overruns its timeout_s answers unknown with `timeout after Ns` and a next step",
+            "a hung step that holds the caller forever, or an overrun read as ok",
+        )
+    )
+    print("  ok    micro run stops a hung step at its timeout")
+
+
+def elapsed_cases(module: ModuleType) -> None:
+    """run() stamps elapsed_ms on every answer; a program's own value is replaced, never trusted."""
+    import microprogram
+
+    class Liar:
+        name, version = "liar", "1"
+
+        def run(self, context: object) -> microprogram.MicroResult:
+            threading.Event().wait(0.02)  # a measurable latency to stamp
+            return microprogram.MicroResult(self.name, self.version, "ok", elapsed_ms=-1.0)
+
+    with mock.patch.dict(microprogram.REGISTRY, {"liar": Liar()}):
+        liar = microprogram.run("liar")
+    missing = microprogram.run("no.such.program")
+    if liar.elapsed_ms is None or not 15.0 <= liar.elapsed_ms < 1000.0 or missing.elapsed_ms is None:
+        raise SystemExit(f"FAIL micro elapsed: run() left latency {liar.elapsed_ms!r} and {missing.elapsed_ms!r}")
+    if liar.to_dict().get("elapsed_ms") != liar.elapsed_ms:
+        raise SystemExit(f"FAIL micro elapsed: to_dict() drops the latency: {liar.to_dict()}")
+    module.CASES.append(
+        (
+            "run() stamps elapsed_ms on every answer and replaces a latency the program set itself",
+            "a step's latency the program reported for itself, or none at all",
+        )
+    )
+    print("  ok    micro run stamps latency")
+
+
+def stats_cases(module: ModuleType) -> None:
+    """run() counts each program's statuses, and `headron mind --health` prints them."""
+    import microprogram
+    import mind
+
+    class Flip:
+        name, version = "flip", "1"
+
+        def run(self, context: object) -> microprogram.MicroResult:
+            if context.get("refuse"):  # pyright: ignore[reportAttributeAccessIssue] - a Mapping at run time
+                return microprogram.MicroResult(self.name, self.version, "refused", next="planted")
+            return microprogram.MicroResult(self.name, self.version, "ok")
+
+    before = microprogram.stats().get("flip", {}).get("counts", {})
+    with mock.patch.dict(microprogram.REGISTRY, {"flip": Flip()}):
+        for refuse in (False, True, True):
+            microprogram.run("flip", {"refuse": refuse})
+    row = microprogram.stats().get("flip", {})
+    after = row.get("counts", {})
+    delta = {status: after.get(status, 0) - before.get(status, 0) for status in microprogram.STATUSES}
+    if delta != {"ok": 1, "unknown": 0, "refused": 2, "error": 0} or row.get("max_ms", -1) < 0:
+        raise SystemExit(f"FAIL micro stats: three planted runs counted {delta}, row {row}")
+    with mock.patch.object(mind, "gather_receipts", return_value=[]):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            mind.main(["--health"])
+    if "micro flip: ok=" not in out.getvalue() or "refused=" not in out.getvalue():
+        raise SystemExit(f"FAIL micro stats: `mind --health` does not print the counters: {out.getvalue()!r}")
+    module.CASES.append(
+        (
+            "run() counts each program's statuses and latency, and `headron mind --health` prints them",
+            "a step that keeps refusing or slowing down with no counter to show it",
+        )
+    )
+    print("  ok    micro run counts statuses per program")
+
+
 def run(module: ModuleType) -> None:
-    result_contract_cases(module)
-    run_never_raises_cases(module)
-    wrapper_cases(module)
-    cli_cases(module)
-    credit_cases(module)
+    for cases in (
+        result_contract_cases,
+        run_never_raises_cases,
+        wrapper_cases,
+        cli_cases,
+        next_step_cases,
+        timeout_cases,
+        elapsed_cases,
+        stats_cases,
+        credit_cases,
+    ):
+        cases(module)
