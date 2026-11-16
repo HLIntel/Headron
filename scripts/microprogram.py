@@ -272,8 +272,39 @@ class TaskObligations:
         return MicroResult(self.name, self.version, status, rows, evidence_refs=refs, next=next_step or None)
 
 
+class MemoryValidate:
+    """Whether a remembered claim (docs/systems/claims.yaml) may be served as a fact now: claims.validity.
+    context: {"claim": name} (or the CLI's first arg), optional "claims" and "root" to read another registry.
+
+    ok only while the claim can be shown to hold; refused when it is refuted or names no claim, naming its
+    successor if it has one; unknown, with next "rediscover", when its validity cannot be established.
+    """
+
+    name = "memory.validate"
+    version = "1"
+    timeout_s = 30.0  # one registry read and at most one git diff
+
+    def run(self, context: Mapping[str, Any]) -> MicroResult:
+        import claims  # noqa: PLC0415
+
+        name = str(context.get("claim") or next(iter(context.get("args") or ()), "")).strip()
+        if not name:
+            return MicroResult(
+                self.name, self.version, "refused", evidence_refs=("no claim named",), next="pass a claim name"
+            )
+        root = Path(context.get("root") or claims.ROOT)
+        registry = context.get("claims")
+        status, why, next_step = claims.validity(name, registry if registry is not None else None, root)
+        spec = (registry if registry is not None else claims.records(root)).get(name) or {}
+        output = {"statement": spec.get("statement"), "label": spec.get("label")} if status == "ok" else None
+        return MicroResult(
+            self.name, self.version, status, output, evidence_refs=(f"claim:{name}", why), next=next_step or None
+        )
+
+
 REGISTRY: dict[str, MicroProgram] = {
-    program.name: program for program in (Classify(), Search(), EdgeDomains(), ContextCredit(), TaskObligations())
+    program.name: program
+    for program in (Classify(), Search(), EdgeDomains(), ContextCredit(), TaskObligations(), MemoryValidate())
 }
 
 

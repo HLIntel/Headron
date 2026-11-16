@@ -100,7 +100,14 @@ def wrapper_cases(module: ModuleType) -> None:
     clean = microprogram.run("graph.edges", {"graph": graph.Graph()})
     if refused.status != "refused" or len(refused.evidence_refs) != 2 or clean.status != "ok":
         raise SystemExit(f"FAIL micro graph.edges: planted {refused.to_dict()}, empty {clean.status}")
-    if set(microprogram.REGISTRY) != {"classify", "search", "graph.edges", "context.credit", "task.obligations"}:
+    if set(microprogram.REGISTRY) != {
+        "classify",
+        "search",
+        "graph.edges",
+        "context.credit",
+        "task.obligations",
+        "memory.validate",
+    }:
         raise SystemExit(f"FAIL micro registry: {sorted(microprogram.REGISTRY)} has a program no case here plants")
     module.CASES.append(
         (
@@ -280,6 +287,86 @@ def obligation_cases(module: ModuleType) -> None:
     print("  ok    micro task.obligations binds done to evidence on this tree")
 
 
+def memory_cases(module: ModuleType) -> None:
+    """memory.validate serves a claim only while it can be shown to hold: a changed scope, an unreadable commit,
+    broken evidence, a reported-only label or a corrupt record is unknown; a refuted claim is refused."""
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    import microprogram
+
+    def git(root: Path, *argv: str) -> str:
+        done = subprocess.run(["git", "-C", str(root), *argv], capture_output=True, text=True, timeout=60, check=True)
+        return done.stdout.strip()
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        git(root, "init", "-q")
+        (root / "gate.py").write_text("RULE = 1\n", encoding="utf-8")
+        (root / "other.py").write_text("x = 1\n", encoding="utf-8")
+        git(root, "add", "-A")
+        git(root, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "seed")
+        sha = git(root, "rev-parse", "HEAD")
+        base = {
+            "statement": "the gate holds RULE",
+            "label": "CONFIRMED",
+            "evidence": ["file:gate.py"],
+            "provenance": "planted",
+            "status": "holds",
+        }
+        registry = {
+            "fresh": {**base, "validity": {"source_commit": sha, "scope": ["gate.py"]}},
+            "rules": {**base, "validity": {"source_commit": sha, "scope": ["rules"]}},
+            "bare": dict(base),
+            "unborn": {**base, "validity": {"source_commit": "0" * 40, "scope": ["gate.py"]}},
+            "reported": {**base, "label": "REPORTED"},
+            "gone": {**base, "evidence": ["file:missing.py"]},
+            "corrupt": {"statement": "no label or status"},
+            "old": {**base, "status": "refuted", "superseded_by": "fresh"},
+        }
+
+        def ask(claim: str) -> microprogram.MicroResult:
+            return microprogram.run("memory.validate", {"claim": claim, "claims": registry, "root": root})
+
+        for claim in ("fresh", "bare"):
+            if ask(claim).status != "ok" or (ask(claim).output or {}).get("label") != "CONFIRMED":
+                raise SystemExit(f"FAIL micro memory: a holding claim {claim} answered {ask(claim).to_dict()}")
+        (root / "other.py").write_text("x = 2\n", encoding="utf-8")
+        if ask("fresh").status != "ok":
+            raise SystemExit("FAIL micro memory: a change outside the claim's scope made it stale")
+        if ask("rules").status != "ok":
+            raise SystemExit(f"FAIL micro memory: an unchanged scope answered {ask('rules').to_dict()}")
+        (root / "rules").mkdir()
+        (root / "rules" / "new.py").write_text("NEW = 1\n", encoding="utf-8")  # untracked: git diff never sees it
+        if ask("rules").status != "unknown":
+            raise SystemExit("FAIL micro memory: a file created in the claim's scope since its commit left it ok")
+        (root / "gate.py").write_text("RULE = 2\n", encoding="utf-8")
+        for claim, want in (
+            ("fresh", "unknown"),
+            ("unborn", "unknown"),
+            ("reported", "unknown"),
+            ("gone", "unknown"),
+            ("corrupt", "unknown"),
+            ("old", "refused"),
+            ("nobody", "refused"),
+        ):
+            got = ask(claim)
+            if got.status != want:
+                raise SystemExit(
+                    f"FAIL micro memory: claim {claim} answered {got.status}, not {want}: {got.evidence_refs}"
+                )
+        if "changed since" not in ask("fresh").evidence_refs[1] or "fresh" not in (ask("old").next or ""):
+            raise SystemExit("FAIL micro memory: a stale or refuted claim did not say why and what to serve instead")
+    module.CASES.append(
+        (
+            "memory.validate is ok only while a claim holds and its scope is unchanged; stale, reported, corrupt is unknown",
+            "a remembered fact served after the code it describes changed, or a refuted claim served at all",
+        )
+    )
+    print("  ok    micro memory.validate serves a claim only while it holds")
+
+
 def next_step_cases(module: ModuleType) -> None:
     """Every result that may not be acted on says what to try next, from the constructor to each wrapper."""
     import microprogram
@@ -428,5 +515,6 @@ def run(module: ModuleType) -> None:
         stats_cases,
         credit_cases,
         obligation_cases,
+        memory_cases,
     ):
         cases(module)
