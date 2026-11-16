@@ -55,10 +55,11 @@ from typing import TYPE_CHECKING
 
 import atomicfile
 from atlascore import ROOT, atlas, diff_names, git_run, text_of
+from githubreceipt import REPORT_HEADING as REPORT_HEADING
+from githubreceipt import comment_markdown, load_receipt, metrics_record, post_pr_comment
 from runtime import resolve
 
 CHECK_NAME = "Headron verify"
-REPORT_HEADING = "## HEADRON REPORT"
 WEBHOOK_PATH, HEALTH_PATH = "/github/webhook", "/health"
 KEYS = ("HEADRON_GITHUB_APP_ID", "HEADRON_GITHUB_APP_PRIVATE_KEY_B64", "HEADRON_GITHUB_APP_WEBHOOK_SECRET")
 API = "https://api.github.com"
@@ -195,51 +196,6 @@ def check_run_payload(report: dict) -> CheckRunBody:
     }
 
 
-def comment_markdown(report: dict) -> str:
-    """HEADRON REPORT body for the pull request (built; posting it as a comment is not wired)."""
-    files = report.get("changed_files") or []
-    gates = report.get("required_gates") or []
-    blocked = "blocked" if not report["merge_allowed"] else "allowed"
-    agent = report.get("agent") or {}
-    lines = [
-        REPORT_HEADING,
-        "",
-        f"**Verdict:** {report['verdict']}",
-        f"**Merge:** {blocked}",
-        f"**Agent:** `{agent.get('agent', 'unknown')}` (runtime `{agent.get('runtime', 'unknown')}`)",
-        "",
-        "### Changed files",
-    ]
-    lines += [f"- `{f}`" for f in files[:50]] or ["- _(none)_"]
-    if len(files) > 50:
-        lines.append(f"- … and {len(files) - 50} more")
-    lines += ["", "### Required gates"]
-    lines += [f"- `{g}`" for g in gates] or ["- _(none declared)_"]
-    lines += ["", f"_Contract v{atlas().get('version')} · posted by the Headron GitHub App._"]
-    return "\n".join(lines) + "\n"
-
-
-def metrics_record(report: dict) -> dict:
-    """Minimal metrics a future dashboard reads: counts, blocked, agent."""
-    tally = (report.get("verify") or {}).get("tally") or {}
-    passed = int(tally.get("PASS") or 0) + int(tally.get("REUSED") or 0)
-    failed = int(tally.get("FAIL") or 0)
-    not_run_count = int(tally.get("NOT RUN") or 0)
-    return {
-        "schema": 1,
-        "kind": "headron_verification",
-        "atlas_version": str(atlas().get("version")),
-        "verifications": passed + failed + not_run_count,
-        "pass": passed,
-        "fail": failed,
-        "not_run": not_run_count,
-        "blocked": not report["merge_allowed"],
-        "verdict": report["verdict"],
-        "agent": (report.get("agent") or {}).get("agent"),
-        "runtime": (report.get("agent") or {}).get("runtime"),
-    }
-
-
 def _assemble(base: str | None, head: str, head_sha: str, files: list[str], verify_result: dict) -> dict:
     verify = verify_result.get("verify") or {}
     concl = conclusion(verify_result.get("exit"), verify.get("tally") or {})
@@ -273,7 +229,33 @@ def build_report(base: str | None, head: str = "HEAD", tree: Path | None = None,
             files = changed_files(base, head, tree)
         except ValueError as err:
             files_error = str(err)
-    verify_result = run_verify(base, tree) if execute else {"exit": 2, "verify": {}, "stderr_tail": "dry-run"}
+    receipt_data, receipt_err = load_receipt(tree, head_sha, base)
+    if receipt_data:
+        rows = [{"id": c["id"], "verdict": c["state"], "why": c.get("why", "")} for c in receipt_data["checks"]]
+        verify_result = {
+            "exit": 0 if receipt_data["verdict"] == "PASS" else 1,
+            "verify": {
+                "verdict": receipt_data["verdict"],
+                "rows": rows,
+                "tally": receipt_data.get("counts") or {},
+                "raw": "",
+            },
+            "stderr_tail": "",
+        }
+    elif receipt_err or (os.environ.get("HEADRON_REQUIRE_SIGNED_RECEIPT") and base):
+        gates = required_gates(files)
+        why = receipt_err or f"no valid signed receipt for head {head_sha[:12]} bound to base {str(base)[:12]}"
+        rows = [{"id": g, "verdict": "FAIL", "why": why} for g in gates] or [
+            {"id": "receipt", "verdict": "FAIL", "why": why}
+        ]
+        tally = {"PASS": 0, "FAIL": len(rows), "NOT RUN": 0}
+        verify_result = {
+            "exit": 1,
+            "verify": {"verdict": "FAIL", "rows": rows, "tally": tally, "raw": why},
+            "stderr_tail": why,
+        }
+    else:
+        verify_result = run_verify(base, tree) if execute else {"exit": 2, "verify": {}, "stderr_tail": "dry-run"}
     if files_error and execute:
         # An unresolvable base is incomplete, never a green merge.
         verify_result = {**verify_result, "exit": 2, "files_error": files_error}
@@ -805,6 +787,8 @@ def run_job(work: QueuedJob, queue: Queue, transport: Transport, token_for: Call
     notes = file_annotations(report, blocked)
     token = token_for(int(work["installation_id"]))  # a long suite can outlive the first token's hour
     post_check_run(transport, token, work, report, notes, run_id)
+    if os.environ.get("HEADRON_POST_PR_COMMENT") == "1":
+        post_pr_comment(transport, token, work, report)
     result = {
         "verdict": report["verdict"],
         "conclusion": report["conclusion"],

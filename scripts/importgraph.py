@@ -91,13 +91,13 @@ def _is_test(name: str) -> bool:
     return name.endswith("_test")
 
 
-def _purpose(path: Path) -> str:
+def _purpose(path: Path, limit: int = PURPOSE_CHARS) -> str:
     """The first sentence of a module's docstring, cut to fit one table cell."""
     tree = parsed_python(text_of(path), str(path))
     doc = (ast.get_docstring(tree) or "") if tree is not None else ""
     first = " ".join(doc.split("\n\n")[0].split()).split(". ")[0].rstrip(".")
-    if len(first) > PURPOSE_CHARS:
-        first = first[:PURPOSE_CHARS].rsplit(" ", 1)[0] + "…"
+    if len(first) > limit:
+        first = first[:limit].rsplit(" ", 1)[0] + "…"
     return first.replace("|", "\\|")
 
 
@@ -118,7 +118,9 @@ def _diagram(users: dict[str, set[str]], graph: dict[str, set[str]]) -> str:
     return "\n".join([*lines, "```"])
 
 
-def _table(names: Iterable[str], users: dict[str, set[str]], graph: dict[str, set[str]], root: Path) -> list[str]:
+def _table(
+    names: Iterable[str], users: dict[str, set[str]], graph: dict[str, set[str]], root: Path, limit: int = PURPOSE_CHARS
+) -> list[str]:
     """One row per module, most used first; `tested by` comes from what the test modules really import."""
     rows = ["| module | what it is | used by | imports | tested by |", "|---|---|---:|---|---|"]
     for name in sorted(names, key=lambda name: (-len(users[name]), name)):
@@ -127,7 +129,7 @@ def _table(names: Iterable[str], users: dict[str, set[str]], graph: dict[str, se
         tested = ", ".join(f"[{test}](../scripts/{test}.py)" for test in tests[:TESTS_SHOWN])
         tested += f" +{len(tests) - TESTS_SHOWN}" if len(tests) > TESTS_SHOWN else ""
         rows.append(
-            f"| [{name}](../scripts/{name}.py) | {_purpose(root / 'scripts' / f'{name}.py')} "
+            f"| [{name}](../scripts/{name}.py) | {_purpose(root / 'scripts' / f'{name}.py', limit)} "
             f"| {len(users[name])} | {', '.join(uses)} | {tested} |"
         )
     return rows
@@ -161,7 +163,7 @@ def map_block(root: Path = ROOT) -> str:
             "",
             _diagram(users, graph),
             "",
-            *_table(shared, users, graph, root),
+            *_table(shared, users, graph, root, limit=70),
         ]
     )
 

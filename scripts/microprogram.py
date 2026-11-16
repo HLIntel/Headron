@@ -350,6 +350,11 @@ class RonVerify:
         return MicroResult(self.name, self.version, status, evidence_refs=(*refs, f"open {first_open}"), next=next_step)
 
 
+from computation_contract import ComputationContract  # noqa: E402
+from compute_compose import Compose  # noqa: E402
+from domain_reconcile import Reconcile  # noqa: E402
+from finance import Finance  # noqa: E402
+
 REGISTRY: dict[str, MicroProgram] = {
     program.name: program
     for program in (
@@ -360,6 +365,10 @@ REGISTRY: dict[str, MicroProgram] = {
         TaskObligations(),
         MemoryValidate(),
         RonVerify(),
+        Finance(),
+        Reconcile(),
+        Compose(),
+        ComputationContract(),
     )
 }
 
@@ -424,7 +433,10 @@ def _bounded(program: MicroProgram, context: Mapping[str, Any]) -> MicroResult:
             next=f"retry with a narrower context, or raise {program.name}'s timeout_s if the step is just slow",
         )
     if "error" in holder:
-        raise holder["error"]  # run() turns an Exception into status error; SystemExit stays the caller's
+        error = holder["error"]
+        if isinstance(error, Exception):
+            raise error
+        raise RuntimeError(f"{type(error).__name__}: {error}") from error
     result = holder.get("result")
     if not isinstance(result, MicroResult):
         raise TypeError(f"{program.name} returned {type(result).__name__}, not a MicroResult")
@@ -477,7 +489,32 @@ def cli(name: str, args: list[str], as_json: bool) -> int:
         rows = [{"name": p.name, "version": p.version} for p in REGISTRY.values()]
         print(json.dumps(rows) if as_json else "\n".join(f"{r['name']} {r['version']}" for r in rows))
         return 0
-    result = run(name, {"files": args, "query": " ".join(args), "args": args})
+    context: Mapping[str, Any] = {"files": args, "query": " ".join(args), "args": args}
+    invalid_json = False
+    if name in ("finance.evaluate", "data.reconcile", "compute.compose", "compute.contract"):
+        try:
+            if not args and name == "compute.contract":
+                parsed = {}
+            elif len(args) == 1:
+                parsed = json.loads(args[0])
+            else:
+                raise ValueError("expected one JSON object")
+            if not isinstance(parsed, dict):
+                raise ValueError("expected a JSON object")
+        except (ValueError, TypeError):
+            invalid_json = True
+            parsed = {}
+        context = parsed
+    if invalid_json:
+        result = MicroResult(
+            name,
+            REGISTRY[name].version,
+            "refused",
+            evidence_refs=("expected one JSON object",),
+            next="supply one JSON object",
+        )
+    else:
+        result = run(name, context)
     if as_json:
         print(json.dumps(result.to_dict(), default=str))
     else:

@@ -95,6 +95,7 @@ Derived from `atlas.yaml/task_profiles`, resolved by `python scripts/atlas.py pl
 | `performance` | `core-code` | `profile` · `bench` | `allocation_profile` · `cache_behaviour_note` · `diff_review` | `focused` | `performance_change` | — | yes |
 | `polyglot` | `polyglot` | `check` · `test` | `forward_compatibility_test` · `diff_review` | `semantic` | `api_change` | — | yes |
 | `research` | `docs` | — | `primary_sources` | `isolated` | `none` | — | no |
+| `quantitative_analysis` | `core-code` · `docs` | `check` · `test` | `schema_validation` · `known_answer_tests` · `citation_check` | `isolated` | `none` | — | no |
 | `retrieval` | `core-code` · `docs` | `test` | `diff_review` | `semantic` | `retrieval_change` | — | no |
 | `autonomous_agent` | `core-code` | — | `diff_review` | `focused` | `source_change` | `narrow_tools` · `sandbox` · `budget` · `approval` · `effects` · `audit` | no |
 <!-- END generated: task-profiles -->

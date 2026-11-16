@@ -44,6 +44,14 @@ roots and sampling — build filesystem boundaries on explicit server configurat
 Forge (remote repository, issues, PRs, CI, security context) + semantic code edit (LSP-backed)
 + native CLI / language server / compiler / debugger.
 
+#### GitHub Token Scopes & Remote Resolution Boundary
+When connecting forge MCP clients (GitHub App or fine-grained PAT), restrict token scopes strictly to:
+- `checks:read` / `checks:write`: Query and post gate PASS/FAIL Check Runs on PRs.
+- `contents:read`: Read repo contract (`atlas.yaml`) and resolve base commit SHAs.
+- `pull_requests:read` / `pull_requests:write`: Post and update receipt summary comments on pull requests.
+
+**Fallback Rule:** MCP clients must only call GitHub APIs for PR status/diff reads when local native `git` CLI cannot resolve remote state (e.g., shallow checkouts, unfetched remote PR refs, or branchless CI worker environments). If `git diff` or `git rev-parse` succeeds locally, remote API calls are forbidden.
+
 ### docs
 Add external documentation server for current library and framework documentation.
 

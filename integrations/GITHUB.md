@@ -18,6 +18,14 @@
 
 ## GitHub App — Headron as an actor on every pull request
 
+### About
+> Headron is an AI agent infrastructure and software verification platform built to help developers and enterprises execute complex workflows with greater speed, efficiency, and confidence. Connect AI agents, GitHub repositories, and development tools through an adaptive system that optimizes context and token usage, coordinates tasks, enforces execution controls, and verifies changes with traceable evidence. From automated code review to enterprise-scale AI orchestration, Headron is building the foundation for more capable, reliable, and autonomous AI systems.
+
+### Redirect, Callback & Webhook URLs
+- **Callback URL:** `https://headron.tech/github/callback`
+- **Setup URL (Install redirect):** `https://headron.tech/docs.html`
+- **Webhook URL:** `https://headron.tech/github/webhook`
+
 For a webhook-free integration, a repository can call the reusable workflow described in
 [CONSUMING.md](../docs/CONSUMING.md#as-a-reusable-workflow-in-your-ci). It runs in the calling
 repository's Actions environment, requests read-only contents access, and reports routes and required
@@ -91,12 +99,14 @@ isolate the process or protect other host secrets. Use a disposable, isolated ru
 do not enable outside owners on the existing host. Checks and annotations are written to GitHub and can
 contain diagnostic output; review that output and its retention before using private repositories.
 
-### Not live yet
+### Live controls & receipt comments
 
 - **Required check.** `Headron verify` is an optional evidence publisher, not a required merge check;
   [config/github-controls.json](../config/github-controls.json) declares the repository's controls.
   A refusal is advice unless a repository separately requires the check.
-- **HEADRON REPORT comment.** The body is built; posting it as a PR comment is not wired.
+- **HEADRON REPORT comment.** Active. Posted and updated via `post_pr_comment` in `scripts/githubreceipt.py`,
+  providing traceable receipt evidence on pull requests.
+- **Cryptographic base receipt binding.** Active. Validates incoming PR head and base SHAs against signed receipts.
 - **Next, out of scope here:** org/team policy packs, OAuth roles, and the dashboard over `timeline.jsonl`.
 
 The App's webhook is configured on the App, not on a repository, so the "webhooks declared as zero"
