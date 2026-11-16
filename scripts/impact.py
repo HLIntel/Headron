@@ -26,7 +26,6 @@ import hashlib
 import json
 import math
 import os
-import re
 import subprocess
 import sys
 import zlib
@@ -272,21 +271,22 @@ def valid_record(rec: object) -> bool:
     """A skip needs a nonempty set of well-formed, repository-relative content identities."""
     if not isinstance(rec, dict) or not isinstance(rec.get("deps"), dict) or not rec["deps"]:
         return False
-    secs = rec.get("secs")
-    if (
-        isinstance(secs, bool)
-        or not isinstance(secs, (float, int))
-        or (isinstance(secs, float) and not math.isfinite(secs))
-        or secs < 0
-    ):
-        return False
+    if "secs" in rec:
+        secs = rec["secs"]
+        if (
+            isinstance(secs, bool)
+            or not isinstance(secs, (float, int))
+            or (isinstance(secs, float) and not math.isfinite(secs))
+            or secs < 0
+        ):
+            return False
     for path, value in rec["deps"].items():
         if not isinstance(path, str) or not path or "\\" in path:
             return False
         parts = PurePosixPath(path)
         if parts.is_absolute() or ".." in parts.parts or str(parts) != path:
             return False
-        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+        if not isinstance(value, str) or not value:
             return False
     return True
 
