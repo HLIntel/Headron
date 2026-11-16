@@ -39,13 +39,13 @@ Entry only: [aider](models/aider/README.md) · [antigravity](models/antigravity/
 Each runtime's route and adapter are in the generated roster above; what each loads is generated in
 [models/README.md](models/README.md). Provider and model names stay out of this file so the repository stays portable.
 
-## Context economy
+## Context economy & memory hygiene
 
-- Load one pack's `README.md`, `OPERATING.md` and `tools.yaml`, not all languages.
-- Load boundary docs only when crossing that boundary.
-- Prefer symbols, tests, schemas and manifests over whole-file dumps; reuse tool output.
-- Record finished investigation where it prevents repeating context cost.
-- Never compress away an invariant to save tokens.
+- **Source of Truth:** Active workspace files (`atlas.yaml`, `server.json`, `integrations/MCP-PROFILES.md`, `MODEL.md`) and live git state (`git status`, `git log -n 5`).
+- **Purge Stale History:** Ignore prior chat summaries, legacy `TheaSoftware` naming, old contract versions, cached assumptions.
+- **Cold-Start Verification:** Inspect actual file tree and current schema definitions before generating code/docs.
+- **Output Format:** Caveman density. Imperative steps, exact paths, zero padding, mandatory verification criteria per step.
+- Load one pack's docs and boundary docs only when crossing. Prefer symbols, tests, schemas and manifests over whole dumps; reuse tool output. Never compress away an invariant.
 
 ## Dynamic verification gates
 

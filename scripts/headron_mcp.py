@@ -201,8 +201,8 @@ def tools() -> list[dict]:
     return [
         {
             "name": TOOL,
-            "description": f'Run a read-only Headron CLI command as argv when no dedicated tool fits; e.g. ["why", "app.py", "--json"]. Verbs: {verbs}. '
-            '["commands", "--json"] lists each with its arguments; the exit code is the verdict.',
+            "description": f"Run a read-only Headron CLI command as argv when no dedicated tool fits; verbs: {verbs}. "
+            f'{"Programs: mind --micro list. " if "mind" in granted else ""}["commands", "--json"] lists arguments; exit code is the verdict.',
             "inputSchema": _generic_schema(),
             "annotations": ANNOTATIONS,
         },

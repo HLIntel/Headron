@@ -1,0 +1,70 @@
+name: Headron Gate Check
+
+# Reusable gate verification workflow. Runs headron verify on CI runners when local
+# receipts are absent, binds the verdict to the base commit, and uploads the signed receipt.
+
+on:
+  workflow_call:
+    inputs:
+      base-ref:
+        description: 'Base commit SHA or branch for verification policy and diff'
+        required: false
+        default: ${{ github.event.pull_request.base.sha || github.base_ref || 'main' }}
+        type: string
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: headron-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Headron Gate Check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+
+      - name: Install harness dependencies
+        run: |
+          if [ -f scripts/requirements.lock.txt ]; then
+            python3 -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
+          fi
+
+      - name: Verify gates and generate receipt
+        id: verify
+        env:
+          HEADRON_BASE: ${{ inputs.base-ref || github.event.pull_request.base.sha || 'main' }}
+        run: |
+          mkdir -p receipts
+          if [ -f receipts/verify.json ] && python3 scripts/receipt.py receipts/verify.json 2>/dev/null; then
+            echo "Valid local receipt found; reusing receipt."
+          else
+            echo "Generating receipt for base $HEADRON_BASE..."
+            python3 scripts/verify.py --base "$HEADRON_BASE" --receipt receipts/verify.json
+          fi
+
+      - name: Upload receipt artifact
+        uses: actions/upload-artifact@ea165f8d6556e18b8b80b72beea679df0739c9df # v4
+        if: always()
+        with:
+          name: headron-receipt-${{ github.sha }}
+          path: receipts/verify.json
+          if-no-files-found: warn

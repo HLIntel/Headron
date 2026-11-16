@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-67 modules that at most one other module imports: 28 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+71 modules that at most one other module imports: 28 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -20,10 +20,13 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [edges](../scripts/edges.py) | The test -> declaration edge: every planted case names the enforcer(s) its plant must trip | 1 | atlas, atlasgen, atlasinv, packmanifest, roster, safeedit, testgroups | [atlas_rules_test](../scripts/atlas_rules_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
 | [enforce](../scripts/enforce.py) | The enforcement rung at commit time, for ANY repository and ANY agent: refuse a change whose file fails its… | 1 | agentpolicy, atomicfile, gateplace, gaterunner, localtools, verify | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) +3 |
 | [failureledger](../scripts/failureledger.py) | The failure ledger's row-shape rules: the closed key set, and the `signature` regexes `headron failures… | 1 |  |  |
+| [finance_capital](../scripts/finance_capital.py) | Periodic capital budgeting, with declared timing and no inferred cash flows | 1 |  |  |
+| [finance_catalog](../scripts/finance_catalog.py) | Static instrument identifiers; no prices, trading venue or live ranking is implied | 1 |  | [microprogram_test](../scripts/microprogram_test.py) |
+| [finance_knowledge](../scripts/finance_knowledge.py) | On-demand finance vocabulary; definitions are not project inputs | 1 |  |  |
 | [formula](../scripts/formula.py) | Spreadsheet formulas for the data kit: parsed and evaluated, never executed | 1 |  | [formula_test](../scripts/formula_test.py) |
 | [ghaudit](../scripts/ghaudit.py) | ghaudit — does the LIVE GitHub configuration match config/github-controls.json? | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
-| [githubapp](../scripts/githubapp.py) | The Headron GitHub App, one module: every pushed head gets a real "Headron verify" check run | 1 | agentpolicy, atomicfile, branchstate, githubjob, knowledge, runtime | [githubapp_test](../scripts/githubapp_test.py), [runtime_test](../scripts/runtime_test.py) |
 | [githubjob](../scripts/githubjob.py) | The GitHub App's wire and queue shapes, as types only: nothing imports this at run time | 1 |  | [githubapp_test](../scripts/githubapp_test.py) |
+| [githubreceipt](../scripts/githubreceipt.py) | Receipt loading, validation, and PR comment rendering for the Headron GitHub App | 1 | githubapp, receipt, receiptsign |  |
 | [hostshape](../scripts/hostshape.py) | Shapes that break on the operator's HOST, checked from the records the host hands in | 1 |  | [schedtargets_test](../scripts/schedtargets_test.py) |
 | [i18n](../scripts/i18n.py) | Localized entry points with canonical, generated command references | 1 |  |  |
 | [identity](../scripts/identity.py) | Who owns this tree, compared against the declaration — and the rename, as one operation | 1 |  | [identity_test](../scripts/identity_test.py) |
@@ -44,6 +47,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [shellsplit](../scripts/shellsplit.py) | The shell-string helpers shell_verdict reads: top-level statements, pipeline stages, heredoc bodies | 1 |  |  |
 | [textguard](../scripts/textguard.py) | Characters in tracked text that a reader cannot see, or cannot tell apart | 1 |  |  |
 | [treeformat](../scripts/treeformat.py) | Working-tree formatting and blame-history checks | 1 | gitobject |  |
+| [verifyinputs](../scripts/verifyinputs.py) | Content identities for verification evidence | 1 |  |  |
 | [workflowbench](../scripts/workflowbench.py) | Does Headron change what agents DO — alone, and when one hands work to another? Measured, per model | 1 | abtest, agentpolicy, dirscope | [atlas_test](../scripts/atlas_test.py) |
 | [yamlshape](../scripts/yamlshape.py) | yaml_prose_is_quoted: prose inside a YAML flow collection is quoted, so a comma cannot silently split it | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [edge_cases_test](../scripts/edge_cases_test.py) |
 | [agentbench](../scripts/agentbench.py) | Does an agent FINISH more real tasks with Headron? The arm every other bench here marks NOT RUN | 0 | agentpolicy, atlas, knowledge | [agentbench_test](../scripts/agentbench_test.py) |

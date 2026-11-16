@@ -160,6 +160,11 @@ def test_adaptive_process_selection():
     # A declared intent can name any process an agent may run, and only an exact match counts.
     assert select_process(local, task_intent="database").process == "database"
     assert select_process(local, task_intent="mutation").process == "mutation"
+    quantitative = select_process(local, task_intent="quantitative_analysis")
+    assert quantitative.process == "quantitative_analysis"
+    assert {"schema_validation", "known_answer_tests", "citation_check"} <= set(
+        plan(local, process=quantitative.process).gates_to_run
+    )
     assert select_process(local, task_intent="hosted_turn").process == "implementation"
     assert select_process(local, task_intent="fix the database").process == "implementation"
     # Whatever process edits, a person or agent reviews the diff: choosing one never loses that gate.

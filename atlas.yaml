@@ -313,6 +313,7 @@ instrument_roster:
       it runs on demand when an MCP server''s schemas are weighed against the declared band'
 
   not_a_script:
+    verifyinputs.py: 'verification input identity for evidence reuse; verified by verifyrun_test.py'
     consumerimpact.py: 'base Python import candidates for consumer deletion checks; static analysis is incomplete and consumer_test.py verifies its limits'
     parsegate.py: 'the first step of `atlas check` and of every staged case, with no command of its own; its proof and limits are that instrument''s'
     importgraph.py: 'the one reading of import statements behind eight instruments, and the module map generated into docs/MODULES.md and docs/MODULES-LEAVES.md; its proof is importgraph_test.py, a hand edit is refused by generated_errors'
@@ -340,6 +341,7 @@ instrument_roster:
     localtools.py: 'a project-local tool found first, a tracked directory never trusted; localtools_test.py plants each'
     localtools_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     githubjob.py: 'the GitHub App''s job and check-run shapes, as types; githubapp_test.py builds each one'
+    githubreceipt.py: 'receipt verification and pull request comment rendering for the GitHub App; githubapp_test.py tests each case'
     gitobject.py: 'Git object identity in-process, the one owner of an object id''s shape; gitobject_test.py compares every name with real git, in both formats'
     gitobject_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     claude_hook_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -406,6 +408,16 @@ instrument_roster:
     cilocal_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     micrograph.py: 'the DAG runner under `headron ci`: a node starts once its needs answered ok, and a blocked, timed-out or over-budget node answers unknown; imported by cilocal.py; its proof is cilocal_test.py'
     microprogram.py: 'the one microprogram contract (MicroResult, its declared statuses, the registry wrapping classify, search, the graph edge-domain check, context.credit, task.obligations and memory.validate); dispatched as `headron mind --micro`; its proof is microprogram_test.py'
+    finance.py: 'on-demand decimal financial equations reached through the microprogram registry; its proof is microprogram_test.py'
+    finance_capital.py: 'periodic capital budgeting calculations reached through finance.py; its proof is microprogram_test.py'
+    finance_catalog.py: 'static financial instrument identifiers reached through finance.py; its proof is microprogram_test.py'
+    finance_knowledge.py: 'on-demand financial vocabulary and equations reached through finance.py; its proof is microprogram_test.py'
+    domain_reconcile.py: 'declared-key decimal reconciliation across domains; its proof is microprogram_test.py'
+    compute_compose.py: 'bounded allowlisted composition of financial variance and reconciliation; its proof is compute_compose_test.py'
+    compute_compose_test.py: 'focused cases for bounded computation composition, run by microprogram_test.py'
+    computation_contract.py: 'calculation request contracts, enforced by calculation.py'
+    computation_contract_test.py: 'contract cases, run by microprogram_test.py'
+    calculation.py: 'shared calculation result and refusal handling; its proof is microprogram_test.py'
     obligations.py: 'the Task Obligation Ledger: a task''s requirements kept on disk under HEADRON_HOME, each bound to its procedure and to the tree its evidence covers; read by the task.obligations microprogram; its proof is microprogram_test.py (obligation_cases)'
     microprogram_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     sweep.py: 'the fast semantic sweep engine (tiers, shards, pointers, tunnels); dispatched through knowledge.py as ; its proof is sweep_test.py'
@@ -1821,6 +1833,8 @@ verification_policy:
     scripts/bench.py: 'CI benchmark job on the runner; its timing is machine-dependent, so no local pass means anything'
     scripts/edges.py: 'CI merges the per-job edge files it wrote; needs the other jobs'' artefacts'
     scripts/freshness.py: 'CI checks generated-artefact age after the build job on a fresh checkout'
+    scripts/receipt.py: 'CI verifies existing receipt signature before re-running verification suite'
+    scripts/verify.py: 'CI harness runner that executes the done_set gates on hosted CI runners when local receipts are absent'
   # THE DONE SET, DECLARED ONCE (3.9.0). It was typed into the generator as a bash block, so "done" was a
   # habit nobody could count. `verify.py` runs it and prints each gate's verdict from its EXIT CODE, its
   # time, and the coverage line the gate prints about itself; the entry files render the same list.
@@ -2051,6 +2065,14 @@ task_profiles:
   research: {tools: [docs], actions: [], gates: [primary_sources],
             context: isolated, class_floor: none, pack: false,
             why_no_class: "the research itself commits nothing; the change that follows carries its own class"}
+  quantitative_analysis:
+    tools: [core-code, docs]
+    actions: [check, test]
+    gates: [schema_validation, known_answer_tests, citation_check]
+    context: isolated
+    class_floor: none
+    pack: false
+    why_no_class: "analysis commits nothing; an implementation carries its own change class"
   # RETRIEVAL IS A TASK WITH ITS OWN FAILURES AND NO SOURCE-CHANGE GATE NOTICES ONE. A chunk that
   # ends mid-function, an index invalidated by mtime and an answer with no citation all pass a
   # formatter, a typechecker and a unit suite. retrieval_change IS that floor, so `gates` adds only the diff review.
@@ -4593,6 +4615,14 @@ processes:
     artifacts: [evidence_record, unresolved_questions]
     stop_when: [evidence_sufficient, gate_refused, budget_exhausted]
     escalate_when: [unresolved_critical_risk]
+  quantitative_analysis:
+    returns: computed results with input definitions, assumptions, evidence references and unresolved limitations
+    task_profile: quantitative_analysis
+    change_class: source_change
+    sequence: [route, scope, retrieve, plan, record, escalate]
+    artifacts: [input_definitions, calculation_results, evidence_record, unresolved_assumptions]
+    stop_when: [evidence_sufficient, gate_refused, budget_exhausted]
+    escalate_when: [unresolved_critical_risk]
   architecture_assessment:
     returns: an architecture assessment with dependency edges, affected boundaries and unresolved risks
     task_profile: architecture_assessment
@@ -5987,6 +6017,10 @@ declared_inputs:
   HEADRON_REPLAY_DIR: {why: 'the directory providers.py reads and writes recorded vendor responses to', set_by: 'a test, or the operator', absent: '~/.cache/headron/replay'}
   HEADRON_PROVIDERS_LIVE: {why: 'set to 1 to let providers.py call the live vendor; unset replays the recorded fixtures, so CI and reruns need no key and stay deterministic', set_by: 'the operator, for a deliberate live run', absent: 'replay: recorded responses only, no network'}
   HEADRON_APP_RUN_OWNERS: {why: 'the owners whose repositories and PR heads the GitHub App executes verify on; a head is code the host runs', set_by: 'the App host operator', absent: 'nobody: every head is a neutral NOT RUN that says why'}
+  HEADRON_POST_PR_COMMENT: {why: 'set to 1 to post or update the HEADRON REPORT receipt summary comment on the PR', set_by: 'the App host operator', absent: 'no PR comments are posted, only check runs'}
+  HEADRON_REQUIRE_SIGNED_RECEIPT: {why: 'set to 1 to require PRs to carry a valid receipt signed and bound to base_commit', set_by: 'the App host operator', absent: 'headron verify runs directly on the checkout'}
+  HEADRON_TRUST_FILE: {why: 'path to the SSH allowed signers trust list for receipt verification', set_by: 'the App host operator', absent: 'receipt detached signature check is skipped'}
+  HEADRON_SIGNER: {why: 'the expected signer identity in the trust list for receipt verification', set_by: 'the App host operator', absent: 'any trusted signer in HEADRON_TRUST_FILE'}
   HEADRON_GITHUB_APP_STATE: {why: 'the GitHub App queue, done records and timeline.jsonl directory', set_by: 'the App host operator', absent: '$XDG_STATE_HOME/headron-github-app'}
   XDG_STATE_HOME: {why: 'the base of the GitHub App default state directory', set_by: 'the host session', absent: '~/.local/state'}
   HEADRON_GITHUB_API: {why: 'the GitHub API base, for Enterprise Server', set_by: 'the App host operator', absent: 'https://api.github.com'}

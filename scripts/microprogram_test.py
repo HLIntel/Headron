@@ -64,6 +64,17 @@ def run_never_raises_cases(module: ModuleType) -> None:
             raise SystemExit(f"FAIL micro run: a raising program raised through run(): {error!r}") from None
     if raised.status != "error" or raised.evidence_refs != ("RuntimeError: planted",) or raised.output is not None:
         raise SystemExit(f"FAIL micro run: a raising program answered {raised.to_dict()}")
+
+    class Exits:
+        name, version = "exits", "1"
+
+        def run(self, context: object) -> microprogram.MicroResult:
+            raise SystemExit("planted")
+
+    with mock.patch.dict(microprogram.REGISTRY, {"exits": Exits()}):
+        exit_result = microprogram.run("exits")
+    if exit_result.status != "error" or "SystemExit: planted" not in exit_result.evidence_refs[0]:
+        raise SystemExit(f"FAIL micro run: worker exit escaped or disappeared: {exit_result.to_dict()}")
     module.CASES.append(
         (
             "run() refuses an unknown program and turns a raising one into status error naming the exception",
@@ -108,6 +119,10 @@ def wrapper_cases(module: ModuleType) -> None:
         "task.obligations",
         "memory.validate",
         "ron.verify",
+        "finance.evaluate",
+        "data.reconcile",
+        "compute.compose",
+        "compute.contract",
     }:
         raise SystemExit(f"FAIL micro registry: {sorted(microprogram.REGISTRY)} has a program no case here plants")
     module.CASES.append(
@@ -117,6 +132,203 @@ def wrapper_cases(module: ModuleType) -> None:
         )
     )
     print("  ok    micro wrappers keep the wrapped refusal")
+
+
+def reconcile_cases(module: ModuleType) -> None:
+    """Reconciliation never treats missing or incompatible records as matching."""
+    import json
+
+    import computation_contract_test
+    import compute_compose_test
+    import microprogram
+
+    row = {"key": "sales", "value": "12.30", "unit": "USD", "period": "annual", "source": "left"}
+    other = {**row, "value": "10.20", "source": "right"}
+    missing = {**row, "key": "cost"}
+    result = microprogram.run("data.reconcile", {"left": [row, missing], "right": [other]})
+    if (
+        result.status != "ok"
+        or result.output["matched"][0]["difference"] != "2.10"
+        or result.output["left_only"] != ["cost"]
+    ):
+        raise SystemExit(f"FAIL reconciliation: {result.to_dict()}")
+    for bad in ({**other, "unit": "EUR"}, {**other, "period": "quarterly"}, {**other, "value": "NaN"}):
+        if microprogram.run("data.reconcile", {"left": [row], "right": [bad]}).status != "refused":
+            raise SystemExit("FAIL reconciliation: incompatible record accepted")
+    if microprogram.run("data.reconcile", {"left": [row, row], "right": [other]}).status != "refused":
+        raise SystemExit("FAIL reconciliation: duplicate key accepted")
+    with contextlib.redirect_stdout(io.StringIO()) as output:
+        exit_code = microprogram.cli("data.reconcile", [json.dumps({"left": [row], "right": [other]})], True)
+    if exit_code or json.loads(output.getvalue())["output"]["matched"][0]["difference"] != "2.10":
+        raise SystemExit("FAIL reconciliation: JSON dispatch did not preserve its inputs")
+    period = {"start": "2024" + "-01-01", "end": "2024" + "-12-31"}
+    record = {"measure": "actual", "value": "12", "unit": "USD", "period": period, "source": "a", "metric": "sales"}
+    budget = {**record, "measure": "budget", "value": "10", "source": "b"}
+    graph = {
+        "version": "1",
+        "nodes": [{"id": "v", "op": "finance.variance", "inputs": {"actual": record, "budget": budget}}],
+    }
+    with contextlib.redirect_stdout(io.StringIO()) as output:
+        exit_code = microprogram.cli("compute.compose", [json.dumps(graph)], True)
+    if exit_code or json.loads(output.getvalue())["output"]["nodes"]["v"]["value"] != "2":
+        raise SystemExit("FAIL composition: JSON dispatch did not preserve its inputs")
+    if microprogram.run("compute.compose", {**graph, "version": "other"}).status != "refused":
+        raise SystemExit("FAIL composition: unsupported version accepted")
+    compute_compose_test.run_cases()
+    computation_contract_test.run_cases()
+    contract = microprogram.run("compute.contract", {"program": "compute.compose"})
+    if contract.status != "ok" or "compute.compose" not in contract.output["request_schemas"]:
+        raise SystemExit("FAIL computation contract: registry discovery")
+    for args in (["{"], ["[]"], ["null"], ["{}", "{}"]):
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            exit_code = microprogram.cli("compute.contract", args, True)
+        if exit_code == 0 or json.loads(output.getvalue())["status"] != "refused":
+            raise SystemExit("FAIL computation contract: invalid CLI request accepted")
+    with contextlib.redirect_stdout(io.StringIO()) as output:
+        exit_code = microprogram.cli("compute.contract", [], True)
+    if exit_code or json.loads(output.getvalue())["status"] != "ok":
+        raise SystemExit("FAIL computation contract: empty discovery request refused")
+    module.CASES.append(
+        (
+            "reconcile preserves unmatched rows and refuses incompatible metadata",
+            "an incompatible or duplicate row accepted as a match",
+        )
+    )
+    print("  ok    reconcile exact keys and declared units")
+
+
+def finance_cases(module: ModuleType) -> None:
+    """Finance keeps decimal arithmetic, provenance and incompatible inputs distinct."""
+    import finance_catalog
+    import microprogram
+
+    period = {"start": "2025" + "-01-01", "end": "2025" + "-12-31"}
+
+    def item(measure: str, amount: str, **extra: object) -> dict:
+        return {"measure": measure, "value": amount, "unit": "USD", "period": period, "source": measure, **extra}
+
+    inputs = {
+        "interest_expense": item("interest_expense", "5"),
+        "average_interest_bearing_debt": item("average_interest_bearing_debt", "100"),
+    }
+    result = microprogram.run("finance.evaluate", {"formula": "cost_of_debt.historical", "inputs": inputs})
+    if result.status != "ok" or result.output["value"] != "0.05" or result.evidence_refs != tuple(inputs):
+        raise SystemExit(f"FAIL finance debt: {result.to_dict()}")
+    variance = {"actual": item("actual", "0.3", metric="revenue"), "budget": item("budget", "0.2", metric="revenue")}
+    result = microprogram.run("finance.evaluate", {"formula": "variance.absolute", "inputs": variance})
+    if result.status != "ok" or result.output["value"] != "0.1":
+        raise SystemExit(f"FAIL finance variance: {result.to_dict()}")
+    large = "10000000000000000000000000000000000"
+    variance_large = {
+        "actual": item("actual", large + "1", metric="revenue"),
+        "budget": item("budget", large + "0", metric="revenue"),
+    }
+    result = microprogram.run("finance.evaluate", {"formula": "variance.absolute", "inputs": variance_large})
+    if result.status != "ok" or result.output["value"] != "1":
+        raise SystemExit(f"FAIL finance variance cancellation: {result.to_dict()}")
+    for bad in (
+        item("budget", "0", metric="cost"),
+        item("budget", "0.2", metric="revenue", unit="EUR"),
+        item("budget", "NaN", metric="revenue"),
+    ):
+        if (
+            microprogram.run(
+                "finance.evaluate", {"formula": "variance.absolute", "inputs": {**variance, "budget": bad}}
+            ).status
+            != "refused"
+        ):
+            raise SystemExit("FAIL finance: incompatible input accepted")
+    zero = {**inputs, "average_interest_bearing_debt": item("average_interest_bearing_debt", "0")}
+    if microprogram.run("finance.evaluate", {"formula": "cost_of_debt.historical", "inputs": zero}).status != "refused":
+        raise SystemExit("FAIL finance: zero debt accepted")
+    capital = {
+        "formula": "capital.periodic",
+        "cash_flows": ["-100", "60", "60"],
+        "rate": "0",
+        "currency": "USD",
+        "period_unit": "year",
+        "source": "forecast",
+    }
+    result = microprogram.run("finance.evaluate", capital)
+    if (
+        result.status != "ok"
+        or result.output["npv"] != "20"
+        or result.output["profitability_index_net"] != "1.2"
+        or result.output["discounted_payback"] != "1.666666666666666666666666666666667"
+    ):
+        raise SystemExit(f"FAIL capital: {result.to_dict()}")
+    result = microprogram.run(
+        "finance.evaluate", {**capital, "cash_flows": ["-" + large, "10000000000000000000000000000000001"]}
+    )
+    if result.status != "ok" or result.output["npv"] != "1":
+        raise SystemExit(f"FAIL capital cancellation: {result.to_dict()}")
+    result = microprogram.run("finance.evaluate", {**capital, "cash_flows": ["-100", "120", "-10"]})
+    if result.status != "ok" or result.output["discounted_payback"] is not None:
+        raise SystemExit("FAIL capital: nonconventional payback")
+    if microprogram.run("finance.evaluate", {**capital, "rate": "-1"}).status != "refused":
+        raise SystemExit("FAIL capital: invalid discount rate")
+    if microprogram.run("finance.evaluate", {**capital, "timing": "period beginning"}).status != "refused":
+        raise SystemExit("FAIL capital: unsupported timing accepted")
+    uncertain = {**capital, "cash_flows": ["-1", "3", "-3", "1"], "rate": "0." + "0" * 74 + "1"}
+    if microprogram.run("finance.evaluate", uncertain).status != "refused":
+        raise SystemExit("FAIL capital: rounded zero reported as exact")
+    cancellation = {
+        **capital,
+        "cash_flows": ["-1", "9", "-36", "84", "-126", "126", "-84", "36", "-9", "1"],
+        "rate": "0.00001",
+    }
+    if microprogram.run("finance.evaluate", cancellation).status != "refused":
+        raise SystemExit("FAIL capital: uncertain sign accepted")
+    exact = microprogram.run("finance.evaluate", {**capital, "cash_flows": ["-1", "1", "2", "12"], "rate": "2"})
+    if (
+        exact.status != "ok"
+        or exact.output["npv"] != "0"
+        or exact.output["profitability_index_net"] != "1"
+        or exact.output["discounted_payback"] != "3"
+    ):
+        raise SystemExit(f"FAIL capital: exact recovery {exact.to_dict()}")
+    exact = microprogram.run("finance.evaluate", {**capital, "cash_flows": ["-1", "1", "6", "1"], "rate": "2"})
+    if exact.status != "ok" or exact.output["discounted_payback"] != "2":
+        raise SystemExit(f"FAIL capital: exact recovery before horizon {exact.to_dict()}")
+    instruments = microprogram.run("finance.evaluate", {"formula": "instrument.lookup"})
+    fx = microprogram.run("finance.evaluate", {"formula": "instrument.lookup", "query": 11})
+    if len(instruments.output["instruments"]) != 38 or fx.output["instruments"][0]["symbol"] != "EUR/USD":
+        raise SystemExit("FAIL finance: instrument catalog")
+    with mock.patch.object(finance_catalog, "_ROWS", tuple(reversed(finance_catalog._ROWS))):
+        reordered = microprogram.run("finance.evaluate", {"formula": 104, "query": 11})
+    ids = [row["id"] for row in instruments.output["instruments"]]
+    if len(ids) != len(set(ids)) or reordered.output["instruments"][0]["symbol"] != "EUR/USD":
+        raise SystemExit("FAIL finance: duplicate or order-dependent identifiers")
+    listing = microprogram.run("finance.evaluate", {"formula": "list"})
+    if listing.output["required_inputs"][103] != ("cash_flows", "rate", "currency", "period_unit", "source"):
+        raise SystemExit("FAIL finance: operation inputs are not discoverable")
+    discounted = microprogram.run(
+        "finance.evaluate", {**capital, "formula": 103, "cash_flows": ["-100", "110"], "rate": "0.1"}
+    )
+    if (
+        discounted.status != "ok"
+        or discounted.output["npv"] != "0"
+        or discounted.output["profitability_index_net"] != "1"
+    ):
+        raise SystemExit(f"FAIL capital: discounting {discounted.to_dict()}")
+    concept = microprogram.run("finance.evaluate", {"formula": 105, "query": 202})
+    if concept.status != "ok" or concept.output["concepts"][0]["label"] != "irr":
+        raise SystemExit("FAIL finance: concept lookup")
+    source = microprogram.run("finance.evaluate", {"formula": 106, "query": "rates"})
+    if source.status != "ok" or not any(row["id"] == 302 for row in source.output["sources"]):
+        raise SystemExit("FAIL finance: source lookup")
+    chart = microprogram.run("finance.evaluate", {"formula": 107, "values": ["1", "2", "3"]})
+    if chart.status != "ok" or chart.output["chart"] != " =@":
+        raise SystemExit("FAIL finance: series visualization")
+    if microprogram.run("finance.evaluate", {"formula": 107, "values": ["NaN"]}).status != "refused":
+        raise SystemExit("FAIL finance: malformed series accepted")
+    module.CASES.append(
+        (
+            "finance evaluates decimal equations and refuses incompatible inputs",
+            "incompatible measures, units or zero debt accepted",
+        )
+    )
+    print("  ok    finance decimals, evidence and refusals")
 
 
 def cli_cases(module: ModuleType) -> None:
@@ -571,6 +783,8 @@ def run(module: ModuleType) -> None:
         result_contract_cases,
         run_never_raises_cases,
         wrapper_cases,
+        reconcile_cases,
+        finance_cases,
         cli_cases,
         next_step_cases,
         timeout_cases,

@@ -33,8 +33,9 @@ from typing import IO, Any
 
 import receipt
 import resilience
-from atlascore import ROOT, atlas, changed_paths, diff_names, ls_files, resolved_once, strict_yaml, text_of
+from atlascore import ROOT, atlas, changed_paths, diff_names, resolved_once, strict_yaml, text_of
 from localtools import find_tool
+from verifyinputs import _digest, _input_names, input_digest
 
 TIMEOUT = 900
 # A cap leaves capacity for the gates themselves: more Python launchers than this only contend.
@@ -81,27 +82,6 @@ def _bounded_run(argv: list[str], cwd: Path, env: dict | None = None) -> tuple[i
         done = subprocess.run(argv, cwd=cwd, timeout=TIMEOUT, check=False, env=env or _gate_env(), **fds)  # noqa: S603
         (said, said_bytes), (cried, cried_bytes) = _bounded_read(out), _bounded_read(err)
         return done.returncode, said + cried, said_bytes + cried_bytes
-
-
-def _input_names(root: Path) -> list[bytes]:
-    """Every versioned or untracked path, in byte order, so a digest is the same on every machine."""
-    names = ls_files(root, flags=("--cached", "--others", "--exclude-standard"))
-    return sorted(name.encode("utf-8", "surrogateescape") for name in names)
-
-
-def _digest(root: Path, names: list[bytes]) -> str:
-    digest = hashlib.sha256()
-    for raw in names:
-        path = root / raw.decode("utf-8", errors="surrogateescape")
-        digest.update(raw + b"\0")
-        digest.update(path.read_bytes() if path.is_file() else b"\0deleted")  # deleted, not yet staged: still a state
-        digest.update(b"\0")
-    return digest.hexdigest()
-
-
-def input_digest(root: Path = ROOT) -> str:
-    """Digest every versioned or untracked input, never a timestamp or a prior verdict."""
-    return _digest(root, _input_names(root))
 
 
 def gate_inputs(gate: dict) -> list[str] | None:
@@ -796,11 +776,15 @@ def main(argv: list[str]) -> int:
     on_row = (lambda r: print_row(r, first_seen)) if live_stream else None
     change_class = _parse_change(argv) or "source_change"
     if not is_atlas_checkout(tree_root):
+        tree = input_digest(tree_root)
         rows = consumer_rows(tree_root, _parse_base(argv), change_class)
         pin = policy_pin(tree_root, argv) if receipt_to else None
         if pin:
             rows.append(pin["row"])
-        tree = input_digest(tree_root)
+        if input_digest(tree_root) != tree:
+            rows.append(
+                {"id": "input_stability", "verdict": "FAIL", "why": "repository inputs changed during verification"}
+            )
         code = report(
             rows,
             argv,
@@ -850,8 +834,6 @@ def main(argv: list[str]) -> int:
         if r["verdict"] == "PASS"
     }
     passed = saved | proven
-    if len(passed) > len(saved) and input_digest() == tree:  # a tree edited mid-run proves nothing about either
-        write_evidence(passed)
     measured = any(r["verdict"] != "REUSED" for r in rows)
     spared = round(sum(r.get("seconds") or 0 for r in rows if r["verdict"] == "REUSED"), 1)
     if changed:  # a fact read from the last suite's ledger, never run: the fast loop stays seconds
@@ -876,6 +858,14 @@ def main(argv: list[str]) -> int:
         if on_row:
             on_row(pin["row"])
         rows.append(pin["row"])
+    stable = input_digest(tree_root) == tree
+    if not stable:
+        row = {"id": "input_stability", "verdict": "FAIL", "why": "repository inputs changed during verification"}
+        rows.append(row)
+        if on_row:
+            on_row(row)
+    elif len(passed) > len(saved):
+        write_evidence(passed)
     code = report(
         rows,
         argv,

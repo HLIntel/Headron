@@ -11,14 +11,29 @@ import types
 import zlib
 from pathlib import Path
 from types import ModuleType
+from unittest.mock import patch
 
 
 def _selection_error(mod: ModuleType) -> str | None:
     """None when `mod.select` picks the moved and the unrecorded group and leaves the untouched one."""
     real = mod.digest("VERSION")
-    data = {"groups": {"kept": {"deps": {"VERSION": real}}, "moved": {"deps": {"VERSION": "0" * 64}}}}
-    got = mod.select(("kept", "moved", "new"), data)
-    want = {"moved": ["VERSION"], "new": ["no passing record"]}
+    data = {
+        "groups": {
+            "kept": {"deps": {"VERSION": real}, "secs": 1},
+            "moved": {"deps": {"VERSION": "0" * 64}, "secs": 1},
+            "empty": {"deps": {}, "secs": 1},
+            "malformed": {"deps": [], "secs": 1},
+            "missing": {"deps": {"absent": None}, "secs": 1},
+            "traversal": {"deps": {"../VERSION": real}, "secs": 1},
+            "badtime": {"deps": {"VERSION": real}, "secs": "bad"},
+        }
+    }
+    got = mod.select(("kept", "moved", "new", "empty", "malformed", "missing", "traversal", "badtime"), data)
+    want = {
+        "moved": ["VERSION"],
+        "new": ["no passing record"],
+        **{name: ["invalid passing record"] for name in ("empty", "malformed", "missing", "traversal", "badtime")},
+    }
     return None if got == want else f"select picked {got}, want {want}"
 
 
@@ -42,7 +57,7 @@ def map_rows_case(module: ModuleType) -> None:
     with tempfile.TemporaryDirectory() as scratch:
         store = Path(scratch) / impact.STORE
         none = impact.changed_row(store)
-        clean = {"groups": {n: {"deps": {}, "secs": 1} for n in impact.groups()}}
+        clean = {"groups": {n: {"deps": {"VERSION": impact.digest("VERSION")}, "secs": 1} for n in impact.groups()}}
         store.write_text(json.dumps({"schema": impact.SCHEMA, **clean}), encoding="utf-8")
         quiet = impact.changed_row(store)
         # Many groups share the same dependencies, each list longer than zlib's 32 KB window sees back. Real
@@ -64,15 +79,22 @@ def map_rows_case(module: ModuleType) -> None:
         dangling = zlib.compress(
             json.dumps({"schema": impact.SCHEMA, "table": [], "groups": {"g": {"deps": [0]}}}).encode()
         )
+        negative = zlib.compress(
+            json.dumps(
+                {"schema": impact.SCHEMA, "table": [["VERSION", "0" * 64]], "groups": {"g": {"deps": [-1]}}}
+            ).encode()
+        )
         for bad in (
             stream[:-4],
             stream + b"x",
             dangling,
+            negative,
         ):  # the records all decode, so only the stream's end or the table can tell
             store.write_text(
                 json.dumps({"schema": impact.COMPRESSED_SCHEMA, "payload": base64.b64encode(bad).decode()})
             )
             damaged = damaged or impact.load(store)
+        _save_repair(impact, store)
     if none["verdict"] != "NOT RUN" or quiet["verdict"] != "PASS" or quiet.get("calls") != 0:
         raise SystemExit(f"FAIL impact rows: no map gave {none}, an untouched map gave {quiet}")
     if restored != data or damaged is not None or inflated is not None or len(payload) > impact.MAX_STORE_BYTES:
@@ -84,6 +106,18 @@ def map_rows_case(module: ModuleType) -> None:
         )
     )
     print("  ok    test-impact: no map is NOT RUN, an untouched map runs nothing")
+
+
+def _save_repair(impact: ModuleType, store: Path) -> None:
+    """An old corrupt group must not prevent fresh evidence from being saved."""
+    data = {"schema": impact.SCHEMA, "groups": {"bad": {"deps": [], "secs": 1}}}
+    store.write_text(json.dumps(data), encoding="utf-8")
+    records = {"good": {"deps": ["VERSION"], "secs": 1}}
+    with patch.object(impact, "groups", return_value=("bad", "good")), patch.object(impact, "_RECORDS", records):
+        count = impact.save(store)
+    saved = impact.load(store)
+    if count != 1 or saved is None or set(saved["groups"]) != {"good"}:
+        raise SystemExit(f"FAIL impact: malformed old records blocked saving: {saved}")
 
 
 def recorder_case(module: ModuleType) -> None:
@@ -121,6 +155,7 @@ def mutant_case(module: ModuleType) -> None:
     mutants = {
         "an edit never selects": ("if digest(p) != h]", "if digest(p) is None and h]"),
         "an unrecorded group never runs": ('chosen[name] = ["no passing record"]', "pass"),
+        "empty records skip": ("if not valid_record(rec):", 'if not valid_record(rec) and rec.get("deps") != {}:'),
     }
     for label, (old, new) in mutants.items():
         if old not in source:
@@ -131,12 +166,9 @@ def mutant_case(module: ModuleType) -> None:
         if _selection_error(mutant) is None:
             raise SystemExit(f"FAIL the selection guard passed a mutant: {label}")
     module.CASES.append(
-        (
-            "the selection guard catches both planted mutants of select()",
-            "a guard that passes whatever select() returns",
-        )
+        ("the selection guard catches planted mutants of select()", "a guard that passes whatever select() returns")
     )
-    print("  ok    test-impact: two mutants of select() caught")
+    print("  ok    test-impact: selection mutants caught")
 
 
 def run(module: ModuleType) -> None:

@@ -406,8 +406,70 @@ def key_names_running_interpreter_case(module: ModuleType | SimpleNamespace) -> 
     print("  ok    the evidence key names the running interpreter and its venv")
 
 
+def input_stability_case(module: ModuleType | SimpleNamespace) -> None:
+    """A passing consumer gate cannot attest to inputs changed while it runs."""
+    from unittest.mock import patch
+
+    import verify
+
+    def trial(after: str) -> tuple[int, list[dict]]:
+        rows = [{"id": "gate", "verdict": "PASS"}]
+        with (
+            patch.object(verify, "target_tree", return_value=Path.cwd()),
+            patch.object(verify, "is_atlas_checkout", return_value=False),
+            patch.object(verify, "input_digest", side_effect=["before", after]),
+            patch.object(verify, "consumer_rows", return_value=rows),
+            patch.object(verify, "_store", return_value=Path("/unused")),
+            patch.object(verify, "report", side_effect=lambda records, *a, **k: verify.verdict_code(records)),
+        ):
+            code = verify.main(["--json"])
+        return code, rows
+
+    good, _ = trial("before")
+    bad, rows = trial("after")
+    if good != 0 or bad == 0 or not any(r["id"] == "input_stability" and r["verdict"] == "FAIL" for r in rows):
+        raise SystemExit(f"FAIL input stability: unchanged={good}, changed={bad}, rows={rows!r}")
+    import receipt
+
+    received = receipt.build(rows, base_commit="a" * 40, policy_digest="b" * 64, input_digest="c" * 64)
+    if received["verdict"] != "FAIL":
+        raise SystemExit("FAIL a changed input produced a passing receipt")
+    module.CASES.append(("changed inputs refuse a verification verdict", "a gate proves a different tree"))
+    print("  ok    changing consumer inputs refuses verification")
+
+
+def input_identity_case(module: ModuleType | SimpleNamespace) -> None:
+    """Ambiguous byte boundaries, modes and symlink targets must not reuse evidence."""
+    import verify
+
+    with tempfile.TemporaryDirectory() as scratch:
+        root = Path(scratch)
+        a, b = root / "a", root / "b"
+        a.write_bytes(b"x\0b\0y")
+        joined = verify._digest(root, [b"a"])
+        a.write_bytes(b"x")
+        b.write_bytes(b"y")
+        split = verify._digest(root, [b"a", b"b"])
+        a.chmod(0o644)
+        ordinary = verify._digest(root, [b"a"])
+        a.chmod(0o755)
+        executable = verify._digest(root, [b"a"])
+        a.unlink()
+        a.symlink_to("b")
+        link = verify._digest(root, [b"a"])
+        a.unlink()
+        a.write_bytes(b"y")
+        regular = verify._digest(root, [b"a"])
+    if joined == split or ordinary == executable or link == regular:
+        raise SystemExit("FAIL distinct repository states shared a verification input identity")
+    module.CASES.append(("input identity binds boundaries, modes and symlinks", "different trees share cached proof"))
+    print("  ok    input identity distinguishes boundaries, modes and symlinks")
+
+
 def run(module: ModuleType | SimpleNamespace) -> None:
     for case in [
+        input_identity_case,
+        input_stability_case,
         undecided_case,
         bounded_case,
         concurrency_case,

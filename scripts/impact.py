@@ -24,11 +24,13 @@ import base64
 import binascii
 import hashlib
 import json
+import math
 import os
+import re
 import subprocess
 import sys
 import zlib
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from types import CodeType
 
 import atomicfile
@@ -189,6 +191,12 @@ def _intern(data: dict) -> dict:
 
 def _expand(packed: dict) -> dict:
     table = packed.pop("table")
+    if not isinstance(table, list) or any(
+        not isinstance(at, int) or isinstance(at, bool) or not 0 <= at < len(table)
+        for rec in packed["groups"].values()
+        for at in rec["deps"]
+    ):
+        raise ValueError("invalid dependency table index")
     groups = {name: {**rec, "deps": dict(table[at] for at in rec["deps"])} for name, rec in packed["groups"].items()}
     return {**packed, "groups": groups}
 
@@ -218,9 +226,10 @@ def save(store: Path | None = None) -> int:
         else:
             deps = {p: digest(p) for p in rec["deps"] if p in known}
             data["groups"][name] = {"deps": deps, "secs": rec["secs"]}
-    # Drop stale groups that no longer exist in PLANTED_GROUPS
-    for stale in set(data["groups"]) - live:
-        data["groups"].pop(stale, None)
+    # A damaged record cannot be packed or justify skipping a future run.
+    for name, rec in list(data["groups"].items()):
+        if name not in live or not valid_record(rec):
+            data["groups"].pop(name, None)
     # Bounded storage: if over cap, drop the cheapest groups to re-run (by secs, ascending) until under
     payload = _payload(data)
     if len(payload) > MAX_STORE_BYTES:
@@ -250,10 +259,36 @@ def select(names: tuple[str, ...], data: dict) -> dict[str, list[str]]:
         if rec is None:
             chosen[name] = ["no passing record"]
             continue
+        if not valid_record(rec):
+            chosen[name] = ["invalid passing record"]
+            continue
         moved = [p for p, h in rec["deps"].items() if digest(p) != h]
         if moved:
             chosen[name] = moved
     return chosen
+
+
+def valid_record(rec: object) -> bool:
+    """A skip needs a nonempty set of well-formed, repository-relative content identities."""
+    if not isinstance(rec, dict) or not isinstance(rec.get("deps"), dict) or not rec["deps"]:
+        return False
+    secs = rec.get("secs")
+    if (
+        isinstance(secs, bool)
+        or not isinstance(secs, (float, int))
+        or (isinstance(secs, float) and not math.isfinite(secs))
+        or secs < 0
+    ):
+        return False
+    for path, value in rec["deps"].items():
+        if not isinstance(path, str) or not path or "\\" in path:
+            return False
+        parts = PurePosixPath(path)
+        if parts.is_absolute() or ".." in parts.parts or str(parts) != path:
+            return False
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+            return False
+    return True
 
 
 def changed_row(store: Path | None = None) -> dict:
