@@ -3,7 +3,7 @@
 Part of [HEADRON](HEADRON.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-121 modules and 375 imports between them, read from the source; 63 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 90 modules use it. These 55 rows are the modules at least 2 others use; the other 66, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+122 modules and 378 imports between them, read from the source; 64 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 90 modules use it. These 55 rows are the modules at least 2 others use; the other 67, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -61,12 +61,13 @@ flowchart LR
 | [agreement](../scripts/agreement.py) | The agreement graph: which file implements which declaration, and what a diff puts at risk | 4 | atlasinv, commands | [atlas_landing_test](../scripts/atlas_landing_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) +1 |
 | [atlasgen](../scripts/atlasgen.py) | Every document section and file GENERATED from atlas.yaml, and the writer that repairs them | 4 | abtest, chatskill, commands, contextcost, dirscope, entryglance, exrun, i18n, knowledge, packmanifest, textguard | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
 | [atlasinv](../scripts/atlasinv.py) | The hard invariants: one function per promise, and the roster that refuses an unowned one | 4 | agentpolicy, atlasgen, cacheinv, callshape, cidrift, contextcost, declcheck, failureledger, knowledge, langbar, leaks, nativetools, orphans, packmanifest, plantcheck, roster, scoreboard, testgroups, yamlshape | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
+| [graph](../scripts/graph.py) | Knowledge graph module — pointers, links, tags, edges, and tunnels | 4 | claims, exrun | [decide_test](../scripts/decide_test.py), [microprogram_test](../scripts/microprogram_test.py) |
 | [localtools](../scripts/localtools.py) | The tool a project installed for itself, found where its package manager put it | 4 |  | [localtools_test](../scripts/localtools_test.py) |
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind rather than as a path or a command name | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
 | [boundedinput](../scripts/boundedinput.py) | Bounded UTF-8 stdin for hooks and local decision requests | 3 |  | [readiness_test](../scripts/readiness_test.py) |
 | [cidrift](../scripts/cidrift.py) | Drift guard: every script a CI workflow runs is a declared gate, or is named as CI-only | 3 |  |  |
 | [consumergates](../scripts/consumergates.py) | Consumer gate discovery, shared by landing and verification | 3 | consumerimpact, verify | [consumer_test](../scripts/consumer_test.py) |
-| [graph](../scripts/graph.py) | Knowledge graph module — pointers, links, tags, edges, and tunnels | 3 | claims, exrun | [decide_test](../scripts/decide_test.py) |
+| [mind](../scripts/mind.py) | Headron Mind API — unified orchestration layer for agent workflows | 3 | adaptive, agentpolicy, atlasindex, decide, graph, knowledge, microprogram, mind_diagnostics, port, receipt, reflex, safeedit, slot, sweep, verify | [mcp_test](../scripts/mcp_test.py), [microprogram_test](../scripts/microprogram_test.py) +1 |
 | [receipt](../scripts/receipt.py) | Headron receipt v1: one verify run as a record that verifies from its own bytes | 3 | receiptsign, safeedit | [gitobject_test](../scripts/gitobject_test.py), [receipt_test](../scripts/receipt_test.py) +1 |
 | [reflex](../scripts/reflex.py) | Command classification primitives — single-pass diff and command classification | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |
 | [roster](../scripts/roster.py) | instrument_roster: which scripts are instruments, and which instrument no gate reaches | 3 | cidrift, dirscope, importgraph | [atlas_rules_test](../scripts/atlas_rules_test.py) |
@@ -86,7 +87,6 @@ flowchart LR
 | [gitobject](../scripts/gitobject.py) | Git's object identity, computed in this process: no `git` is spawned, so a hook can answer with zero shell… | 2 |  | [gitobject_test](../scripts/gitobject_test.py) |
 | [headron_mcp](../scripts/headron_mcp.py) | Headron as an MCP server: the same commands `headron` answers, offered as tools over stdio | 2 | agents, atlas, commands, mind_verifier | [agents_test](../scripts/agents_test.py), [atlas_guards_test](../scripts/atlas_guards_test.py) +3 |
 | [impact](../scripts/impact.py) | The runtime test-impact map: which repository files each planted group ACTUALLY loads, keyed on content hashes | 2 | atomicfile, importgraph, safeedit, testgroups, verify | [atlas_rules_test](../scripts/atlas_rules_test.py), [impact_test](../scripts/impact_test.py) |
-| [mind](../scripts/mind.py) | Headron Mind API — unified orchestration layer for agent workflows | 2 | adaptive, agentpolicy, atlasindex, decide, graph, knowledge, mind_diagnostics, port, receipt, reflex, safeedit, slot, sweep, verify | [mcp_test](../scripts/mcp_test.py), [mind_test](../scripts/mind_test.py) |
 | [mind_diagnostics](../scripts/mind_diagnostics.py) | Headron Mind API Diagnostics & Recovery — failure diagnosis and remediation | 2 | adaptive, knowledge, mind |  |
 | [onboard](../scripts/onboard.py) | `headron init`: the first five minutes in a repository, in one command | 2 | branchstate, consumergates, enforce, localtools, verify |  |
 | [providers](../scripts/providers.py) | Where a measurement may send a prompt: OpenAI-compatible endpoints, their key NAMES, their pace | 2 | atomicfile, resilience | [agent_test](../scripts/agent_test.py) |
