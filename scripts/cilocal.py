@@ -15,6 +15,9 @@ slot.spare_cores() says so. A dirty tree, width 1, or named jobs run in place, o
 proves: a unit is ok only when every one of its steps exited 0 within its bound, and only after its needs were ok
 does_not_prove: that a step's command checks what its name says; that is the step's own instrument
 closed_by: cilocal_test.py, which plants a failed need, a hung step, a missing tool, a killed child and a dirty tree
+
+See also: cipipeline.py (job declarations), micrograph.py (DAG ordering), microprogram.py (step results),
+gaterunner.py (step execution), slot.py (core budgeting).
 """
 
 from __future__ import annotations
@@ -35,7 +38,7 @@ from types import ModuleType
 import cipipeline
 import gaterunner
 import micrograph
-from atlascore import text_of
+from atlascore import git_run, text_of
 from microprogram import MicroResult
 from slot import spare_cores
 
@@ -56,12 +59,13 @@ def _width() -> int:
 
 def _committed_head() -> str | None:
     """HEAD when the tree IS HEAD. A dirty tree runs in place: a worktree of HEAD would pass without its edits."""
-    status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False, timeout=600)
+    status = git_run(None, "status", "--porcelain")
     if status.returncode or status.stdout.strip():
         return None
-    return subprocess.run(
-        ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True, timeout=600
-    ).stdout.strip()
+    rev = git_run(None, "rev-parse", "HEAD")
+    if rev.returncode:
+        return None
+    return rev.stdout.strip()
 
 
 def load(path: str | Path) -> ModuleType:

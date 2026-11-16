@@ -8,6 +8,8 @@ path in a doc, a personal address in an example, a LAN address in a config, a lo
 committed by accident. Those identify a machine and a person as surely as a key identifies an account.
 
 Each finding is refused unless it is a declared placeholder (atlas.yaml/public_surface/placeholders).
+
+See also: privacy_guard.py (pre-commit secret and PII detection), importgraph.py (network library tracking).
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ import subprocess
 import sys
 from functools import lru_cache
 
-from atlascore import ROOT, atlas, parsed_python, text_of, tracked
+from atlascore import ROOT, atlas, git_run, parsed_python, text_of, tracked
 from importgraph import NETWORK_IMPORTS, network_libraries
 
 PATTERNS = {
@@ -87,9 +89,8 @@ def private_terms(home: str | None = None) -> tuple[str, ...] | None:
 
 
 def _git_config(key: str) -> str:
-    done = subprocess.run(
-        ["git", "config", "--get", key], cwd=ROOT, capture_output=True, text=True, timeout=60, check=False
-    )  # noqa: S603, S607
+    """Read a git config value through atlascore's centralized git_run()."""
+    done = git_run(ROOT, "config", "--get", key)
     return done.stdout.strip()
 
 

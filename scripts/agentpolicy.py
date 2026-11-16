@@ -17,6 +17,9 @@ and why `agentrun.py` prints the host-observed ones as UNOBSERVED rather than as
 THE CONTRACT'S OWN BUDGETS ARE A PREFERENCE. A contract is written by the same agent these
 controls bound, so `effective_budgets` takes the LOWER of the declaration and the contract —
 never the contract alone.
+
+See also: agenteffects.py (post-action effects), agentrun.py (task runner), agentaudit.py (audit trail),
+processpolicy.py (process conditions), shellsplit.py (shell parsing), packmanifest.py (language packs).
 """
 from __future__ import annotations
 
