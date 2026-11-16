@@ -398,6 +398,7 @@ def fan_out(workflow: str, units: dict[str, list[str]], head: str, runner_temp: 
 # WHY A LANDING NEEDS A HAND, declared (field ledger 2026-11: 47 of 182 landings exited 65, cause unrecorded,
 # so no fix could be ranked). Every 65 in branchstate._land_once names one; one that names none is "unattributed".
 LAND_REFUSALS = ("uninspectable", "diverged", "rebase", "merge", "gate", "replay", "post_ci")
+LAND_UNATTRIBUTED = "unattributed"  # a 65 whose cause no `refuse` named: the role known, its value not
 refusal: dict[str, str] = {}  # this landing's cause; record_landing consumes it, so none reaches the next landing
 
 
@@ -429,7 +430,7 @@ def record_landing(code: int, attempts: int) -> int:
 
     body: dict[str, object] = {"armed": code == 0, "result_code": code, "attempts": attempts}
     if code == 65:  # the cause of a refusal that needs a hand, so the split by cause is measurable
-        body.update(refusal or {"reason": "unattributed"})
+        body.update(refusal or {"reason": LAND_UNATTRIBUTED})
     refusal.clear()
     agents.field("field_landed", body)
     return code
