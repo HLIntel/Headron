@@ -235,6 +235,13 @@ def agents_md() -> str:
     return agent_entrypoint("agents")
 
 
+def pyproject_field(key: str) -> str:
+    """One `key = "value"` line of pyproject.toml. The package description is the one-line summary
+    llms.txt opens with: a second hand-written copy here had already drifted to a different sentence."""
+    match = re.search(rf'^{key}\s*=\s*"([^"]+)"', read("pyproject.toml"), re.M)
+    return match.group(1) if match else "(not declared)"
+
+
 def llms_txt() -> str:
     """llms.txt — the machine-readable entry point, in the convention agents already look for.
 
@@ -251,7 +258,7 @@ def llms_txt() -> str:
     lines = [
         f"# {ident['project_name']} by {ident['display_name']} (contract v{read('VERSION').strip()})",
         "",
-        "> Rules and build checks for AI coding agents.",
+        f"> {pyproject_field('description')}",
         "",
         "<!-- GENERATED from atlas.yaml by `atlas.py index --write`; do not edit. -->",
         "",
@@ -604,16 +611,10 @@ def examples_block() -> str:
 
 def packages_block() -> str:
     """What this repository declares as a package, and what it depends on."""
-    pyproject = read("pyproject.toml")
-
-    def field(key: str) -> str:
-        match = re.search(rf'^{key}\s*=\s*"([^"]+)"', pyproject, re.M)
-        return match.group(1) if match else "(not declared)"
-
     requirements = [ln.strip() for ln in read("scripts/requirements.txt").splitlines() if ln.strip()]
     rows = [
-        ("harness package", f"`{field('name')}`", "declared in `pyproject.toml`; released to the index once `PYPI_PUBLISH` is on"),
-        ("python required", f"`{field('requires-python')}`", "`pyproject.toml`"),
+        ("harness package", f"`{pyproject_field('name')}`", "declared in `pyproject.toml`; released to the index once `PYPI_PUBLISH` is on"),
+        ("python required", f"`{pyproject_field('requires-python')}`", "`pyproject.toml`"),
         ("runtime dependency", ", ".join(f"`{r}`" for r in requirements),
          "`scripts/requirements.txt`, mirrored in `pyproject.toml`"),
         ("what CI actually installs", "`scripts/requirements.lock.txt`",
