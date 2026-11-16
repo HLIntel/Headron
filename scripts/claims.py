@@ -177,8 +177,8 @@ def validity(name: str, claims: dict | None = None, root: Path = ROOT) -> tuple[
     spec = claims.get(name)
     if spec is None:
         return "refused", f"{name!r} names no claim in {REGISTRY}", f"pick a claim from {REGISTRY}"
-    if not isinstance(spec, dict) or (missing := [f for f in FIELDS if not spec.get(f)]):
-        missing = FIELDS if not isinstance(spec, dict) else missing
+    missing = list(FIELDS) if not isinstance(spec, dict) else [f for f in FIELDS if not spec.get(f)]
+    if missing:
         return "unknown", f"claim {name} declares no {', '.join(missing)}", f"repair claim {name}: `atlas check`"
     if spec.get("label") not in LABELS or spec.get("status") not in STATUSES:
         return "unknown", f"claim {name} has an undeclared label or status", f"repair claim {name}: `atlas check`"
