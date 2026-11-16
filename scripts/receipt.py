@@ -29,11 +29,17 @@ import sys
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import NotRequired, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 RECEIPT_SCHEMA = 1
 KIND = "headron.receipt"
+COMPUTATION_KIND = "headron.computation_receipt"
 STATES = ("PASS", "FAIL", "NOT RUN", "SKIP")
+COMPUTATION_STATUSES = ("ok", "unknown", "refused", "error")
+
+
+def _is_sha_hex(value: object, length: int) -> bool:
+    return isinstance(value, str) and re.fullmatch(rf"[0-9a-f]{{{length}}}", value) is not None
 
 
 class Policy(TypedDict):
@@ -70,24 +76,20 @@ FINDING_WHY_CAP = 200
 
 def _shape_error(receipt: dict) -> str | None:
     """Check the v1 schema with the standard library, including nested fields."""
-
-    def sha(value: object, length: int) -> bool:
-        return isinstance(value, str) and re.fullmatch(rf"[0-9a-f]{{{length}}}", value) is not None
-
     if set(receipt) != {*REQUIRED, "schema", "kind"}:
         return "receipt fields do not match schema 1"
     if isinstance(receipt["schema"], bool) or receipt["schema"] != 1 or receipt["kind"] != KIND:
         return "receipt schema or kind is invalid"
-    if not sha(receipt["receipt_id"], 64) or not sha(receipt["input_digest"], 64):
+    if not _is_sha_hex(receipt["receipt_id"], 64) or not _is_sha_hex(receipt["input_digest"], 64):
         return "receipt_id or input_digest is not a sha256 digest"
     base = receipt["base_commit"]
     # Spelled here, not imported: this file verifies alone. gitobject_test holds the two to one answer.
-    if base is not None and not (sha(base, 40) or sha(base, 64)):
+    if base is not None and not (_is_sha_hex(base, 40) or _is_sha_hex(base, 64)):
         return "base_commit is not a commit hash or null"
     policy = receipt["policy"]
     if not isinstance(policy, dict) or set(policy) != {"source", "digest"} or policy["source"] != "base":
         return "policy fields or source are invalid"
-    if policy["digest"] is not None and not sha(policy["digest"], 64):
+    if policy["digest"] is not None and not _is_sha_hex(policy["digest"], 64):
         return "policy digest is not a sha256 digest or null"
     checks = receipt["checks"]
     if not isinstance(checks, list):
@@ -162,6 +164,40 @@ def build(rows: list[dict], *, base_commit: str | None, policy_digest: str | Non
     return {"receipt_id": digest(body), **body}
 
 
+def build_computation_receipt(
+    *,
+    program: str,
+    version: str,
+    inputs: Any,
+    outputs: Any,
+    status: str,
+    verification: Mapping[str, Any] | None = None,
+    evidence_refs: tuple[str, ...] | list[str] = (),
+) -> dict:
+    """Build a computation receipt binding inputs, version, outputs, and verification results."""
+    in_digest = digest(inputs)
+    out_digest = digest(outputs) if outputs is not None else None
+    verif = dict(
+        verification
+        or {
+            "status": "PASS" if status == "ok" else "FAIL",
+            "checks": [{"id": f"{program}.contract", "state": "PASS" if status == "ok" else "FAIL"}],
+        }
+    )
+    body: dict[str, Any] = {
+        "schema": RECEIPT_SCHEMA,
+        "kind": COMPUTATION_KIND,
+        "program": str(program),
+        "version": str(version),
+        "status": str(status),
+        "input_digest": in_digest,
+        "output_digest": out_digest,
+        "verification": verif,
+        "evidence_refs": [str(r) for r in evidence_refs],
+    }
+    return {"receipt_id": digest(body), **body}
+
+
 def dumps(receipt: Mapping[str, object]) -> str:
     return json.dumps(receipt, indent=2) + "\n"
 
@@ -175,13 +211,67 @@ def _unique_pairs(pairs: list[tuple[str, object]]) -> dict:
     return result
 
 
+COMPUTATION_REQUIRED = (
+    "schema",
+    "kind",
+    "receipt_id",
+    "program",
+    "version",
+    "status",
+    "input_digest",
+    "output_digest",
+    "verification",
+    "evidence_refs",
+)
+
+
+def _computation_shape_error(receipt: dict) -> str | None:
+    if set(receipt) != set(COMPUTATION_REQUIRED):
+        return "computation receipt fields do not match schema 1"
+    if isinstance(receipt["schema"], bool) or receipt["schema"] != 1 or receipt["kind"] != COMPUTATION_KIND:
+        return "computation receipt schema or kind is invalid"
+    if not _is_sha_hex(receipt["receipt_id"], 64) or not _is_sha_hex(receipt["input_digest"], 64):
+        return "receipt_id or input_digest is not a sha256 digest"
+    if receipt["output_digest"] is not None and not _is_sha_hex(receipt["output_digest"], 64):
+        return "output_digest must be a sha256 digest or null"
+    if not isinstance(receipt["program"], str) or not receipt["program"].strip():
+        return "program is not a non-empty string"
+    if not isinstance(receipt["version"], str) or not receipt["version"].strip():
+        return "version is not a non-empty string"
+    if receipt["status"] not in COMPUTATION_STATUSES:
+        return f"status is outside {list(COMPUTATION_STATUSES)}"
+    if receipt["status"] == "ok" and receipt["output_digest"] is None:
+        return "status is ok but output_digest is null"
+    if not isinstance(receipt["verification"], dict):
+        return "verification must be an object"
+    if not isinstance(receipt["evidence_refs"], list) or any(not isinstance(r, str) for r in receipt["evidence_refs"]):
+        return "evidence_refs must be a list of strings"
+    return None
+
+
+def verify_computation_receipt(receipt: dict) -> list[str]:
+    """Check a computation receipt against its integrity rules."""
+    shape_err = _computation_shape_error(receipt)
+    if shape_err:
+        return [shape_err]
+    findings = []
+    body = {k: v for k, v in receipt.items() if k != "receipt_id"}
+    if receipt["receipt_id"] != digest(body):
+        findings.append("receipt_id does not match the computation's contents: edited or mis-copied")
+    return findings
+
+
 def verify_bytes(data: bytes) -> list[str]:
     """Each finding against a receipt's own bytes; an empty list means intact. Reads no repository."""
     try:
         receipt = json.loads(data.decode("utf-8"), object_pairs_hook=_unique_pairs)
     except (UnicodeDecodeError, ValueError, RecursionError) as error:
         return [f"not a JSON receipt: {error}"]
-    if not isinstance(receipt, dict) or receipt.get("schema") != RECEIPT_SCHEMA or receipt.get("kind") != KIND:
+    if not isinstance(receipt, dict):
+        return ["receipt must be an object"]
+    if receipt.get("kind") == COMPUTATION_KIND:
+        return verify_computation_receipt(receipt)
+    if receipt.get("schema") != RECEIPT_SCHEMA or receipt.get("kind") != KIND:
         return [f"not a {KIND} schema {RECEIPT_SCHEMA} record"]
     missing = [field for field in REQUIRED if field not in receipt]
     if missing:
@@ -318,6 +408,11 @@ def main(argv: list[str]) -> int:
     receipt = json.loads(data)
     signed = f"  signed by {options['--signed-by']}" if "--signed-by" in options else ""
     wrote = f"  wrote {argv[1]}.sig" if argv[0] == "sign" else ""
+    if receipt.get("kind") == COMPUTATION_KIND:
+        print(
+            f"ok    {receipt['receipt_id']}  computation {receipt['program']} v{receipt['version']}  status {receipt['status']}{signed}{wrote}"
+        )
+        return 0
     print(
         f"ok    {receipt['receipt_id']}  verdict {receipt['verdict']}  {len(receipt['checks'])} checks{signed}{wrote}"
     )
