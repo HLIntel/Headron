@@ -327,6 +327,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         "set up a repository: machine, languages, checks, agent wiring, first run",
         "emit the setup as a record",
         (
+            _arg("--dry-run", **_ON, help="preview setup without modifying files or installing hooks"),
             _arg(
                 "--no-wiring",
                 **_ON,
