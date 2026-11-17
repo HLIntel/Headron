@@ -100,7 +100,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,634 tokens. The 214 documents (734 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,634 tokens. The 214 documents (733 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
