@@ -57,6 +57,8 @@ export VIRTUAL_ENV="$work/venv" PATH="$work/venv/bin:$PATH"
 "$runner" scripts/cilocal.py --runner-temp "$work/runner" "$@" &
 child=$!
 trap 'kill -TERM "$child" 2>/dev/null' TERM INT
+# An interrupted or failed wait must not bypass the cleanup loop under errexit.
+set +e
 wait "$child"
 rc=$?
 while kill -0 "$child" 2>/dev/null; do
