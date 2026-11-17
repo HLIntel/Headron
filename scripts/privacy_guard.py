@@ -21,8 +21,9 @@ RULES (a finding prints file:line and a redacted value, never the whole value)
             npm, PyPI, Docker, Vercel, generic API keys, or a PEM private key
   name      a term from the personal denylist (see DENYLIST below)
 
-ESCAPE. A line that carries the marker `privacy: allow` is not refused. Use it for a fixture that
-must hold the shape. Do not use it to excuse a real value; rotate the value and remove it instead.
+ESCAPE. A line that carries the marker `privacy: allow` excuses benign fixture paths and placeholder
+text in tests. It NEVER excuses cryptographic secrets (AWS, GitHub, Stripe, PEM keys, etc.), which are
+always refused and must be rotated.
 
 DENYLIST. The personal terms are NEVER written into this repository, because a list of them is
 itself the leak. They live in the file named by $HEADRON_PRIVACY_DENY, or else
@@ -127,6 +128,10 @@ def load_denylist() -> list[re.Pattern[str]] | None:
 
 
 def scan_line(where: str, text: str, names: list[re.Pattern[str]] | None, findings: list[str]) -> None:
+    # Secrets can NEVER be escaped by an inline marker: an active credential must be rotated, not excused.
+    for label, rx in SECRET_SHAPES:
+        for m in rx.finditer(text):
+            findings.append(f"{where}: secret ({label}): {redact(m.group(0))}")
     if ESCAPE in text:
         return
     for m in EMAIL.finditer(text):
@@ -135,9 +140,6 @@ def scan_line(where: str, text: str, names: list[re.Pattern[str]] | None, findin
     for m in HOME.finditer(text):
         if m.group(1).lower() not in PLACEHOLDER_HOMES:
             findings.append(f"{where}: home path: {redact(m.group(0))}")
-    for label, rx in SECRET_SHAPES:
-        for m in rx.finditer(text):
-            findings.append(f"{where}: secret ({label}): {redact(m.group(0))}")
     for rx in names or []:
         for m in rx.finditer(text):
             findings.append(f"{where}: name: {redact(m.group(0))}")

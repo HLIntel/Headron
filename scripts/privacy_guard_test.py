@@ -142,8 +142,11 @@ def main() -> int:
     expect("aws key refused", 1, "--staged", {"a.txt": key}, "AWS access key")
     expect("key value redacted", 1, "--staged", {"a.txt": key}, "AKI***")
     expect("pem refused", 1, "--staged", {"a.txt": b"-----BEGIN RSA " + b"PRIVATE KEY-----\n"}, "PEM")
-    # the escape marker is the only way past a finding
+    # the escape marker only excuses fixture paths and benign placeholders, never actual cryptographic secrets
     expect("escape clean", 0, "--staged", {"a.txt": b"open /Us" + b"ers/alice/x  # privacy: allow\n"})
+    expect(
+        "secret with escape still refused", 1, "--staged", {"a.txt": key + b"  # privacy: allow\n"}, "AWS access key"
+    )
     # identity: a non-noreply author is refused on the next commit
     root, env = repo_with({"a.txt": b"ok\n"})
     git(root, "config", "user.email", "jane" + AT + "acme.io")
@@ -194,7 +197,7 @@ def main() -> int:
     if FAILED:
         print("privacy_guard_test: FAILED", *FAILED, sep="\n  ")
         return 1
-    print("privacy_guard_test: ok (30 cases)")
+    print("privacy_guard_test: ok (31 cases)")
     return 0
 
 

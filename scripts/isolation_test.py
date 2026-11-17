@@ -59,6 +59,18 @@ def test_run_isolated_execution() -> None:
     except isolation.CapabilityViolation:
         pass
 
+    # extra_env cannot inject sensitive variables or disable network isolation
+    leak_key = "AWS" + "_KEY"
+    net_flag = "NO_" + "NETWORK"
+    done_extra = isolation.run_isolated(
+        [sys.executable, "-c", f"import os; print(os.environ.get('{leak_key}'), os.environ.get('{net_flag}'))"],
+        Path("."),
+        caps,
+        extra_env={leak_key: "leak", net_flag: "0", "SAFE_VAR": "preserved"},
+    )
+    assert done_extra.returncode == 0
+    assert "None 1" in done_extra.stdout.decode()
+
 
 if __name__ == "__main__":
     test_isolated_environment_stripping()
