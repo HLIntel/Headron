@@ -584,7 +584,26 @@ def _pack_directory(path: Path) -> str | None:
 
 def is_pack_document(path_value: str) -> bool:
     path = (ROOT / path_value).resolve()
-    return path.name in {"README.md", "OPERATING.md"} and path.parent.parent == ROOT / "languages"
+    return path.name == "README.md" and path.parent.parent == ROOT / "languages"
+
+
+# ONE PACK, ONE DOCUMENT. The operating card was a second file beside each guide; it is now the
+# `## Operating card` section of the guide, so a pack is README.md + tools.yaml. The wire key stays
+# `operating_card`; its value is the guide with this anchor.
+OPERATING_CARD_HEADING = "## Operating card"
+
+
+def operating_card_ref(route: str) -> str:
+    return f"languages/{route}/README.md#operating-card"
+
+
+def operating_card(route: str) -> str | None:
+    """The card section of a pack's guide, or None when the guide or the section is missing."""
+    path = ROOT / "languages" / route / "README.md"
+    if not path.is_file():
+        return None
+    m = re.search(rf"^{re.escape(OPERATING_CARD_HEADING)}\n(.*?)(?=^## |\Z)", text_of(path), re.S | re.M)
+    return m.group(1) if m else None
 
 
 def route_with_evidence(path_value: str) -> tuple[str | None, str, str]:

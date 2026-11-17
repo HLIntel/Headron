@@ -62,5 +62,5 @@ policy:
     - test_failure
     - security_failure
 notes:
-  profiler: "profiling needs a dataset and report files; follow the profile task in languages/futhark/OPERATING.md"
+  profiler: "profiling needs a dataset and report files; follow the profile task in languages/futhark/README.md#operating-card"
   compiler_or_runtime: c, multicore, cuda and opencl backends

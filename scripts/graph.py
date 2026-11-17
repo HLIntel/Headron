@@ -347,7 +347,6 @@ def _populate_routes_and_instruments(g: Graph, data: dict) -> None:
         g.add_node(Node(id=route_id, type=NodeType.ROUTE, tags=["route", "language"]))
         for doc in (
             f"languages/{target}/README.md",
-            f"languages/{target}/OPERATING.md",
             f"languages/{target}/tools.yaml",
         ):
             if (ROOT / doc).is_file():

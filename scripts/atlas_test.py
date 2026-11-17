@@ -316,9 +316,9 @@ def external_api_cases() -> None:
         atlas.main(["decide", "caching_strategies", "--json"])
     _records.append(json.loads(_buf.getvalue()))
     _records += [atlas.gate_record("scripts/atlas.py", "unit_tests"),
-                 atlas.gate_record("languages/bqn/OPERATING.md", "unit_tests"),
+                 atlas.gate_record("languages/bqn/README.md", "unit_tests"),
                  atlas.gate_record("Makefile", "unit_tests")]
-    card_gate = atlas.gate_record("languages/rust/OPERATING.md", "formatter")
+    card_gate = atlas.gate_record("languages/rust/README.md", "formatter")
     # Markdown's formatter is prettier, which this repository does not adopt: the card keeps its pack route
     # and its gate says why it proves nothing here (gateplace.unadopted), rather than running a style no one chose.
     assert card_gate["route"] == "rust" and card_gate["state"] == "unplaced" and "prettier" in card_gate["why"], \

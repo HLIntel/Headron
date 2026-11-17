@@ -1,8 +1,8 @@
 # Languages
 
-Use [ATLAS.md](ATLAS.md) to choose by workload. Each language has a stable overview plus a compact `OPERATING.md` card for AI/code routing.
+Use [ATLAS.md](ATLAS.md) to choose by workload. Each language has one guide, `README.md`, ending in a compact `## Operating card` section for AI/code routing.
 
-**Language route:** `README.md → OPERATING.md → task profile → native tools → boundary tests → verification`.
+**Language route:** `README.md → operating card → task profile → native tools → boundary tests → verification`.
 
 | Family | Languages |
 |---|---|
@@ -15,7 +15,7 @@ Use [ATLAS.md](ATLAS.md) to choose by workload. Each language has a stable overv
 
 ## Operating cards
 
-Every route has an `OPERATING.md` containing its fast path, native authority, pairing strategy, boundary contract, anti-patterns, reliability practices, verification loop, AI learning loop, and primary research links. The card's
+Every route's `README.md` ends in a `## Operating card` section containing its fast path, native authority, pairing strategy, boundary contract, anti-patterns, reliability practices, verification loop, AI learning loop, and primary research links. The card's
 fields are the ones `atlas.py check` counts (`cards` and `labels` in its summary line); the
 manifest beside it is [PACK-TOOLS-SPEC.md](PACK-TOOLS-SPEC.md).
 
@@ -38,44 +38,44 @@ Derived from `atlas.yaml/artifact_routes` — 40 routes + 0 umbrella, 40 tool ma
 
 | route | guide | operating card | tool manifest |
 |---|---|---|---|
-| `bash` | [guide](bash/README.md) | [card](bash/OPERATING.md) | `tools.yaml` |
-| `bqn` | [guide](bqn/README.md) | [card](bqn/OPERATING.md) | `tools.yaml` |
-| `c` | [guide](c/README.md) | [card](c/OPERATING.md) | `tools.yaml` |
-| `carbon` | [guide](carbon/README.md) | [card](carbon/OPERATING.md) | `tools.yaml` |
-| `chapel` | [guide](chapel/README.md) | [card](chapel/OPERATING.md) | `tools.yaml` |
-| `cloudflare` | [guide](cloudflare/README.md) | [card](cloudflare/OPERATING.md) | `tools.yaml` |
-| `cpp` | [guide](cpp/README.md) | [card](cpp/OPERATING.md) | `tools.yaml` |
-| `cuda` | [guide](cuda/README.md) | [card](cuda/OPERATING.md) | `tools.yaml` |
-| `dockerfile` | [guide](dockerfile/README.md) | [card](dockerfile/OPERATING.md) | `tools.yaml` |
-| `elixir` | [guide](elixir/README.md) | [card](elixir/OPERATING.md) | `tools.yaml` |
-| `forth` | [guide](forth/README.md) | [card](forth/OPERATING.md) | `tools.yaml` |
-| `fsharp` | [guide](fsharp/README.md) | [card](fsharp/OPERATING.md) | `tools.yaml` |
-| `futhark` | [guide](futhark/README.md) | [card](futhark/OPERATING.md) | `tools.yaml` |
-| `gleam` | [guide](gleam/README.md) | [card](gleam/OPERATING.md) | `tools.yaml` |
-| `go` | [guide](go/README.md) | [card](go/OPERATING.md) | `tools.yaml` |
-| `hare` | [guide](hare/README.md) | [card](hare/OPERATING.md) | `tools.yaml` |
-| `haskell` | [guide](haskell/README.md) | [card](haskell/OPERATING.md) | `tools.yaml` |
-| `headron` | [guide](headron/README.md) | [card](headron/OPERATING.md) | `tools.yaml` |
-| `json` | [guide](json/README.md) | [card](json/OPERATING.md) | `tools.yaml` |
-| `julia` | [guide](julia/README.md) | [card](julia/OPERATING.md) | `tools.yaml` |
-| `lean4` | [guide](lean4/README.md) | [card](lean4/OPERATING.md) | `tools.yaml` |
-| `markdown` | [guide](markdown/README.md) | [card](markdown/OPERATING.md) | `tools.yaml` |
-| `mojo` | [guide](mojo/README.md) | [card](mojo/OPERATING.md) | `tools.yaml` |
-| `nim` | [guide](nim/README.md) | [card](nim/OPERATING.md) | `tools.yaml` |
-| `ocaml` | [guide](ocaml/README.md) | [card](ocaml/OPERATING.md) | `tools.yaml` |
-| `odin` | [guide](odin/README.md) | [card](odin/OPERATING.md) | `tools.yaml` |
-| `python` | [guide](python/README.md) | [card](python/OPERATING.md) | `tools.yaml` |
-| `r` | [guide](r/README.md) | [card](r/OPERATING.md) | `tools.yaml` |
-| `roc` | [guide](roc/README.md) | [card](roc/OPERATING.md) | `tools.yaml` |
-| `rust` | [guide](rust/README.md) | [card](rust/OPERATING.md) | `tools.yaml` |
-| `scala` | [guide](scala/README.md) | [card](scala/OPERATING.md) | `tools.yaml` |
-| `sql` | [guide](sql/README.md) | [card](sql/OPERATING.md) | `tools.yaml` |
-| `swift` | [guide](swift/README.md) | [card](swift/OPERATING.md) | `tools.yaml` |
-| `toml` | [guide](toml/README.md) | [card](toml/OPERATING.md) | `tools.yaml` |
-| `typescript` | [guide](typescript/README.md) | [card](typescript/OPERATING.md) | `tools.yaml` |
-| `uiua` | [guide](uiua/README.md) | [card](uiua/OPERATING.md) | `tools.yaml` |
-| `v` | [guide](v/README.md) | [card](v/OPERATING.md) | `tools.yaml` |
-| `webassembly` | [guide](webassembly/README.md) | [card](webassembly/OPERATING.md) | `tools.yaml` |
-| `yaml` | [guide](yaml/README.md) | [card](yaml/OPERATING.md) | `tools.yaml` |
-| `zig` | [guide](zig/README.md) | [card](zig/OPERATING.md) | `tools.yaml` |
+| `bash` | [guide](bash/README.md) | [card](bash/README.md#operating-card) | `tools.yaml` |
+| `bqn` | [guide](bqn/README.md) | [card](bqn/README.md#operating-card) | `tools.yaml` |
+| `c` | [guide](c/README.md) | [card](c/README.md#operating-card) | `tools.yaml` |
+| `carbon` | [guide](carbon/README.md) | [card](carbon/README.md#operating-card) | `tools.yaml` |
+| `chapel` | [guide](chapel/README.md) | [card](chapel/README.md#operating-card) | `tools.yaml` |
+| `cloudflare` | [guide](cloudflare/README.md) | [card](cloudflare/README.md#operating-card) | `tools.yaml` |
+| `cpp` | [guide](cpp/README.md) | [card](cpp/README.md#operating-card) | `tools.yaml` |
+| `cuda` | [guide](cuda/README.md) | [card](cuda/README.md#operating-card) | `tools.yaml` |
+| `dockerfile` | [guide](dockerfile/README.md) | [card](dockerfile/README.md#operating-card) | `tools.yaml` |
+| `elixir` | [guide](elixir/README.md) | [card](elixir/README.md#operating-card) | `tools.yaml` |
+| `forth` | [guide](forth/README.md) | [card](forth/README.md#operating-card) | `tools.yaml` |
+| `fsharp` | [guide](fsharp/README.md) | [card](fsharp/README.md#operating-card) | `tools.yaml` |
+| `futhark` | [guide](futhark/README.md) | [card](futhark/README.md#operating-card) | `tools.yaml` |
+| `gleam` | [guide](gleam/README.md) | [card](gleam/README.md#operating-card) | `tools.yaml` |
+| `go` | [guide](go/README.md) | [card](go/README.md#operating-card) | `tools.yaml` |
+| `hare` | [guide](hare/README.md) | [card](hare/README.md#operating-card) | `tools.yaml` |
+| `haskell` | [guide](haskell/README.md) | [card](haskell/README.md#operating-card) | `tools.yaml` |
+| `headron` | [guide](headron/README.md) | [card](headron/README.md#operating-card) | `tools.yaml` |
+| `json` | [guide](json/README.md) | [card](json/README.md#operating-card) | `tools.yaml` |
+| `julia` | [guide](julia/README.md) | [card](julia/README.md#operating-card) | `tools.yaml` |
+| `lean4` | [guide](lean4/README.md) | [card](lean4/README.md#operating-card) | `tools.yaml` |
+| `markdown` | [guide](markdown/README.md) | [card](markdown/README.md#operating-card) | `tools.yaml` |
+| `mojo` | [guide](mojo/README.md) | [card](mojo/README.md#operating-card) | `tools.yaml` |
+| `nim` | [guide](nim/README.md) | [card](nim/README.md#operating-card) | `tools.yaml` |
+| `ocaml` | [guide](ocaml/README.md) | [card](ocaml/README.md#operating-card) | `tools.yaml` |
+| `odin` | [guide](odin/README.md) | [card](odin/README.md#operating-card) | `tools.yaml` |
+| `python` | [guide](python/README.md) | [card](python/README.md#operating-card) | `tools.yaml` |
+| `r` | [guide](r/README.md) | [card](r/README.md#operating-card) | `tools.yaml` |
+| `roc` | [guide](roc/README.md) | [card](roc/README.md#operating-card) | `tools.yaml` |
+| `rust` | [guide](rust/README.md) | [card](rust/README.md#operating-card) | `tools.yaml` |
+| `scala` | [guide](scala/README.md) | [card](scala/README.md#operating-card) | `tools.yaml` |
+| `sql` | [guide](sql/README.md) | [card](sql/README.md#operating-card) | `tools.yaml` |
+| `swift` | [guide](swift/README.md) | [card](swift/README.md#operating-card) | `tools.yaml` |
+| `toml` | [guide](toml/README.md) | [card](toml/README.md#operating-card) | `tools.yaml` |
+| `typescript` | [guide](typescript/README.md) | [card](typescript/README.md#operating-card) | `tools.yaml` |
+| `uiua` | [guide](uiua/README.md) | [card](uiua/README.md#operating-card) | `tools.yaml` |
+| `v` | [guide](v/README.md) | [card](v/README.md#operating-card) | `tools.yaml` |
+| `webassembly` | [guide](webassembly/README.md) | [card](webassembly/README.md#operating-card) | `tools.yaml` |
+| `yaml` | [guide](yaml/README.md) | [card](yaml/README.md#operating-card) | `tools.yaml` |
+| `zig` | [guide](zig/README.md) | [card](zig/README.md#operating-card) | `tools.yaml` |
 <!-- END generated: language-index -->

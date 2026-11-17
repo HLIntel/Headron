@@ -54,6 +54,8 @@ from atlascore import (
     known_labels,
     label_for,
     link_target,
+    operating_card,
+    operating_card_ref,
     proof_record,
     read,
     rel,
@@ -279,9 +281,8 @@ def required_path_errors() -> list[str]:
             errors.append(f"missing required path: {path}")
 
 
-    aliases = [
-        "docs/MODEL.md", "docs/PYTHON.md", "docs/RUST.md", "docs/GO.md", "docs/TYPESCRIPT.md",
-    ]
+    # Kept as test fixtures (symlink routing, sandbox landing, enforce skip); other aliases were copies.
+    aliases = ["docs/MODEL.md", "docs/PYTHON.md"]
     for alias in aliases:
         path = ROOT / alias
         if not path.is_symlink():
@@ -465,10 +466,10 @@ def _after_the_parse_gate(version: str, errors: list[str], warnings: list[str]) 
         base = ROOT / "languages" / target
         if not (base / "README.md").exists():
             errors.append(f"route target missing: {target}")
-        if (base / "OPERATING.md").exists():
+        if operating_card(target) is not None:
             cards_present += 1
         else:
-            errors.append(f"operating card missing: languages/{target}/OPERATING.md")
+            errors.append(f"operating card missing: {operating_card_ref(target)}")
         if (base / "tools.yaml").exists():
             manifests_present += 1
             errors += manifest_errors(target)
@@ -626,7 +627,7 @@ def route_record(path_value: str) -> dict:
     manifest = cast("dict[str, Any]", strict_yaml(text_of(base / "tools.yaml"), str(base / "tools.yaml")) if (base / "tools.yaml").exists() else {})
     record.update({
         "guide": f"languages/{language}/README.md",
-        "operating_card": f"languages/{language}/OPERATING.md",
+        "operating_card": operating_card_ref(language),
         "tool_manifest": f"languages/{language}/tools.yaml",
         "manifest_present": bool(manifest),
         "authority": (manifest or {}).get("authority", {}),
@@ -736,7 +737,7 @@ def plan_record(path_value: str, language: str, task: str, change: str | None,
         "change_classes": list(gates),
         "verification_tiers": list(tiers),
         "guide": f"languages/{language}/README.md",
-        "operating_card": f"languages/{language}/OPERATING.md",
+        "operating_card": operating_card_ref(language),
         "tool_manifest": f"languages/{language}/tools.yaml",
         "verification": "docs/VERIFY.md",
         "branch_policy": "docs/wiki/BRANCH-WORKTREES.md",
@@ -793,11 +794,11 @@ def proof(path_value: str, task: str, change: str, modifiers: list[str], measure
 
 def learn(language: str) -> int:
     """Turn an operating card into the seven-pass mastery loop."""
-    target = language if (ROOT / "languages" / language / "OPERATING.md").exists() else route_for(language)
-    if not target or not (ROOT / "languages" / target / "OPERATING.md").exists():
+    target = language if operating_card(language) is not None else route_for(language)
+    card = operating_card(target) if target else None
+    if card is None:
         print(f"no operating card for {language}")
         return 2
-    card = read(f"languages/{target}/OPERATING.md")
     def field(name: str) -> str:
         m = re.search(rf"\*\*{name}:\*\*\s*(.+)", card)
         return m.group(1).strip() if m else "(not on the card)"
@@ -808,7 +809,7 @@ def learn(language: str) -> int:
     auth = {k: " + ".join(str(i) for i in v) if isinstance(v, list) else v for k, v in raw_auth.items()}
     verify = (tools.get("provenance") or {}).get("verify") or []
     print(f"language: {target}")
-    print(f"card: languages/{target}/OPERATING.md")
+    print(f"card: {operating_card_ref(target)}")
     print(f"fast path: {field('Fast path')}")
     print(f"native authority: {field('Native authority')}")
     print(f"research: {field('Research')}")

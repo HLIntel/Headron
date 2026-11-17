@@ -78,4 +78,4 @@ policy:
   - security_failure
 notes:
   compiler_or_runtime: CPython
-  benchmark: For a project benchmark fixture, see languages/python/OPERATING.md; pytest alone does not prove a benchmark ran.
+  benchmark: For a project benchmark fixture, see languages/python/README.md#operating-card; pytest alone does not prove a benchmark ran.
