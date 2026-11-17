@@ -1,6 +1,6 @@
 # Modules
 
-Part of [HEADRON](HEADRON.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
+Part of [HEADRON](HEADRON.md). Proofs per instrument: [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
 139 modules and 432 imports between them, read from the source; 69 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 97 modules use it. These 66 rows are the modules at least 2 others use; the other 73, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
