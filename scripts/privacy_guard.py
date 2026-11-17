@@ -205,7 +205,8 @@ def default_base() -> str | None:
     try:
         done = git_run(None, "merge-base", "origin/main", "HEAD", timeout=GIT_TIMEOUT_S)
     except subprocess.TimeoutExpired:
-        return None
+        sys.stderr.write(f"privacy_guard: git merge-base timed out after {GIT_TIMEOUT_S}s; range not checked\n")
+        raise SystemExit(2) from None
     if done.returncode != 0:
         return None
     return done.stdout.strip() or None

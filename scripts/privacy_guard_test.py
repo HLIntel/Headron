@@ -117,8 +117,11 @@ def git_timeout_exits_2() -> None:
         except subprocess.TimeoutExpired:
             FAILED.append("git timeout: TimeoutExpired escaped as a traceback")
         try:
-            if privacy_guard.default_base() is not None:
-                FAILED.append("git timeout: default_base answered a base from a hung git")
+            privacy_guard.default_base()
+            FAILED.append("git timeout: range silently fell back to a tree scan")
+        except SystemExit as exc:
+            if exc.code != 2:
+                FAILED.append(f"git timeout: default_base exit {exc.code}, want 2")
         except subprocess.TimeoutExpired:
             FAILED.append("git timeout: default_base let TimeoutExpired escape")
     finally:
