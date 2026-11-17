@@ -18,62 +18,40 @@ class Calculation:
 
     def run(self, context: Mapping[str, Any]) -> Any:
         from computation_contract import request_errors  # noqa: PLC0415
-        from microprogram import MicroResult  # noqa: PLC0415
-        from receipt import build_computation_receipt  # noqa: PLC0415
 
         try:
             errors = request_errors(self.name, context)
             if errors:
-                receipt = build_computation_receipt(
-                    program=self.name,
-                    version=self.version,
-                    inputs=context,
-                    outputs=None,
-                    status="refused",
-                    verification={
-                        "status": "FAIL",
-                        "checks": [{"id": f"{self.name}.contract", "state": "FAIL", "why": "; ".join(errors)}],
-                    },
-                    evidence_refs=tuple(errors),
-                )
-                return MicroResult(
-                    self.name,
-                    self.version,
-                    "refused",
-                    evidence_refs=tuple(errors),
-                    next=self.next_step,
-                    receipt=receipt,
-                )
+                return self._refused(context, "contract", tuple(errors))
             output, refs = self.operation(context)
         except (ValueError, DecimalException, TypeError) as exc:
-            receipt = build_computation_receipt(
-                program=self.name,
-                version=self.version,
-                inputs=context,
-                outputs=None,
-                status="refused",
-                verification={
-                    "status": "FAIL",
-                    "checks": [{"id": f"{self.name}.operation", "state": "FAIL", "why": str(exc)}],
-                },
-                evidence_refs=(str(exc),),
-            )
-            return MicroResult(
-                self.name, self.version, "refused", evidence_refs=(str(exc),), next=self.next_step, receipt=receipt
-            )
+            return self._refused(context, "operation", (str(exc),))
+        passed = [{"id": f"{self.name}.{step}", "state": "PASS"} for step in ("contract", "operation")]
+        return self._result(context, "ok", output, passed, refs)
+
+    def _refused(self, context: Mapping[str, Any], step: str, reasons: tuple[str, ...]) -> Any:
+        failed = [{"id": f"{self.name}.{step}", "state": "FAIL", "why": "; ".join(reasons)}]
+        return self._result(context, "refused", None, failed, reasons, next=self.next_step)
+
+    def _result(
+        self,
+        context: Mapping[str, Any],
+        status: str,
+        output: Any,
+        checks: list[dict],
+        refs: tuple[str, ...],
+        **extra: Any,
+    ) -> Any:
+        from microprogram import MicroResult  # noqa: PLC0415
+        from receipt import build_computation_receipt  # noqa: PLC0415
+
         receipt = build_computation_receipt(
             program=self.name,
             version=self.version,
             inputs=context,
             outputs=output,
-            status="ok",
-            verification={
-                "status": "PASS",
-                "checks": [
-                    {"id": f"{self.name}.contract", "state": "PASS"},
-                    {"id": f"{self.name}.operation", "state": "PASS"},
-                ],
-            },
+            status=status,
+            checks=checks,
             evidence_refs=refs,
         )
-        return MicroResult(self.name, self.version, "ok", output, evidence_refs=refs, receipt=receipt)
+        return MicroResult(self.name, self.version, status, output, evidence_refs=refs, receipt=receipt, **extra)

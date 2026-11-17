@@ -426,15 +426,6 @@ def _record(key: str, result: MicroResult, started: float, context: Mapping[str,
                 inputs=context or {},
                 outputs=stamped.output,
                 status=stamped.status,
-                verification={
-                    "status": "PASS" if stamped.status == "ok" else "FAIL",
-                    "checks": [
-                        {
-                            "id": f"{stamped.program or key}.status",
-                            "state": "PASS" if stamped.status == "ok" else "FAIL",
-                        }
-                    ],
-                },
                 evidence_refs=stamped.evidence_refs,
             ),
         )
