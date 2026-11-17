@@ -570,6 +570,7 @@ def gate_record(path_value: str, gate: str) -> dict:
                    "why": f"#!{shebang_dialect(path_value)[0]} chooses it (atlas.yaml/routing_policy/shebang_dialects)"}
     placed = placement(path_value, gate, verdict.get("argv"))  # no argv (absent, undeclared): nothing to place
     state, why = (verdict["state"], verdict["why"]) if "why" not in placed else ("unplaced", placed["why"])
+    why = placed.get("basis", why)
     return {"schema": 1, "command": "gate", "atlas_version": str(atlas().get("version")),
             "path": path_value, "route": language, "gate": gate, "state": state,
             "argv": placed.get("argv"), "cwd": placed.get("cwd", "."), "why": why}

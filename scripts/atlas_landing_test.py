@@ -521,6 +521,9 @@ def consumer_placement_cases() -> None:
     29 of 82 FAIL rows were these verbs run from the tree root, against changes that broke nothing."""
     import gateplace  # noqa: PLC0415
     import verify  # noqa: PLC0415
+    from verifyrun_test import javascript_placement_cases  # noqa: PLC0415
+
+    javascript_placement_cases(_placed)
 
     with tempfile.TemporaryDirectory() as top:
         (Path(top) / "Cargo.toml").write_text("")  # ABOVE .git: a stray parent manifest, not the project
