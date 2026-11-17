@@ -3,7 +3,7 @@
 <!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
   <img src="https://raw.githubusercontent.com/HLIntel/Headron/main/docs/media/headron-banner.jpg"
-       alt="Headron Software: AI governance, contract verification, and adaptive execution"
+       alt="Headron: From Task to Trusted Results — Unified execution and verification system"
        width="992">
   <h1>Headron Software</h1>
   <p><strong>The trust layer for agentic work: contract verification and receipts for autonomous agents</strong></p>
@@ -99,7 +99,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Task bench, 3 Claude models (contract 2.29.0) | with Headron 137/138; blind 78/138; every task answered by both arms |
-| Free-model screen, 18 lanes answered (contract 3.63.0, 22 tasks) | on the 138 tasks both arms answered: with Headron 115/138; blind 58/138. 88 lanes gave no answer and carry no score |
+| Free-model screen, 18 lanes answered (contract 3.63.0, 22 tasks) | on the 138 tasks both arms answered: with Headron 115/138; blind 58/138 |
 
 Entry context: ~1,644 tokens; the rest loads on demand. Each row is its own record, contract version and task set: rows are never summed into one figure, and no run crowns a model.
 [Routing data](benchmarks/ab-latest.json). [Task records](benchmarks/tasks-latest.json), [screen](benchmarks/screen-universal.json). [Per model, per record](docs/RESULTS.md).

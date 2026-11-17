@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -273,6 +274,8 @@ def install_cases(module: ModuleType, base: Path) -> None:
 
     Offline against uv's cache, so no network decides it: with --require-hashes uv names the missing hash before
     resolving; without it, uv tries to resolve and fails for a different reason."""
+    if shutil.which("uv") is None:
+        return
     steps = [step for job in cipipeline.JOBS for step in job.steps if "pip install" in step.run]
     unhashed = base / "unhashed.lock.txt"
     unhashed.write_text("six==1.16.0\n", encoding="utf-8")
