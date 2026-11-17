@@ -445,6 +445,12 @@ instrument_roster:
     githubapp.py: 'the GitHub App, one module: the verdict (verify over a PR base, conclusion mapping), RS256 app JWT, signed webhook, durable (repo, sha) queue, runner posting the check run with batched annotations, refusal/override timeline; a host serves it, proven by githubapp_test.py'
     githubapp_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     exrun_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
+    crosscache.py: 'cross-session execution cache and task DAG incremental recomputation; its proof is crosscache_test.py'
+    crosscache_test.py: 'a case module that verifies cross-session caching and task DAG invalidation'
+    isolation.py: 'capability-enforced worker isolation for subprocess and gate execution; its proof is isolation_test.py'
+    isolation_test.py: 'a case module that verifies worker capability isolation and environment sanitization'
+    adaptive_scheduling_test.py: 'a case module that verifies cost-adaptive execution scheduling and fail-fast ordering'
+    taskimage_portable_test.py: 'a case module that verifies portable task images and cross-checkout execution'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -4277,6 +4283,7 @@ runtime_entry:
 - {runtime: Devin CLI, id: devin, loads: AGENTS.md, adapter: models/devin/README.md}
 - {runtime: Cline, id: cline, loads: AGENTS.md, adapter: models/cline/README.md}
 - {runtime: Windsurf, id: windsurf, loads: AGENTS.md, adapter: models/windsurf/README.md}
+- {runtime: Kilo, id: kilo, loads: AGENTS.md, adapter: models/kilo/README.md}
 
 # THE LOCAL ATTACHMENT ROSTER. runtime_entry keeps its own display and loading facts; seats derives rows from it
 # and from these companion ids, instead of clients carrying another agent list. The desktop hosts seats, not itself.
@@ -4326,6 +4333,7 @@ native_agent_tools:
     devin: {tool_config: [.devin/config.json, .devin/mcp_config.json], headron_via: [cli, git_hook, mcp_read_only]}
     cline: {tool_config: [], headron_via: [cli, git_hook, mcp_read_only], none_because: 'Cline configures its tools in VS Code or desktop settings outside the repository; AGENTS.md is the instruction file it reads'}
     windsurf: {tool_config: [.windsurfrules], headron_via: [cli, git_hook, mcp_read_only]}
+    kilo: {tool_config: [.kilo/config.json], headron_via: [cli, git_hook, mcp_read_only]}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an

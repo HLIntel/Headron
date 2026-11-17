@@ -57,10 +57,12 @@ if TYPE_CHECKING:
     from decide import GateVerdict
 
 AdaptiveDecision = _adaptive.AdaptiveDecision
+AdaptiveSchedule = _adaptive.AdaptiveSchedule
 ReconciliationResult = _adaptive.ReconciliationResult
 adapt_recovery = _adaptive.adapt_recovery
 decompose = _adaptive.decompose
 reconcile = _adaptive.reconcile
+schedule_execution = _adaptive.schedule_execution
 select_process = _adaptive.select_process
 
 # =============================================================================

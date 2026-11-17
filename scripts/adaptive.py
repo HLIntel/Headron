@@ -75,6 +75,86 @@ class DecompositionPlan:
 
 
 @dataclass(frozen=True)
+class AdaptiveSchedule:
+    """Optimal execution ordering and parallel grouping derived from measured costs."""
+
+    batches: tuple[tuple[str, ...], ...]
+    fail_fast_order: tuple[str, ...]
+    estimated_latency_s: float
+    estimated_tokens: int
+    status: str = "scheduled"
+
+    def to_dict(self) -> dict:
+        return {
+            "batches": [list(b) for b in self.batches],
+            "fail_fast_order": list(self.fail_fast_order),
+            "estimated_latency_s": self.estimated_latency_s,
+            "estimated_tokens": self.estimated_tokens,
+            "status": self.status,
+        }
+
+
+def schedule_execution(
+    gates: list[dict], historical_costs: dict[str, dict] | None = None, max_parallel: int = 4
+) -> AdaptiveSchedule:
+    """Schedule gate execution adaptively to minimize latency and token consumption.
+
+    Cheap, high-signal checks are ordered first (fail-fast). Non-mutating gates
+    are grouped into concurrent batches; mutating gates run sequentially.
+    """
+    costs = historical_costs or {}
+    scored: list[tuple[float, str, bool, float, int]] = []
+
+    for gate in gates:
+        gid = str(gate.get("id") or gate.get("gate") or "unknown")
+        cost = costs.get(gid, {})
+        lat = float(cost.get("latency_s") or 1.0)
+        tok = int(cost.get("tokens") or 0)
+        fail_prob = float(cost.get("failure_rate") or 0.1)
+        mutates = bool(gate.get("mutates"))
+        # Fail-fast score: prioritize gates that fail frequently and execute quickly
+        score = -(fail_prob / max(0.1, lat))
+        scored.append((score, gid, mutates, lat, tok))
+
+    scored.sort(key=lambda item: item[0])
+    fail_fast_order = tuple(item[1] for item in scored)
+
+    batches: list[tuple[str, ...]] = []
+    current_read_only: list[str] = []
+    total_latency = 0.0
+    total_tokens = sum(item[4] for item in scored)
+
+    for _, gid, mutates, lat, _ in scored:
+        if mutates:
+            if current_read_only:
+                batches.append(tuple(current_read_only))
+                current_read_only = []
+            batches.append((gid,))
+            total_latency += lat
+        else:
+            current_read_only.append(gid)
+            if len(current_read_only) >= max_parallel:
+                batches.append(tuple(current_read_only))
+                current_read_only = []
+
+    if current_read_only:
+        batches.append(tuple(current_read_only))
+
+    # Add parallel batch latencies assuming maximum gate latency in batch dominates
+    for batch in batches:
+        if len(batch) > 1:
+            batch_lat = max(float(costs.get(g, {}).get("latency_s") or 1.0) for g in batch)
+            total_latency += batch_lat
+
+    return AdaptiveSchedule(
+        batches=tuple(batches),
+        fail_fast_order=fail_fast_order,
+        estimated_latency_s=round(total_latency, 2),
+        estimated_tokens=total_tokens,
+    )
+
+
+@dataclass(frozen=True)
 class ReconciliationResult:
     """Deterministic validation of delegated subtask results."""
 

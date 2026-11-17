@@ -163,7 +163,7 @@ def map_block(root: Path = ROOT) -> str:
             "",
             _diagram(users, graph),
             "",
-            *_table(shared, users, graph, root, limit=54),
+            *_table(shared, users, graph, root, limit=48),
         ]
     )
 

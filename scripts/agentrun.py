@@ -122,7 +122,15 @@ def plan_drift(contract: dict) -> list[str]:
     return problems
 
 
-def run_gates(contract: dict, stream: Path, execute: bool, budget: dict) -> list[dict]:
+def run_gates(
+    contract: dict,
+    stream: Path,
+    execute: bool,
+    budget: dict,
+    *,
+    incremental: bool = False,
+    cached_nodes: dict | None = None,
+) -> list[dict]:
     """One row per PLANNED gate, including every one that did not run and why.
 
     `execute` is off by default. A runner that shells out on every pull request would make this
@@ -130,8 +138,23 @@ def run_gates(contract: dict, stream: Path, execute: bool, budget: dict) -> list
     which is the part that rots. An absent tool is reported, never skipped.
 
     """
+    import crosscache  # noqa: PLC0415
+    import isolation  # noqa: PLC0415
+    import obligations  # noqa: PLC0415
+
     rows: list[dict] = []
     for gate in agentpolicy.required_gates(contract):
+        if execute and (cached_nodes or incremental):
+            c_hash = agentpolicy.contract_hash(contract)
+            prev = (cached_nodes or {}).get(gate) or (
+                crosscache.get_cached_node(c_hash, gate, obligations.tree(ROOT)) if incremental else None
+            )
+            if prev and (prev.get("state") == "PASS" or prev.get("exit_code") == 0):
+                row = {"gate": gate, "ran": True, "exit_code": 0, "reused": True, "command": str(gate)}
+                agentaudit.append(stream, "gate_reused", {"gate": gate, "reason": "incremental_dag_cache"})
+                agentaudit.append(stream, "gate_result", {k: row[k] for k in ("gate", "ran", "exit_code")})
+                rows.append(row)
+                continue
         argv, why = agentpolicy.gate_command(str(contract.get("route")), gate)
         row: dict[str, object] = {"gate": gate, "ran": False, "exit_code": -1}
         if argv is None:
@@ -157,18 +180,27 @@ def run_gates(contract: dict, stream: Path, execute: bool, budget: dict) -> list
                 agentaudit.append(stream, "policy_denied", {"gate": gate, "reason": reason})
             elif execute:
                 agentaudit.append(stream, "command_started", {"gate": gate, "argv": agentaudit.digest(argv)})
-                done = subprocess.run(argv, cwd=ROOT, capture_output=True, check=False, timeout=600)
-                row.update({"ran": True, "exit_code": done.returncode})
-                agentaudit.append(
-                    stream,
-                    "command_finished",
-                    {
-                        "gate": gate,
-                        "exit_code": done.returncode,
-                        "stdout": agentaudit.digest(done.stdout),
-                        "stderr": agentaudit.digest(done.stderr),
-                    },
-                )
+                try:
+                    done = isolation.run_isolated(argv, cwd=ROOT)
+                    row.update({"ran": True, "exit_code": done.returncode})
+                    agentaudit.append(
+                        stream,
+                        "command_finished",
+                        {
+                            "gate": gate,
+                            "exit_code": done.returncode,
+                            "stdout": agentaudit.digest(done.stdout),
+                            "stderr": agentaudit.digest(done.stderr),
+                        },
+                    )
+                    if done.returncode == 0:
+                        crosscache.put_cached_node(
+                            agentpolicy.contract_hash(contract), gate, obligations.tree(ROOT), row
+                        )
+                except isolation.CapabilityViolation as err:
+                    row["command"] = f"refused: {err}"
+                    row["control"] = "worker_isolation"
+                    agentaudit.append(stream, "policy_denied", {"gate": gate, "reason": str(err)})
         agentaudit.append(stream, "gate_result", {k: row[k] for k in ("gate", "ran", "exit_code")})
         rows.append(row)
     return rows
@@ -186,7 +218,9 @@ def run_status(rows: list[dict], denials: list[dict]) -> str:
     return "controls_verified" if not rows or any(not r["ran"] for r in rows) else "verified"
 
 
-def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
+def execute_contract(
+    path: Path, execute: bool, *, incremental: bool = False, cached_nodes: dict | None = None
+) -> tuple[dict, int]:
     """Validate, resolve, run under the controls, and write the outcome into the same record."""
     contract = headronlang.load_contract(path)
     problems = agentpolicy.contract_errors(contract)
@@ -207,7 +241,7 @@ def execute_contract(path: Path, execute: bool) -> tuple[dict, int]:
     environment = environment_fingerprint()
     budget: dict[str, int] = {"tool_calls": 0}
     started = time.monotonic()
-    rows = run_gates(contract, stream, execute, budget)
+    rows = run_gates(contract, stream, execute, budget, incremental=incremental, cached_nodes=cached_nodes)
     touched = changed_files()
     exercised = sorted(
         {

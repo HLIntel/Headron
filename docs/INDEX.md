@@ -1,12 +1,12 @@
 # Headron Index
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**40** languages · **60** extensions · **64** gates · **17** runtimes · **128** failure shapes · **50** success moves · **52** invariants · **95** instruments · **368** agreement edges · **2** dependency
+**40** languages · **60** extensions · **64** gates · **18** runtimes · **128** failure shapes · **50** success moves · **52** invariants · **95** instruments · **368** agreement edges · **2** dependency
 <!-- END generated: glance -->
 
 ## Use it
 
-Start with the task below and follow the linked page; the index is a map, not a reading list.
+Start with the task below; the index is a map, not a reading list.
 
 | Need | Start |
 |---|---|
