@@ -158,6 +158,11 @@ def format_summary_table(metrics: dict[str, Any]) -> str:
     def row(label: str, key: str, fmt: str, note: str = "") -> str:
         return f"{label:<26} {format(blind[key], fmt):<20} {format(headron[key], fmt):<20} {note}"
 
+    def delta(key: str, spec: str, suffix: str) -> str:
+        # A delta is None when its baseline recorded zero; say so instead of crashing or printing "None%".
+        value = adv[key]
+        return "unmeasured (zero baseline)" if value is None else f"{format(value, spec)}{suffix}"
+
     lines = [
         "=" * 78,
         f"HEADRON ECONOMIC BENCHMARK: ASSISTED VS UNASSISTED ({n} paired task{'s' if n != 1 else ''})",
@@ -165,13 +170,13 @@ def format_summary_table(metrics: dict[str, Any]) -> str:
         f"{'Dimension':<26} {'Unassisted':<20} {'Headron':<20} Delta",
         "-" * 78,
         row("Solved", "solved_count", "d", f"of {n}"),
-        row("Clean gates", "clean_gates_count", "d", f"{adv['first_pass_hygiene_gain_pct']:+.1f} pts"),
+        row("Clean gates", "clean_gates_count", "d", delta("first_pass_hygiene_gain_pct", "+.1f", " pts")),
         row("Direct seconds", "direct_seconds", ".1f"),
-        row("Direct tokens", "direct_tokens", ".0f", f"{adv['direct_token_change_pct']:+.1f}%"),
+        row("Direct tokens", "direct_tokens", ".0f", delta("direct_token_change_pct", "+.1f", "%")),
         row("Direct cost USD", "direct_cost_usd", ".4f"),
-        row("Effective seconds*", "effective_seconds", ".1f", f"{adv['effective_time_to_green_ratio']}x"),
-        row("Effective tokens*", "effective_tokens", ".0f", f"{adv['effective_token_savings_pct']}% saved"),
-        row("Effective cost USD*", "effective_cost_usd", ".4f", f"{adv['effective_cost_savings_pct']}% saved"),
+        row("Effective seconds*", "effective_seconds", ".1f", delta("effective_time_to_green_ratio", "", "x")),
+        row("Effective tokens*", "effective_tokens", ".0f", delta("effective_token_savings_pct", "", "% saved")),
+        row("Effective cost USD*", "effective_cost_usd", ".4f", delta("effective_cost_savings_pct", "", "% saved")),
     ]
     if routing := metrics["context_routing"]:
         lines.append(
