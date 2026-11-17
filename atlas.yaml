@@ -339,6 +339,7 @@ instrument_roster:
     worktree.py: 'worktree-based agent isolation — creates isolated git worktrees per session with state machine rollback; accessed via branchstate.py and headron MCP generic tool, not a standalone instrument'
     artifacts_test.py: 'pytest cases for artifacts.py, run by the artifacts_tests gate; declared here because the instrument ratchet only falls'
     gaterunner.py: 'shared bounded gate execution; readiness_test exercises output and timeout behavior'
+    gaterunner_test.py: 'case module for gaterunner: a SIGTERM to the runner stops the gate group; run by its own cases'
     boundedinput.py: 'bounded hook and decision input; readiness_test exercises refusal'
     atomicfile.py: 'whole-file replacement, the one owner of os.replace; atomicfile_test.py plants each failure'
     atomicfile_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
