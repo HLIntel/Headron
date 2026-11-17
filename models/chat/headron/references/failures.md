@@ -100,6 +100,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: the generated table links to files under an ignored build directory that exist only on the machine that ran the example
 - do instead: example walks read the tracked tree. DECLARED BLIND SPOT, a promise to come back — about 25 other globs still walk the disk, over directories no build writes into today
 
+## a_non_answer_scored_as_wrong
+
+- shape: a scorer maps a refusal, a decline or an unparsed format onto WRONG, so the number measures the prompt or the parser instead of the model
+- looks like: a large, clean improvement
+- tell: a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
+- do instead: score returns None for a non-answer, and a run holding any None is refused; an external cross-model record with any errored record must declare its error_policy
+
 ## a_count_typed_into_prose
 
 - shape: writing a number into a document instead of generating it or naming the instrument
@@ -184,12 +191,12 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: the navigation line names an old version, and the check passes because a generated table in the same file carries the new one
 - do instead: version_sites names a pattern for the one line that states the version
 
-## a_non_answer_scored_as_wrong
+## a_plant_that_does_not_fail
 
-- shape: a scorer maps a refusal, a decline or an unparsed format onto WRONG, so the number measures the prompt or the parser instead of the model
-- looks like: a large, clean improvement
-- tell: a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
-- do instead: score returns None for a non-answer, and a run holding any None is refused
+- shape: a benchmark task's planted bug passes the task's own test, always or on some hash seeds, so an agent that changes nothing scores solved and a bad edit is the only way to lose
+- looks like: a task every arm solves, or one every arm fails for a reason nobody can find
+- tell: the unchanged plant exits 0 under the task test: ratelimit's test never asked for the first call, and dedupe's list(set(...)) kept first-seen order on 8 of 41 hash seeds
+- do instead: agentbench runs each task's tests against its plant under 32 hash seeds and spends no agent unless every seed fails by assertion; a reference fix kept outside the task must pass
 
 ## a_suite_that_writes_the_owners_state
 
@@ -428,6 +435,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a complete checklist for the special case
 - tell: an API or security change must pass its own gates but not the compile, format and unit tests every code change needs
 - do instead: profiles declare `extends`, and required_gates resolves the base first
+
+## a_chain_lane_read_as_a_model
+
+- shape: a router-chain lane is ranked as if it were a model, while the router served whichever model answered first, so several lanes are one model and a dead first choice is invisible
+- looks like: five distinct free models clustered at one score
+- tell: small, code, judge, cheap and deep all served codestral after their first choices returned 400, and scored 0.861 to 0.877 in one external run
+- do instead: an external record refuses a freeroute-* lane that names no resolved_model
 
 ## a_named_mechanism_that_does_not_exist
 

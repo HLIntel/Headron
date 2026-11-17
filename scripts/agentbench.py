@@ -20,6 +20,7 @@ It is a sample, K is printed, and a difference of one task is noise.
 from __future__ import annotations
 
 import json
+import pathlib
 import shlex
 import shutil
 import subprocess
@@ -127,6 +128,102 @@ def missing_runners(tasks: list[str]) -> list[str]:
     return sorted(missing)
 
 
+# Each test_* function in the scratch copy, called directly: no runner, so a missing pytest reads as an error, never a fail
+_PROBE = """
+import importlib, json, pathlib, sys
+sys.path.insert(0, ".")
+out = {}
+for f in sorted(pathlib.Path(".").glob("test_*.py")):
+    try:
+        mod = importlib.import_module(f.stem)
+    except BaseException as exc:
+        out[f.stem] = "error:" + type(exc).__name__
+        continue
+    for name in sorted(n for n in dir(mod) if n.startswith("test_")):
+        try:
+            getattr(mod, name)()
+            out[name] = "pass"
+        except AssertionError:
+            out[name] = "assert"
+        except BaseException as exc:
+            out[name] = "error:" + type(exc).__name__
+print(json.dumps(out))
+"""
+PLANT_SEEDS = range(32)  # PYTHONHASHSEED values: a plant whose verdict hangs on set order passes some of them
+
+
+def test_outcomes(task: str, source_text: str | None = None, seed: int = 0) -> dict[str, str]:
+    """{test name: pass | assert | error:<Type>} for the task's tests against its plant, or against `source_text`."""
+    spec = json.loads(text_of(TASKS / task / "task.json"))
+    with tempfile.TemporaryDirectory() as work:
+        for f in (TASKS / task).iterdir():
+            if f.is_file() and f.name != "task.json":
+                shutil.copy(f, work)
+        if source_text is not None:
+            (pathlib.Path(work) / spec["source"]).write_text(source_text, encoding="utf-8")
+        done = subprocess.run(
+            [sys.executable, "-I", "-c", _PROBE],
+            cwd=work,
+            env={"PYTHONHASHSEED": str(seed), "PATH": "/usr/bin:/bin"},
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    try:
+        return json.loads(done.stdout or "{}")
+    except json.JSONDecodeError:
+        return {"probe": f"error:exit {done.returncode}"}
+
+
+def plant_errors(tasks: list[str]) -> list[str]:
+    """A plant must FAIL its own test, by assertion, on every hash seed: a test the plant passes hands out free solves."""
+    errors = []
+    for task in tasks:
+        for seed in PLANT_SEEDS:
+            got = test_outcomes(task, seed=seed)
+            broken = sorted(n for n, v in got.items() if v.startswith("error"))
+            if broken or not got:
+                errors.append(f"{task}: the plant's tests do not run (seed {seed}): {broken or 'no test_* found'}")
+                break
+            if "assert" not in got.values():
+                errors.append(f"{task}: the plant PASSES its own test (seed {seed}), so solved is free")
+                break
+    return errors
+
+
+EXTERNAL_RECORDS = "benchmarks/freebench-*.json"  # cross-model runs made outside this script, kept as reported
+
+
+def record_errors(doc: dict[str, Any]) -> list[str]:
+    """What an external cross-model record must hold before any of its numbers is read (the first freebench run):
+    a declared error policy wherever a lane errored, the served model for a router-chain lane, no score
+    for a lane the source could not score, and no winner, since one run per lane does not order a tie."""
+    errors: list[str] = []
+    if doc.get("obtained_by") != "reported_external" or not doc.get("raw_records"):
+        errors.append("an external record declares obtained_by: reported_external and where its raw records are")
+    if not doc.get("arm"):
+        errors.append("an external record declares its arm: blind numbers rank models, not Headron's effect")
+    blob = json.dumps(doc).lower()
+    for word in ("winner", "champion"):
+        if f'"{word}' in blob:
+            errors.append(f"a key names a {word}: one run per lane does not order lanes inside its noise")
+    for rnd, row in (doc.get("rounds") or {}).items():
+        tasks = row.get("tasks")
+        for lane, got in (row.get("lanes") or {}).items():
+            where = f"{rnd}/{lane}"
+            score, records, errs = got.get("score"), got.get("records"), got.get("errors")
+            if not isinstance(score, (int, float)) or not 0 <= score <= 1:
+                errors.append(f"{where}: no score in [0, 1]; a lane the source could not score belongs in `excluded`")
+            if not (isinstance(records, int) and isinstance(errs, int) and 0 <= errs <= records == tasks):
+                errors.append(f"{where}: records {records} and errors {errs} must be counted over all {tasks} tasks")
+            elif errs and not doc.get("error_policy"):
+                errors.append(f"{where}: {errs} errored records and no error_policy, so a 0 may be a non-answer")
+            if lane.startswith("freeroute-") and not got.get("resolved_model"):
+                errors.append(f"{where}: a router-chain lane names no resolved_model, so its score has no model")
+    return errors
+
+
 def main(argv: list[str]) -> int:
     model = argv[argv.index("--model") + 1] if "--model" in argv else "haiku"
     if not shutil.which("claude"):
@@ -139,6 +236,10 @@ def main(argv: list[str]) -> int:
     if missing := missing_runners(tasks):
         # a runner that is absent fails every task alike, so the bench would record "0 solved" for the machine, not the agent
         print(f"agentbench: NOT RUN — the task test runner cannot start here: {', '.join(missing)}; nothing spent")
+        return 2
+    if bad := plant_errors(tasks):
+        # ratelimit's plant passed its own test in the first external freebench run: every arm "solved" it without a change
+        print(f"agentbench: NOT RUN — a task cannot score a fix: {'; '.join(bad)}; nothing spent")
         return 2
     results = {t: {arm: run(t, arm, model) for arm in arms} for t in tasks}
     for arm in arms:

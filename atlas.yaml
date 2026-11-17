@@ -2629,13 +2629,33 @@ agent_failure_modes:
     sightings: 1
     prevented_by: profiles declare `extends`, and required_gates resolves the base first
   a_non_answer_scored_as_wrong:
-    enforced_by: [taskbench.score]
+    enforced_by: [taskbench.score, agentbench.record_errors]
     shape: a scorer maps a refusal, a decline or an unparsed format onto WRONG, so the number
       measures the prompt or the parser instead of the model
     looks_like: a large, clean improvement
     tell: 'a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess'
+    sightings: 3
+    prevented_by: score returns None for a non-answer, and a run holding any None is refused; an
+      external cross-model record with any errored record must declare its error_policy
+  a_plant_that_does_not_fail:
+    enforced_by: [agentbench.plant_errors]
+    shape: a benchmark task's planted bug passes the task's own test, always or on some hash seeds,
+      so an agent that changes nothing scores solved and a bad edit is the only way to lose
+    looks_like: a task every arm solves, or one every arm fails for a reason nobody can find
+    tell: 'the unchanged plant exits 0 under the task test: ratelimit''s test never asked for the first
+      call, and dedupe''s list(set(...)) kept first-seen order on 8 of 41 hash seeds'
     sightings: 2
-    prevented_by: score returns None for a non-answer, and a run holding any None is refused
+    prevented_by: agentbench runs each task's tests against its plant under 32 hash seeds and spends
+      no agent unless every seed fails by assertion; a reference fix kept outside the task must pass
+  a_chain_lane_read_as_a_model:
+    enforced_by: [agentbench.record_errors]
+    shape: a router-chain lane is ranked as if it were a model, while the router served whichever
+      model answered first, so several lanes are one model and a dead first choice is invisible
+    looks_like: five distinct free models clustered at one score
+    tell: 'small, code, judge, cheap and deep all served codestral after their first choices returned
+      400, and scored 0.861 to 0.877 in one external run'
+    sightings: 1
+    prevented_by: an external record refuses a freeroute-* lane that names no resolved_model
   a_named_mechanism_that_does_not_exist:
     enforced_by: [atlasgen.missing_path_errors]
     shape: policy prose sends work to a job, file or workflow that nothing implements
@@ -3588,6 +3608,18 @@ not_a_success: [added, built, created, fixed, implemented, merged, landed, shipp
 # that prove it, so failure -> move -> guard is one graph: `headron failures --for` prints the move beside the
 # shape, and `successes_answer_recurring_failures` refuses a failure seen twice with no move.
 agent_success_patterns:
+  prove_a_task_plant_fails_before_spending_an_agent:
+    move: 'run each benchmark task''s tests against its unchanged plant under many hash seeds, and against a
+      reference fix kept outside the task, before any agent run is scored'
+    when: 'adding or editing a task under benchmarks/agent/, or running agentbench'
+    verification: 'agentbench_test.plant_case: every plant fails by assertion on every seed, every reference fix
+      passes, and planted always-passing and seed-flaky tasks are refused'
+    evidence: 'a ratelimit plant that passed its own test and a dedupe plant that passed on some hash seeds gave
+      free solves until the plant preflight refused them'
+    pairs: [a_plant_that_does_not_fail]
+    proven_by: [agentbench.plant_errors, agentbench_test.plant_case]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
   refuse_to_rewrite_a_published_lane:
     move: 'push a landing branch without force and reconcile a divergent remote before trying again'
     when: 'a landing helper publishes a branch'
@@ -5958,7 +5990,7 @@ benchmark_floors:
 - {id: handoff_gates_right, file: benchmarks/workflow-latest.json, path: handoff.*.headron, num: gates_right, den: asked, floor: 1.0, measured_by: workflowbench.py, evidence: 'self-authored handoffs'}
 - {id: tokens_per_routed_question, file: benchmarks/ab-latest.json, path: models.*.routed, field: tokens_per_question, ceiling: 220, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
 - {id: tokens_per_scoped_question, file: benchmarks/ab-latest.json, path: models.*.scoped, field: tokens_per_question, ceiling: 130, slack: 10, measured_by: abtest.py, evidence: 'the most expensive model per question, lower is better'}
-- {id: agent_tasks_solved_with_headron, file: benchmarks/agent-latest.json, path: arms.headron, num: solved, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'three self-authored single-file bug fixes, one run each; the blind arm also solved all three, a ceiling effect'}
+- {id: agent_tasks_solved_with_headron, file: benchmarks/agent-latest.json, path: arms.headron, num: solved, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'three self-authored single-file bug fixes, one run each; the blind arm also solved all three, a ceiling effect. Measured at 3.18.0, while the ratelimit plant still passed its own test, so one solve per arm was free'}
 - {id: agent_gates_clean_with_headron, file: benchmarks/agent-latest.json, path: arms.headron, num: gates_clean, den: attempted, floor: 1.0, measured_by: agentbench.py, evidence: 'four self-authored tasks, one run; blind 3/4, the fourth left unformatted — a sample, not an edge'}
 - {id: commit_breaks_refused, file: benchmarks/enforce-latest.json, path: '', num: refused, den: planted, floor: 1.0, measured_by: enforce.py measure, evidence: 'planted breaks in the repos own examples'}
 

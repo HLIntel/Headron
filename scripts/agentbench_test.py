@@ -7,6 +7,7 @@ import contextlib
 import io
 import pathlib
 import tempfile
+from collections.abc import Callable
 from types import ModuleType
 
 
@@ -81,6 +82,124 @@ def runner_case(module: ModuleType) -> None:
     print("  ok    a missing task test runner is NOT RUN, never a 0 solved")
 
 
+# Reference fixes live HERE, never in benchmarks/agent/<task>/: agentbench copies every file there into the agent's scratch
+REFERENCE = {
+    "dedupe": "def dedupe(items):\n    return list(dict.fromkeys(items))\n",
+    "duration": (
+        "import re\n\n\ndef seconds(text):\n    units = {'h': 3600, 'm': 60, 's': 1}\n"
+        "    return sum(int(n) * units[u] for n, u in re.findall(r'(\\d+)([hms])', text))\n"
+    ),
+    "ratelimit": (
+        "import time\n\n\nclass Limiter:\n    def __init__(self, per_second):\n        self.gap = 1.0 / per_second\n"
+        "        self.last = None\n\n    def allow(self, now=None):\n"
+        "        now = time.monotonic() if now is None else now\n"
+        "        if self.last is not None and now - self.last < self.gap:\n            return False\n"
+        "        self.last = now\n        return True\n"
+    ),
+    "window": "def window(xs, n):\n    return [xs[i : i + n] for i in range(len(xs) - n + 1)]\n",
+}
+
+
+def plant_case(module: ModuleType) -> None:
+    """The first external freebench run: ratelimit's plant passed its own test, and dedupe's passed on 8 of 41 hash seeds — free solves."""
+    import json
+
+    import agentbench
+
+    tasks = sorted(p.name for p in agentbench.TASKS.iterdir() if (p / "task.json").is_file())
+    if sorted(REFERENCE) != tasks:
+        raise SystemExit(
+            f"FAIL every agent task needs a reference fix here: tasks={tasks} references={sorted(REFERENCE)}"
+        )
+    if bad := agentbench.plant_errors(tasks):
+        raise SystemExit(f"FAIL an agent task's plant does not fail its own test: {bad}")
+    for task in tasks:
+        for seed in range(4):  # a reference fix is order-free; the plants carry the full seed sweep
+            got = agentbench.test_outcomes(task, REFERENCE[task], seed)
+            if not got or set(got.values()) != {"pass"}:
+                raise SystemExit(f"FAIL {task}: the reference fix does not pass its test (seed {seed}): {got}")
+    # the plant: a task whose test the unchanged source already passes, and one whose plant only fails on some seeds
+    with tempfile.TemporaryDirectory() as tmp:
+        root = pathlib.Path(tmp)
+        for name, source in (
+            ("free", "def f():\n    return 1\n"),
+            ("flaky", "def f():\n    return list({'b', 'a', 'c'})\n"),
+        ):
+            (root / name).mkdir()
+            (root / name / "task.json").write_text(
+                json.dumps({"prompt": "p", "source": "m.py", "test": []}), encoding="utf-8"
+            )
+            (root / name / "m.py").write_text(source, encoding="utf-8")
+        (root / "free" / "test_m.py").write_text(
+            "from m import f\n\n\ndef test_f():\n    assert f() == 1\n", encoding="utf-8"
+        )
+        (root / "flaky" / "test_m.py").write_text(
+            "from m import f\n\n\ndef test_f():\n    assert f() == ['b', 'a', 'c']\n", encoding="utf-8"
+        )
+        real = agentbench.TASKS
+        agentbench.TASKS = root
+        try:
+            caught = agentbench.plant_errors(["free", "flaky"])
+        finally:
+            agentbench.TASKS = real
+    if len(caught) != 2 or not all("PASSES its own test" in c for c in caught):
+        raise SystemExit(f"FAIL a plant that passes its own test, always or on some seeds, was not refused: {caught}")
+    module.CASES.append(
+        (
+            "every agent task's plant fails its test by assertion on every hash seed, and its reference fix passes",
+            "a plant that already passed its test scored every arm solved, so the bench counted free points",
+        )
+    )
+    print("  ok    every agent-task plant fails its own test, and a reference fix passes it")
+
+
+def record_case(module: ModuleType) -> None:
+    """The first external freebench run scored errors as 0, named five router chains that served one model as five
+    lanes, and crowned a winner inside its own noise: every kept external record is held to agentbench."""
+    import copy
+    import json
+
+    import agentbench
+    from atlascore import ROOT
+
+    kept = sorted(ROOT.glob(agentbench.EXTERNAL_RECORDS))
+    if not kept:
+        raise SystemExit(f"FAIL no external record matches {agentbench.EXTERNAL_RECORDS}: the case would prove nothing")
+    for path in kept:
+        if bad := agentbench.record_errors(json.loads(path.read_text(encoding="utf-8"))):
+            raise SystemExit(f"FAIL {path.name}: {bad}")
+    base = json.loads(kept[0].read_text(encoding="utf-8"))
+    rnd, lane = next(
+        (r, n)
+        for r, row in base["rounds"].items()
+        for n, g in row["lanes"].items()
+        if g.get("resolved_model") and g["errors"]
+    )
+
+    def planted(change: Callable[[dict, dict], object]) -> list[str]:
+        doc = copy.deepcopy(base)
+        change(doc, doc["rounds"][rnd]["lanes"][lane])
+        return agentbench.record_errors(doc)
+
+    plants = {
+        "no error_policy": (lambda d, g: d.pop("error_policy"), "no error_policy"),
+        "no resolved_model": (lambda d, g: g.pop("resolved_model"), "names no resolved_model"),
+        "an N/A score": (lambda d, g: g.update(score=None), "no score in [0, 1]"),
+        "a winner": (lambda d, g: d.update(winners={"main": lane}), "names a winner"),
+        "a partial run": (lambda d, g: g.update(records=g["records"] - 1), "counted over all"),
+    }
+    for name, (change, needle) in plants.items():
+        if not any(needle in e for e in planted(change)):
+            raise SystemExit(f"FAIL an external record with {name} was not refused: {planted(change)}")
+    module.CASES.append(
+        (
+            "an external cross-model record declares its error policy and each chain lane's served model, and names no winner",
+            "errored records scored 0 and one model counted as five lanes, read as a ranking",
+        )
+    )
+    print("  ok    an external cross-model record is refused without error policy, served model, or with a winner")
+
+
 def run(module: ModuleType) -> None:
-    agentbench_case(module)
-    runner_case(module)
+    for case in (agentbench_case, runner_case, plant_case, record_case):
+        case(module)

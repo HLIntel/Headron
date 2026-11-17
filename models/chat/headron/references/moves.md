@@ -2,6 +2,13 @@
 
 GENERATED from atlas.yaml/agent_success_patterns.
 
+## prove_a_task_plant_fails_before_spending_an_agent
+
+- move: run each benchmark task's tests against its unchanged plant under many hash seeds, and against a reference fix kept outside the task, before any agent run is scored
+- when: adding or editing a task under benchmarks/agent/, or running agentbench
+- verify: agentbench_test.plant_case: every plant fails by assertion on every seed, every reference fix passes, and planted always-passing and seed-flaky tasks are refused
+- answers: a_plant_that_does_not_fail
+
 ## refuse_to_rewrite_a_published_lane
 
 - move: push a landing branch without force and reconcile a divergent remote before trying again
