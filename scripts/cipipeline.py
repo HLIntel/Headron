@@ -76,6 +76,19 @@ UV = Step(
     timeout_s=30,
     tools=("uv", "uvx"),
 )
+# ONE INSTALL, BY HASH, LINKED. Every job installs the lock through uv: it refuses a line with no hash
+# (--require-hashes) and links each package out of its cache (clonefile on APFS), never unpacking it again.
+# MEASURED at contract 3.63.0, same lock, same packages: stdlib venv + pip 5.6 s on a quiet machine and ~28 s under a
+# land's load, per unit; uv venv + uv pip 0.8 s. .github/ci-local.sh makes the unit's venv with uv as well.
+LOCK = "scripts/requirements.lock.txt"
+
+
+def install(name: str = "Install harness dependency", *locks: str, timeout_s: float) -> Step:
+    """The hash-locked install of LOCK plus `locks` into the unit's venv; with no uv it answers unknown."""
+    files = " ".join(f"-r {lock}" for lock in (LOCK, *locks))
+    return Step(name, f"uv pip install --quiet --require-hashes {files}", timeout_s=timeout_s, tools=("uv",))
+
+
 GO = Step(
     "Check Go against examples/go/go.mod",
     (
@@ -140,11 +153,7 @@ JOBS: tuple[Job, ...] = (
                 timeout_s=480,
             ),
             PYTHON,
-            Step(
-                "Install harness dependency",
-                "python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt",
-                timeout_s=480,
-            ),
+            install(timeout_s=480),
             Step(
                 "Check for personal data and secrets",
                 (
@@ -216,11 +225,7 @@ JOBS: tuple[Job, ...] = (
         shards=("core", "guards-0", "guards-1"),
         steps=(
             PYTHON,
-            Step(
-                "Install harness dependency",
-                "python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt",
-                timeout_s=840,
-            ),
+            install(timeout_s=840),
             Step(
                 "Mutation-test the harness itself",
                 'ATLAS_SHARD="$HEADRON_CI_SHARD" python scripts/atlas_test.py',
@@ -258,11 +263,7 @@ JOBS: tuple[Job, ...] = (
         ),
         steps=(
             PYTHON,
-            Step(
-                "Install harness dependency",
-                "python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt",
-                timeout_s=240,
-            ),
+            install(timeout_s=240),
             Step(
                 "Judge the union of the shards",
                 'python scripts/edges.py --merge "$HEADRON_CI_ARTIFACTS/edges-core.json" "$HEADRON_CI_ARTIFACTS/edges-guards-0.json" "$HEADRON_CI_ARTIFACTS/edges-guards-1.json"',
@@ -276,11 +277,7 @@ JOBS: tuple[Job, ...] = (
         budget_s=600,
         steps=(
             PYTHON,
-            Step(
-                "Install harness dependency",
-                "python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt",
-                timeout_s=600,
-            ),
+            install(timeout_s=600),
             Step(
                 "Exercise directory routing (a language guide must route to its own pack)",
                 "python scripts/atlas.py route languages/python/README.md",
@@ -340,11 +337,7 @@ JOBS: tuple[Job, ...] = (
         steps=(
             PYTHON,
             UV,
-            Step(
-                "Install harness dependency",
-                "python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt",
-                timeout_s=480,
-            ),
+            install(timeout_s=480),
             Step(
                 "Run every documented install command in a clean home",
                 "python scripts/cli_test.py --install",
@@ -364,11 +357,7 @@ JOBS: tuple[Job, ...] = (
         ),
         steps=(
             PYTHON,
-            Step(
-                "Install harness dependency",
-                "python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt",
-                timeout_s=300,
-            ),
+            install(timeout_s=300),
             Step(
                 "Judge the diff against the contract the pull request names",
                 (
@@ -404,11 +393,7 @@ JOBS: tuple[Job, ...] = (
         budget_s=2700,
         steps=(
             PYTHON,
-            Step(
-                "Install harness dependency",
-                "python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt",
-                timeout_s=2700,
-            ),
+            install(timeout_s=2700),
             Step(
                 "Install the declared toolchains",
                 "brew bundle check --file=Brewfile",
@@ -431,11 +416,7 @@ JOBS: tuple[Job, ...] = (
         shards=("fuzz_manifest_entry", "fuzz_jsonc"),
         steps=(
             PYTHON,
-            Step(
-                "Install the harness and atheris, by hash",
-                "python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt -r fuzz/requirements.lock.txt",
-                timeout_s=1200,
-            ),
+            install("Install the harness and atheris, by hash", "fuzz/requirements.lock.txt", timeout_s=1200),
             Step(
                 "Fuzz the target for ten minutes",
                 (

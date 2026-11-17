@@ -243,6 +243,41 @@ def drift_cases(module: ModuleType) -> None:
     )
 
 
+def install_cases(module: ModuleType, base: Path) -> None:
+    """Every job installs through cipipeline.install, and that install refuses a lock line with no hash.
+
+    Offline against uv's cache, so no network decides it: with --require-hashes uv names the missing hash before
+    resolving; without it, uv tries to resolve and fails for a different reason."""
+    steps = [step for job in cipipeline.JOBS for step in job.steps if "pip install" in step.run]
+    unhashed = base / "unhashed.lock.txt"
+    unhashed.write_text("six==1.16.0\n", encoding="utf-8")
+    venv = base / "install-venv"
+    made = subprocess.run(
+        ["uv", "venv", "--quiet", str(venv)], capture_output=True, text=True, timeout=120, check=False
+    )
+    tried = subprocess.run(
+        cipipeline.install(timeout_s=60).run.replace(cipipeline.LOCK, str(unhashed)),
+        shell=True,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+        env={**os.environ, "VIRTUAL_ENV": str(venv), "UV_OFFLINE": "1"},
+    )
+    _case(
+        module,
+        "every job's install is the one uv install by hash, and it refuses a lock line that carries no hash",
+        "a job back on a bare pip install, an install that drops --require-hashes, or one that never declares uv",
+        len(steps) >= 8
+        and all(
+            step.run.startswith("uv pip install --quiet --require-hashes ") and "uv" in step.tools for step in steps
+        )
+        and made.returncode == 0
+        and tried.returncode != 0
+        and "must have a hash" in tried.stderr,
+    )
+
+
 def run_cases(module: ModuleType, base: Path) -> None:
     """The real runner over a planted declaration, through its CLI."""
     repo, shared = _repo(base, "plan")
@@ -474,6 +509,7 @@ def run(module: ModuleType) -> None:
         graph_cases(module)
         declaration_cases(module)
         drift_cases(module)
+        install_cases(module, base)
         run_cases(module, base)
         rescue_tag_cases(module, base)
         hook_cases(module, base)
