@@ -6,12 +6,15 @@ from collections.abc import Callable, Mapping
 from decimal import DecimalException
 from typing import Any
 
+from effects import PURE
+
 
 class Calculation:
     name: str
     version: str
     operation: Callable[[Mapping[str, Any]], tuple[dict[str, Any], tuple[str, ...]]]
     next_step: str
+    declared = PURE  # a calculation reads only its context: no effects, same output for the same context
 
     def run(self, context: Mapping[str, Any]) -> Any:
         from computation_contract import request_errors  # noqa: PLC0415

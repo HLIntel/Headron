@@ -24,6 +24,8 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Protocol
 
+import effects
+
 # THE STATUSES, AND WHAT A CALLER MAY DO WITH EACH. Only "ok" may be acted on; the other three
 # fail closed. "unknown" (could not decide) is kept apart from "refused" (decided no): reading
 # one as the other is the trap enforce.py already records for pytest's exit 5.
@@ -100,6 +102,7 @@ class Classify:
 
     name = "classify"
     version = "1"
+    declared = effects.Declared({"read", "spawn"}, {"git"})
     timeout_s = 10.0
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
@@ -121,6 +124,7 @@ class Search:
 
     name = "search"
     version = "1"
+    declared = effects.Declared({"read", "write", "spawn"}, {"git"})  # rebuilds .agent/index when stale
     timeout_s = 30.0
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
@@ -142,6 +146,7 @@ class EdgeDomains:
 
     name = "graph.edges"
     version = "1"
+    declared = effects.Declared({"read"})
     timeout_s = 30.0
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
@@ -186,6 +191,7 @@ class ContextCredit:
 
     name = "context.credit"
     version = "1"
+    declared = effects.Declared({"write"})  # appends to the credit store when record is set
     timeout_s = 10.0  # pure arithmetic over recorded runs; the append is the only I/O
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
@@ -256,6 +262,7 @@ class TaskObligations:
 
     name = "task.obligations"
     version = "1"
+    declared = effects.Declared({"read", "spawn"}, {"git"})  # reads the tree the evidence must cover
     timeout_s = 60.0  # git calls, one file read, and with a contract one atlas resolution per changed file x gate
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
@@ -298,6 +305,7 @@ class MemoryValidate:
 
     name = "memory.validate"
     version = "1"
+    declared = effects.Declared({"read", "spawn"}, {"git"})  # git diff over a claim's validity envelope
     timeout_s = 30.0  # one registry read and at most one git diff
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
@@ -330,6 +338,7 @@ class RonVerify:
 
     name = "ron.verify"
     version = "1"
+    declared = effects.Declared({"read"})
     timeout_s = 30.0  # one directory walk and a digest per file
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
@@ -452,14 +461,17 @@ def _bounded(program: MicroProgram, context: Mapping[str, Any]) -> MicroResult:
     """Run the program on a daemon thread and wait at most its timeout_s.
 
     A Python thread cannot be killed, so an overrun step is abandoned, not stopped: it is a daemon, so it
-    cannot hold the process open, and it writes only to its own holder, never to the counters.
+    cannot hold the process open, and it writes only to its own holder, never to the counters. The worker
+    is held to the program's declared effects (effects.scope): an undeclared write, spawn or connection is
+    refused before it happens and ends the run as status "error".
     """
     timeout_s = float(getattr(program, "timeout_s", DEFAULT_TIMEOUT_S))
     holder: dict[str, Any] = {}
 
     def target() -> None:
         try:
-            holder["result"] = program.run(context)
+            with effects.scope(program):
+                holder["result"] = program.run(context)
         except BaseException as exc:  # noqa: BLE001 - carried back to the caller, raised nowhere
             holder["error"] = exc
 
@@ -528,7 +540,10 @@ def cli(name: str, args: list[str], as_json: bool) -> int:
     import json  # noqa: PLC0415
 
     if name == "list":
-        rows = [{"name": p.name, "version": p.version} for p in REGISTRY.values()]
+        rows = [
+            {"name": p.name, "version": p.version, "declared": effects.declared_of(p).to_dict()}
+            for p in REGISTRY.values()
+        ]
         print(json.dumps(rows) if as_json else "\n".join(f"{r['name']} {r['version']}" for r in rows))
         return 0
     context: Mapping[str, Any] = {"files": args, "query": " ".join(args), "args": args}
