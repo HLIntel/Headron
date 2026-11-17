@@ -9,7 +9,7 @@ store, so the image is content-addressed, copied with `git fetch`/`git push` of 
   headron task compile <contract.headron>             # the image with every node NOT RUN
   headron task run     <contract.headron> [--execute] # run the gates through agentrun, record each node
   headron task resume  <contract.headron> [--execute] # refused unless the contract is the one the image recorded;
-                                                      # a node that passed on this same clean tree is REUSED
+                                                      # gates run again when execution is requested
   headron task inspect <task_id> [--json]             # reads the ref only, never the working tree
 
 The image tree holds contract.json (the compiled contract), state.json (contract hash, tree, status, the node
@@ -18,12 +18,12 @@ obligations.jsonl (the ledger snapshot). Gates run only through agentrun.execute
 executes anything under the policy; this module never runs a gate itself.
 
 proves: an image whose contract hash differs from the contract given refuses resume; a node with no recorded
-  result, or a gate that did not run, reads NOT RUN and never PASS; a pass is reused only on the same clean tree;
+  result, or a gate that did not run, reads NOT RUN and never PASS; resume does not reuse gate results;
   a blob, message or identity privacy_guard would refuse is never written; a ref moved by another writer
   refuses the update instead of overwriting it
 does_not_prove: that a recorded gate checks what the task needs (the contract's gates are the instrument), or
   that a fetched image was produced by the run it describes (sign the receipt for that, receiptsign.py)
-closed_by: taskimage_test.py, which plants a stale contract, a missing node, a dry run, a dirty-tree pass, a home
+closed_by: taskimage_test.py, which plants a stale contract, a missing node, a dry run, a stale pass, a home
   path in a contract and a concurrent ref update
 """
 
@@ -88,8 +88,6 @@ def node_state(row: dict) -> str:
     """One gate row to one state. Only a gate that RAN and exited 0 is PASS; a row that did not run is NOT RUN."""
     if "control" in row:
         return "REFUSED"
-    if row.get("reused"):
-        return "REUSED"
     if not row.get("ran"):
         return NOT_RUN
     return "PASS" if row.get("exit_code") == 0 else "FAIL"
@@ -179,13 +177,6 @@ def image_files(contract: dict, rows: list[dict], outcome: dict | None, tree: st
     return files
 
 
-def reusable(state: dict, tree: str) -> frozenset[str]:
-    """Nodes that passed on THIS tree. A dirty tree id is not a content address, so nothing on it is reused."""
-    if tree.endswith("+dirty") or state.get("tree") != tree:
-        return frozenset()
-    return frozenset(name for name, node in nodes_of(state) if node.get("state") in ("PASS", "REUSED"))
-
-
 def stale_reason(state: dict, contract: dict) -> str | None:
     recorded, given = state.get("contract"), agentpolicy.contract_hash(contract)
     if recorded != given:
@@ -208,7 +199,6 @@ def run_image(path: Path, execute: bool, resume: bool, repo: Path = ROOT) -> tup
     task_id = str(contract["task_id"])
     found = read(task_id, repo)
     tree = obligations.tree(repo)
-    reuse: frozenset[str] = frozenset()
     if resume:
         if found is None:
             raise Refused(f"no image at {PREFIX}{task_id}: compile or run it first")
@@ -216,8 +206,7 @@ def run_image(path: Path, execute: bool, resume: bool, repo: Path = ROOT) -> tup
         reason = stale_reason(state, contract)
         if reason:
             raise Refused(f"stale contract, resume refused: {reason}")
-        reuse = reusable(state, tree)
-    record, code = agentrun.execute_contract(path, execute, reuse)
+    record, code = agentrun.execute_contract(path, execute)
     if "outcome" not in record:
         raise Refused("agentrun refused the contract: " + "; ".join(map(str, record.get("refusals") or [])))
     outcome = record["outcome"]
@@ -236,8 +225,8 @@ def inspect(task_id: str, repo: Path = ROOT) -> tuple[dict, int]:
     checkpoints = int(_git(repo, "rev-list", "--count", commit))
     view = {**state, "commit": commit, "checkpoints": checkpoints, "files": sorted(files)}
     view["nodes"] = dict(nodes_of(state))
-    passed = all(node.get("state") in ("PASS", "REUSED") for node in view["nodes"].values())
-    return view, 0 if passed and view["nodes"] else 1
+    passed = all(node.get("state") == "PASS" for node in view["nodes"].values())
+    return view, 0 if state.get("status") == "verified" and passed and view["nodes"] else 1
 
 
 def show(view: dict) -> None:
