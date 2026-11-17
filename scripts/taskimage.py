@@ -210,6 +210,10 @@ def run_image(path: Path, execute: bool, resume: bool, repo: Path = ROOT) -> tup
     if "outcome" not in record:
         raise Refused("agentrun refused the contract: " + "; ".join(map(str, record.get("refusals") or [])))
     outcome = record["outcome"]
+    if outcome["status"] == "verified" and (
+        tree == obligations.UNKNOWN_TREE or tree.endswith("+dirty") or obligations.tree(repo) != tree
+    ):
+        raise Refused("verified task requires a clean source tree unchanged during execution")
     files = image_files(contract, outcome["gates"], outcome, tree)
     verb = "resume" if resume else "run"
     write(task_id, files, f"task {task_id}: {verb} ({outcome['status']})", found[0] if found else None, repo)
