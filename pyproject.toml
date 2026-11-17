@@ -150,5 +150,4 @@ executionEnvironments = [
     { root = "examples/webhooks", extraPaths = ["examples/webhooks", "scripts"] },
     { root = "fuzz", extraPaths = ["fuzz", "scripts"] },
     { root = "scripts", extraPaths = ["scripts"] },
-    { root = "benchmarks/agent/ratelimit", extraPaths = ["benchmarks/agent/ratelimit", "scripts"] },
 ]
