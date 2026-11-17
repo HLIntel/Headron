@@ -441,7 +441,7 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - shape: a task every lane passes, or every lane fails, moves every lane's score by the same amount and is read as part of the ranking, so it adds width to a table and no information to an order
 - looks like: a suite whose totals differ by less than one task's weight, or a round with one score for every lane
 - tell: one task at 0.0 in every lane, or one round at the same rate in every lane
-- do instead: the screen splits tasks into flat_pass, flat_fail, discriminating and unmeasured over the lanes that answered, ranks on the discriminating tasks only, and reports each lane with a Wilson interval
+- do instead: the screen splits tasks into flat_pass, flat_fail, discriminating and unmeasured over the lanes that answered, ranks on the discriminating tasks only, and reports each lane with a Wilson interval; a lane that cannot echo the census canary (a classifier) is excluded with its reason, since a lane that fails everything turns every task the real models pass into a discriminating one
 
 ## a_chain_lane_read_as_a_model
 

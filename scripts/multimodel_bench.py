@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import providers
+import resilience
 import taskbench
 from abtest import _reader_lock
 from atlascore import atlas, text_of
@@ -70,7 +71,11 @@ def benchmark_single(
             t0 = time.monotonic()
             try:
                 ans, tok = providers.complete(provider, model, q[arm], timeout, max_tokens)
-            except (OSError, ValueError, KeyError):
+            except (OSError, ValueError, KeyError, resilience.BreakerOpen) as err:
+                # BreakerOpen is a RuntimeError: uncaught, one dead lane ended the whole run unrecorded
+                cls = "breaker_open" if isinstance(err, resilience.BreakerOpen) else resilience.classify(error=err)
+                errors = summary.setdefault("errors", {})
+                errors[cls] = errors.get(cls, 0) + 1
                 ans, tok = "", 0
             elapsed = time.monotonic() - t0
             # A NON-ANSWER IS NOT A WRONG ANSWER (`a_non_answer_scored_as_wrong`). A transport error, an
@@ -119,7 +124,7 @@ def benchmark_cooperative(
                 "Review the draft against the rules above. Output the verified final answer only."
             )
             peer_ans, peer_tok = providers.complete(peer_provider, peer_model, review_prompt, timeout, max_tokens)
-        except (OSError, ValueError, KeyError):
+        except (OSError, ValueError, KeyError, resilience.BreakerOpen):
             lead_ans, lead_tok = "", 0
             peer_ans, peer_tok = "", 0
         elapsed = time.monotonic() - t0
@@ -212,12 +217,35 @@ def format_matrix_markdown(benchmarks: list[dict[str, Any]], cooperative: dict[s
     return "\n".join(lines)
 
 
+def census_lanes(rows: list[dict[str, Any]]) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
+    """The lanes a screen may rank, and every census row it may not, each with its reason.
+
+    Ranked: alive, answering AS ITSELF, and following a one-line instruction. A lane served as another
+    model is that model's record (`a_chain_lane_read_as_a_model`). A lane that cannot echo a token is a
+    classifier or a broken template: it fails every task, so every task the real models pass reads as
+    DISCRIMINATING and the gate stops gating. Nothing is dropped silently."""
+    keep: list[tuple[str, str]] = []
+    excluded: list[dict[str, str]] = []
+    for r in rows:
+        lane = f"{r['provider']}:{r['model']}"
+        if r["status"] != "alive":
+            excluded.append({"lane": lane, "reason": f"not_run:{r.get('error')}"})
+        elif r.get("identity") == "differs":
+            excluded.append({"lane": lane, "reason": f"served_as:{r.get('served')}"})
+        elif not r.get("followed"):
+            excluded.append({"lane": lane, "reason": "did_not_follow_canary"})
+        else:
+            keep.append((r["provider"], r["model"]))
+    return keep, excluded
+
+
 def run_matrix(
     models: list[tuple[str, str]],
     kinds: list[str],
     sample_diagnose: int | None = None,
     peer: tuple[str, str] | None = None,
     timeout: int = 60,
+    excluded: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Execute matrix benchmark across declared models with optional peer collaboration."""
     _held = _reader_lock()  # noqa: F841
@@ -236,6 +264,7 @@ def run_matrix(
         "cooperative": coop,
         "discrimination": discrimination(benchmarks),
         "ranking": screen_ranking(benchmarks),
+        "excluded": excluded or [],
     }
 
 
@@ -263,12 +292,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     providers.set_live(args.live)
+    excluded: list[dict[str, str]] = []
     if args.models_from:
-        rows = json.loads(text_of(Path(args.models_from)))
-        # a lane served as another model is that other model's record, not this name's
-        model_pairs = [
-            (r["provider"], r["model"]) for r in rows if r["status"] == "alive" and r.get("identity") != "differs"
-        ]
+        model_pairs, excluded = census_lanes(json.loads(text_of(Path(args.models_from))))
     elif args.auto:
         active = providers.available_providers()
         print(f"Auto-discovered active providers: {', '.join(active)}")
@@ -286,7 +312,7 @@ def main(argv: list[str] | None = None) -> int:
     peer_pair = parse_model_spec(args.peer) if args.peer.strip() else None
     kinds_list = [k.strip() for k in args.kinds.split(",") if k.strip()]
 
-    matrix = run_matrix(model_pairs, kinds_list, args.sample_diagnose, peer_pair, args.timeout)
+    matrix = run_matrix(model_pairs, kinds_list, args.sample_diagnose, peer_pair, args.timeout, excluded)
     table = format_matrix_markdown(matrix["models"], matrix.get("cooperative"))
     print("\n# Headron Multi-Model Benchmark Matrix\n")
     print(table)
