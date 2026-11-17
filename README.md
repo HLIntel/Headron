@@ -25,21 +25,11 @@ Agents: [llms.txt](llms.txt). Chats: [CHAT.md](CHAT.md). [Evidence](#recorded-re
 
 <!-- END generated: headline -->
 
-## Why this exists
-
-Headron connects changed files to declared checks and reports whether those checks ran. A skipped
-check is not a pass. An optional Git hook can run checks before a commit, whether the change came
-from a developer or an agent.
-
 ## How it works
 
-`headron port <file>` tells an agent what a file owes before it edits. [`atlas.yaml`](atlas.yaml)
-holds those checks; the commit hook and CI report `PASS`, `FAIL`, `SKIP` or `NOT RUN`. The hosted
-[Mind API](https://headron.tech/mind-api.html) plans a declared change through `headron mind`.
-
-Headron's own CI is native: `headron ci` runs the jobs [`scripts/cipipeline.py`](scripts/cipipeline.py)
-declares, Python steps run as one graph of bounded checks. No hosted runner gates a pull request; a
-landing posts the `local-ci` commit status from that run.
+`headron port <file>` tells an agent what a file owes before it edits; [`atlas.yaml`](atlas.yaml) holds
+the checks. The hook and `headron verify` report `PASS`, `FAIL`, `SKIP` or `NOT RUN`: a skipped
+check is never a pass, whoever wrote the change. `headron ci` runs CI locally.
 
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
@@ -61,6 +51,17 @@ $ headron gate scripts/doctor.py
 
 <!-- END generated: gate-example -->
 
+## From task to proof
+
+Done means every obligation is proven on the checked tree:
+
+1. **Owe:** `obligations.py extract <task> <contract>` binds each requirement to its check.
+2. **Check:** `headron verify --receipt verify.json` writes a receipt bound to the tree.
+3. **Seal:** `ronbundle.py pack <task> out.ron --receipt verify.json` writes a digest-named, optionally signed [`.ron` bundle](docs/HEADRON-LANGUAGE.md#what-a-finished-program-carries-the-ron-bundle).
+4. **Trust:** `headron mind --micro ron.verify out.ron`: `ok`, `refused` or `unknown`; only `ok` is acted on.
+
+Steps 1 and 3 run `python scripts/…` in a clone.
+
 ## Quickstart
 
 <!-- BEGIN generated: install (python scripts/atlas.py index --write) -->
@@ -81,12 +82,7 @@ cd path/to/your-repo && headron init   # finds checks, wires agents, installs ho
 headron verify && headron proof <file> --verify   # after a change: verdicts, then a file's proof
 ```
 
-With an impact map, `headron verify --changed` evaluates checks for modified files.
-Target a specific profile with `headron verify --changed --change <class>` (e.g. `source_change`, `api_change`, `security_sensitive`); `headron verify` remains the final full verdict.
-
-**Machines:** [bootstrap](.agent/bootstrap.json), [facts](.agent/facts.json), and [JSON schema](tools/atlas-output.schema.json).
-**Agents:** [adapters](models/README.md); the MCP interface is read-only.
-**Another repository:** [CONSUMING](docs/CONSUMING.md).
+`headron verify --changed [--change <class>]` checks only modified files; plain `headron verify` is the final verdict.
 
 ## Recorded results
 
@@ -111,7 +107,8 @@ Entry context: ~1,634 tokens. The 214 documents (733 KiB) load on demand; instal
 
 ## Where it fits
 
-- **Agents and runtimes:** [adapters](models/README.md) describe supported integrations.
+- **Agents and runtimes:** [adapters](models/README.md) describe supported integrations; the local MCP server is read-only.
+- **Machines:** [bootstrap](.agent/bootstrap.json) (this entry as JSON) · [facts](.agent/facts.json).
 - **Headron Harness:** a separate desktop dashboard and runtime; see [product boundaries](docs/PRODUCT-STRATEGY.md).
 - **Other repositories:** `headron init` sets up a repository; [CONSUMING](docs/CONSUMING.md) covers CI, the [GitHub Action](docs/CONSUMING.md#as-a-github-action) and the [hosted MCP](docs/CONSUMING.md#hosted-mind-api--mcp).
 - **Languages:** routes declare available checks and identify checks without a tool.
@@ -131,10 +128,11 @@ $ headron port . --line
 
 <!-- END generated: port-example -->
 
-- **Discover:** `headron find <query>` does deterministic symbol and BM25 search over paths, symbols and terms; `headron sweep` maps topology.
+- **Discover:** `headron find <query>` searches paths, symbols and terms; `headron sweep` maps topology.
 - **Route:** `headron port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
-- **Processes:** `headron process [<id>] --json` lists workflows; with an id, its steps and gates.
+- **Processes:** `headron process [<id>] --json` lists workflows, or one's steps and gates.
 - **Mind:** `headron mind --route <file>` routes; `headron mind --receipts` summarizes the latest local verification record.
+- **Compute:** `headron mind --micro list` names the [microprograms](docs/COMPUTATION.md); each returns a status, evidence and a receipt.
 - **Beliefs:** `headron revise` names what rests on a refuted claim; `headron propose` drafts each fix outside the tree.
 - **Automate:** add `--json`; records follow [the output schema](tools/atlas-output.schema.json).
 - **Before shell:** `headron shell --json "<cmd>"`; exit 3 means its verdict would be misread.
