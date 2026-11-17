@@ -1,7 +1,7 @@
 # Headron Index
 
 <!-- BEGIN generated: glance (python scripts/atlas.py index --write) -->
-**40** languages · **60** extensions · **64** gates · **18** runtimes · **131** failure shapes · **52** success moves · **52** invariants · **95** instruments · **376** agreement edges · **2** dependency
+**40** languages · **60** extensions · **64** gates · **18** runtimes · **131** failure shapes · **52** success moves · **52** invariants · **95** instruments · **378** agreement edges · **2** dependency
 <!-- END generated: glance -->
 
 ## Use it

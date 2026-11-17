@@ -158,7 +158,7 @@ Generated on every build; `check` refuses drift.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
 - **52** hard invariants — enforced on every change, zero unowned
-- **376** agreement edges — each a file tied to the declaration it answers for
+- **378** agreement edges — each a file tied to the declaration it answers for
 - **95** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
 - **222** harness Python files — every one held by `lint` · `format` · `typecheck`

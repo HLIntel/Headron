@@ -71,7 +71,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [links](../scripts/links.py) | `headron links`: where this release is, and what each companion reads from it | 0 | commands |  |
 | [mcpsize](../scripts/mcpsize.py) | Measure an MCP `tools/list` dump against the declared per-server token band | 0 | contextcost |  |
 | [mdshape](../scripts/mdshape.py) | mdshape — every Markdown file has a class, and each class has a rule: bounded, preserved, or… | 0 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [cli_test](../scripts/cli_test.py) |
-| [multimodel_bench](../scripts/multimodel_bench.py) | Multi-model cross-evaluation benchmark: Headron lift, tokens, and multi-model collaboration | 0 | abtest, providers, taskbench | [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
+| [multimodel_bench](../scripts/multimodel_bench.py) | Multi-model cross-evaluation benchmark: Headron lift, tokens, and multi-model collaboration | 0 | abtest, providers, resilience, taskbench | [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
 | [packprobe](../scripts/packprobe.py) | packprobe — how many of each language pack's DECLARED commands resolve on this machine | 0 | packmanifest |  |
 | [pointers](../scripts/pointers.py) | The pointer table: every name in atlas.yaml that points at something else, in one place, read by… | 0 | knowledge, packmanifest | [pointers_test](../scripts/pointers_test.py) |
 | [propose](../scripts/propose.py) | Propose: a loop that reads what Headron believes, drafts the revision, and never lands it | 0 | atomicfile, claims | [propose_test](../scripts/propose_test.py) |

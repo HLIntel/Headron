@@ -140,6 +140,38 @@ class TestMultiModelBench(unittest.TestCase):
         ):
             self.assertTrue(providers.canary("groq", "m")["error"].startswith("exhausted:"))
 
+    def test_census_lanes_exclude_with_reasons(self) -> None:
+        rows = [
+            {"provider": "k", "model": "good", "status": "alive", "identity": "match", "followed": True},
+            {
+                "provider": "k",
+                "model": "auto",
+                "status": "alive",
+                "identity": "differs",
+                "served": "x",
+                "followed": True,
+            },
+            {"provider": "g", "model": "guard", "status": "alive", "identity": "match", "followed": False},
+            {"provider": "c", "model": "spent", "status": "not_run", "error": "exhausted:402"},
+        ]
+        keep, excluded = multimodel_bench.census_lanes(rows)
+        self.assertEqual(keep, [("k", "good")])
+        self.assertEqual(
+            [e["reason"] for e in excluded], ["served_as:x", "did_not_follow_canary", "not_run:exhausted:402"]
+        )
+
+    @patch("providers.complete")
+    def test_an_open_breaker_is_not_run_not_a_crash(self, mock_complete: Any) -> None:
+        import resilience
+
+        mock_complete.side_effect = resilience.BreakerOpen("open")
+        qs = [{"kind": "hygiene", "task": "h0", "truth": ["yes"], "blind": "ask", "headron": "Rule A:\nask"}]
+        res = multimodel_bench.benchmark_single("router", "small", qs, timeout=5)
+        self.assertEqual(res["questions"]["h0"], {"blind": "not_run", "headron": "not_run"})
+        self.assertEqual(res["errors"], {"breaker_open": 2})
+        coop = multimodel_bench.benchmark_cooperative("router", "small", "router", "code", qs, timeout=5)
+        self.assertEqual(coop["not_run"], 1)
+
     def test_format_matrix_markdown(self) -> None:
         benchmarks = [
             {

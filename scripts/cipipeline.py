@@ -197,7 +197,7 @@ JOBS: tuple[Job, ...] = (
             Step("Type-check the harness against its baseline", "uvx basedpyright@1.40.2", timeout_s=480),
             Step(
                 "Run the artifacts pytest cases",
-                "uvx --from pytest==8.3.5 --with-requirements scripts/requirements.lock.txt pytest -q -p no:cacheprovider scripts/artifacts_test.py scripts/datakit_test.py scripts/formula_test.py",
+                "uvx --from pytest==8.3.5 --with-requirements scripts/requirements.lock.txt pytest -q -p no:cacheprovider scripts/artifacts_test.py scripts/datakit_test.py scripts/formula_test.py scripts/multimodel_bench_test.py",
                 timeout_s=480,
                 why=(
                     "THE ARTIFACTS PYTEST CASES, RUN BY THE PINNED RUNNER (done_set: artifacts_tests). Bare python cannot "
