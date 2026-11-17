@@ -229,7 +229,7 @@ def declaration_cases(module: ModuleType) -> None:
     )
     # MEASURED at contract 3.63.0: each unit's seconds in one clean land (PR 563, width 3). The graph starts ready
     # units in declared order, so the slowest shard declared after a faster one waits for exercises to free a seat.
-    seconds = {
+    seconds: dict[str, float] = {
         "fast": 48,
         "mutation:core": 111,
         "mutation:guards-0": 63,
