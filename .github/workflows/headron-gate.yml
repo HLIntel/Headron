@@ -53,12 +53,13 @@ jobs:
         env:
           HEADRON_BASE: ${{ inputs.base-ref || github.event.pull_request.base.sha || 'main' }}
         run: |
-          mkdir -p receipts
-          if [ -f receipts/verify.json ] && python3 scripts/receipt.py receipts/verify.json 2>/dev/null; then
+          git config core.hooksPath .githooks
+          mkdir -p .tmp/receipts
+          if [ -f .tmp/receipts/verify.json ] && python3 scripts/receipt.py .tmp/receipts/verify.json 2>/dev/null; then
             echo "Valid local receipt found; reusing receipt."
           else
             echo "Generating receipt for base $HEADRON_BASE..."
-            python3 scripts/verify.py --base "$HEADRON_BASE" --receipt receipts/verify.json
+            python3 scripts/verify.py --base "$HEADRON_BASE" --receipt .tmp/receipts/verify.json
           fi
 
       - name: Upload receipt artifact
@@ -66,5 +67,5 @@ jobs:
         if: always()
         with:
           name: headron-receipt-${{ github.sha }}
-          path: receipts/verify.json
+          path: .tmp/receipts/verify.json
           if-no-files-found: warn
