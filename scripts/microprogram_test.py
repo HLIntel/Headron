@@ -500,6 +500,92 @@ def obligation_cases(module: ModuleType) -> None:
     print("  ok    micro task.obligations binds done to evidence on this tree")
 
 
+def extract_cases(module: ModuleType) -> None:
+    """A task contract's obligations are derived from the files it changed, not typed by the agent: extraction is
+    idempotent, and coverage refuses a dropped obligation, a newly changed file, an unrouted file and a drift."""
+    import json
+    import os
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    import microprogram
+    import obligations
+
+    def git(root: Path, *argv: str) -> None:
+        subprocess.run(["git", "-C", str(root), *argv], capture_output=True, text=True, timeout=60, check=True)
+
+    def fail(why: str) -> None:
+        raise SystemExit(f"FAIL micro extract: {why}")
+
+    with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {"HEADRON_HOME": f"{tmp}/home"}):
+        root = Path(tmp) / "repo"
+        root.mkdir()
+        git(root, "init", "-q")
+        git(root, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "base")
+        (root / "a.py").write_text("x = 1\n", encoding="utf-8")
+        contract = Path(tmp) / "task.json"
+        contract.write_text(
+            json.dumps({"change_class": "source_change", "acceptance": {"required_checks": ["smoke"]}}),
+            encoding="utf-8",
+        )
+        if obligations.coverage("t", contract, root) == []:
+            fail("an empty ledger read as covering a changed file")
+        first = obligations.extract("t", contract, root)
+        held = obligations.current("t")
+        if not any(oid.startswith("gate.") and "a.py" in row.get("paths", []) for oid, row in held.items()):
+            fail(f"no gate obligation names the changed file a.py: {sorted(held)}")
+        if "accept.smoke" not in held:
+            fail(f"the contract's required check was not owed: {sorted(held)}")
+        if obligations.coverage("t", contract, root):
+            fail(f"a freshly extracted ledger read short: {obligations.coverage('t', contract, root)}")
+        if obligations.extract("t", contract, root)["written"]:
+            fail("extracting twice wrote rows: extraction is not idempotent")
+        ask = microprogram.run("task.obligations", {"task": "t", "contract": str(contract), "root": str(root)})
+        if ask.status != "refused" or "extract" in (ask.next or ""):
+            fail(f"a whole but unproven ledger answered {ask.status} {ask.next!r}, not refused with a check to run")
+        (root / "c.py").write_text("y = 2\n", encoding="utf-8")  # PLANTED: a file changed after extraction
+        late = obligations.coverage("t", contract, root)
+        if not any("does not cover c.py" in finding for finding in late):  # a shared command must name the new file
+            fail(f"a file changed after extraction read covered by a command recorded before it: {late}")
+        ask = microprogram.run("task.obligations", {"task": "t", "contract": str(contract), "root": str(root)})
+        if ask.status != "refused" or "extract" not in (ask.next or ""):
+            fail(f"an uncovered change answered {ask.status} {ask.next!r}, not refused naming extract")
+        (root / "c.py").unlink()
+        (root / "b.zzz").write_text("z\n", encoding="utf-8")  # PLANTED: a file no route reads
+        if not any(f.startswith("gap ") and "b.zzz" in f for f in obligations.coverage("t", contract, root)):
+            fail("a changed file no route reads was not a gap: a skipped check read as a pass")
+        (root / "b.zzz").unlink()
+        store = obligations.path("t")
+        lines = store.read_text(encoding="utf-8").splitlines()
+        store.write_text("\n".join(x for x in lines if "accept.smoke" not in x) + "\n", encoding="utf-8")  # PLANTED
+        if not any("accept.smoke" in f and "not recorded" in f for f in obligations.coverage("t", contract, root)):
+            fail("a dropped obligation read as covered")
+        drifted = [x.replace('"check": "', '"check": "drifted ', 1) if '"op": "add"' in x else x for x in lines]
+        store.write_text("\n".join(drifted) + "\n", encoding="utf-8")  # PLANTED: the recorded check drifted
+        try:
+            obligations.extract("t", contract, root)
+            fail("extract wrote over a drifted obligation")
+        except obligations.LedgerError:
+            pass
+        if not any("now owes" in f for f in obligations.coverage("t", contract, root)):
+            fail("a drifted obligation read as covered")
+        try:
+            obligations.extract("t", contract, Path(tmp) / "home")  # not a git tree: nothing would pass every check
+            fail("extract outside a git tree recorded an empty list of changes")
+        except obligations.LedgerError:
+            pass
+        if not first["written"]:
+            fail("the first extraction wrote nothing")
+    module.CASES.append(
+        (
+            "extract derives a task's obligations from its changed files; coverage refuses what the ledger lacks",
+            "an obligation the agent never wrote down, a file changed after the list was made, or a route-less file",
+        )
+    )
+    print("  ok    micro obligations extract derives owed checks and coverage refuses gaps")
+
+
 def memory_cases(module: ModuleType) -> None:
     """memory.validate serves a claim only while it can be shown to hold: a changed scope, an unreadable commit,
     broken evidence, a reported-only label or a corrupt record is unknown; a refuted claim is refused."""
@@ -792,6 +878,7 @@ def run(module: ModuleType) -> None:
         stats_cases,
         credit_cases,
         obligation_cases,
+        extract_cases,
         memory_cases,
         ron_cases,
     ):
