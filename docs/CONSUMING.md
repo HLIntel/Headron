@@ -157,11 +157,11 @@ the command's own verdict.
 | Existing CI? | The reusable workflow plans gates. Your pipeline must run the selected checks and enforce their results. |
 | Audit and incident review? | Retain the receipt alongside the commit, CI logs and relevant approvals. Verify its contents and review every skipped or missing check. |
 
-A receipt records a base commit, policy and input digests, check states and a verdict. Its digest detects
-accidental changes, but anyone can recompute it; a trusted signature identifies a signer, not whether the
-checks actually ran. It does not record the head commit, run time or CI job link. Retain those separately.
-Reused and freshly executed passing checks look the same in a receipt; use `--fresh` where a new run is
-required. A skipped check is distinct from a pass, even when the overall verdict is PASS.
+A receipt records a base commit, policy and input digests, check states and verdict. Its digest is not a
+signature; a signature identifies a signer, not whether checks ran. Retain the head commit, run time and CI
+job link separately. Reused and fresh passes look alike; use `--fresh` for a new run. A skip or unrun check
+makes the verdict NOT RUN unless another check fails. Earlier mixed PASS/SKIP receipts with a PASS verdict
+are rejected by the current verifier; preserve them and rerun the checks.
 
 For an external repository, `verify --receipt` currently requires an unchanged `atlas.yaml` with a
 verification policy at the selected base and in the working tree. Without it, policy pinning fails closed;

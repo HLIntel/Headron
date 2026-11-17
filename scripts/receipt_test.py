@@ -27,6 +27,18 @@ def _build(receipt: ModuleType, rows: list[dict], policy_digest: str | None = "b
     return receipt.build(rows, base_commit="a" * 40, policy_digest=policy_digest, input_digest="c" * 64)
 
 
+def _unbound_fail(receipt: ModuleType) -> dict:
+    return receipt.build(
+        [{"id": "policy_pinned", "verdict": "FAIL"}], base_commit=None, policy_digest=None, input_digest="c" * 64
+    )
+
+
+def _legacy_pass(receipt: ModuleType, mixed: dict) -> dict:
+    body = dict(mixed, verdict="PASS")
+    body["receipt_id"] = receipt.digest({k: v for k, v in body.items() if k != "receipt_id"})
+    return body
+
+
 def _git(cwd: Path, *args: str) -> str:
     done = subprocess.run(
         ["git", "-c", "user.email=t@t", "-c", "user.name=t", *args],
@@ -69,6 +81,28 @@ def _without_repo_access(receipt_file: Path) -> subprocess.CompletedProcess:
         )
 
 
+def _verdict_case(verify: ModuleType, receipt: ModuleType) -> tuple:
+    rows = [
+        [],
+        [{"verdict": "PASS"}],
+        [{"verdict": "REUSED"}],
+        [{"verdict": "SKIP"}],
+        [*PASS_ROWS, {"verdict": "SKIP"}],
+        [{"verdict": "FAIL"}, {"verdict": "SKIP"}],
+        [{"verdict": "unknown"}],
+        [{}],
+    ]
+    expected = [2, 0, 0, 2, 2, 1, 1, 1]
+    actual = [verify.verdict_code(row) for row in rows]
+    receipt_codes = [{"PASS": 0, "FAIL": 1, "NOT RUN": 2}[_build(receipt, row)["verdict"]] for row in rows]
+    return (
+        "receipt and exit verdicts agree for all states",
+        "divergent exit and receipt verdicts",
+        actual == expected == receipt_codes and receipt.verdict_of(["PASS", "UNKNOWN"]) == "FAIL",
+        actual,
+    )
+
+
 def _consumer_binding_case(verify: ModuleType, top: Path, repo: Path, base: str) -> tuple:
     receipt_file = top / "consumer.json"
     with (
@@ -86,6 +120,7 @@ def _consumer_binding_case(verify: ModuleType, top: Path, repo: Path, base: str)
         and binding.get("base") == exported["base_commit"]
         and binding.get("policy_digest") == exported["policy"]["digest"]
         and binding.get("input_digest") == exported["input_digest"]
+        and binding.get("receipt_id") == exported["receipt_id"]
     )
     return (
         "consumer receipts and the latest verification record carry the same policy and input binding",
@@ -125,7 +160,6 @@ def run(module: ModuleType) -> None:
         same = verify.policy_pin(same_repo, ["--base", same_base])
         removed = verify.policy_pin(removed_repo, ["--base", removed_base])
         no_base = verify.policy_pin(nogit, [])
-        consumer_case = _consumer_binding_case(verify, top, same_repo, same_base)
         receipt_file = top / "receipt.json"
         receipt_file.write_text(json.dumps(_build(receipt, PASS_ROWS), indent=2) + "\n", encoding="utf-8")
         intact = _without_repo_access(receipt_file)
@@ -144,12 +178,11 @@ def run(module: ModuleType) -> None:
         )
         skip_only = _build(receipt, [{"id": "x", "verdict": "SKIP"}])
         mixed = _build(receipt, [*PASS_ROWS, {"id": "y", "verdict": "SKIP"}])
+        legacy_mixed = _legacy_pass(receipt, mixed)
         unknown = _build(receipt, [{"id": "x", "verdict": "PASSED"}, {"id": "y"}])
         no_policy_pass = _build(receipt, PASS_ROWS, policy_digest=None)
         no_base_pass = receipt.build(PASS_ROWS, base_commit=None, policy_digest="b" * 64, input_digest="c" * 64)
-        no_base_fail = receipt.build(
-            [{"id": "policy_pinned", "verdict": "FAIL"}], base_commit=None, policy_digest=None, input_digest="c" * 64
-        )
+        no_base_fail = _unbound_fail(receipt)
         bad_state = json.loads(json.dumps(_build(receipt, PASS_ROWS)))
         bad_state["checks"][0]["state"] = "PASSED"
         verdicts = [
@@ -165,14 +198,16 @@ def run(module: ModuleType) -> None:
         except jsonschema.ValidationError:
             schema_ok = False
 
-        def _refused(candidate: dict) -> bool:
+        def _refused(candidate: object) -> bool:
             try:
                 jsonschema.validate(candidate, schema)
             except jsonschema.ValidationError:
                 return True
             return False
 
-        schema_refuses = _refused(bad_state) and _refused(no_policy_pass) and _refused(dict(no_base_pass))
+        schema_refuses = all(
+            _refused(v) for v in (bad_state, no_policy_pass, no_base_pass, legacy_mixed, dict(mixed, verdict="SKIP"))
+        )
         numeric_receipt = _build(receipt, PASS_ROWS)
         numeric_receipt["schema"] = 1.0
         numeric_receipt["counts"]["PASS"] = 2.0
@@ -196,7 +231,8 @@ def run(module: ModuleType) -> None:
             candidate["receipt_id"] = receipt.digest({k: v for k, v in candidate.items() if k != "receipt_id"})
             malformed.append(candidate)
         cases = [
-            consumer_case,
+            _consumer_binding_case(verify, top, same_repo, same_base),
+            _verdict_case(verify, receipt),
             (
                 "a NOT RUN check, alone or beside PASSes, never yields PASS; an empty receipt is NOT RUN",
                 "a gate that did not run counted as a pass because the others passed, or no check at all counted as done",
@@ -204,13 +240,15 @@ def run(module: ModuleType) -> None:
                 [v["verdict"] for v in verdicts],
             ),
             (
-                "a SKIP is counted apart and never a pass: skip-only is NOT RUN, and beside a PASS it is not counted as one",
-                "a skipped gate tallied into PASS so a receipt of nothing but skips reads as proof",
+                "a SKIP makes the overall verdict NOT RUN, alone or beside passing checks",
+                "a skipped gate beside a passing gate produces a green receipt",
                 skip_only["verdict"] == "NOT RUN"
                 and skip_only["counts"]["SKIP"] == 1
                 and skip_only["counts"]["PASS"] == 0
                 and mixed["counts"] == {"PASS": 2, "FAIL": 0, "NOT RUN": 0, "SKIP": 1}
-                and mixed["verdict"] == "PASS",
+                and mixed["verdict"] == "NOT RUN"
+                and any("verdict" in finding for finding in receipt.verify_bytes(receipt.canonical(legacy_mixed)))
+                and receipt.verdict_of(["FAIL", "SKIP"]) == "FAIL",
                 (skip_only["verdict"], skip_only["counts"], mixed["counts"], mixed["verdict"]),
             ),
             (

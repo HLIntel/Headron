@@ -442,8 +442,9 @@ def _paint(verdict: str) -> str:
 
 def verdict_code(rows: list[dict]) -> int:
     """1 on any FAIL; 2 when nothing failed but something did not run; 0 only when every gate PASSED."""
-    verdicts = {r["verdict"] for r in rows}
-    return 1 if "FAIL" in verdicts else 2 if verdicts - {"PASS", "REUSED"} or not rows else 0
+    return {"PASS": 0, "FAIL": 1, "NOT RUN": 2}[
+        receipt.verdict_of([receipt.check_state(r.get("verdict")) for r in rows])
+    ]
 
 
 def changed_gates(change_class: str = "source_change") -> list[dict]:
@@ -761,10 +762,11 @@ def policy_pin(tree: Path, argv: list[str]) -> dict:
     return _pin(True, f"verification_policy unchanged from base {commit[:12]}", commit, digest)
 
 
-def write_receipt(path: Path, rows: list[dict], pin: dict, input_tree: str) -> None:
+def write_receipt(path: Path, rows: list[dict], pin: dict, input_tree: str) -> str:
     """This run's receipt: the rows the verdict is read from, through receipt.py's one mapping, and nothing else."""
     body = receipt.build(rows, base_commit=pin["base_commit"], policy_digest=pin["digest"], input_digest=input_tree)
     path.write_text(receipt.dumps(body), encoding="utf-8")
+    return body["receipt_id"]
 
 
 def main(argv: list[str]) -> int:
@@ -785,6 +787,7 @@ def main(argv: list[str]) -> int:
             rows.append(
                 {"id": "input_stability", "verdict": "FAIL", "why": "repository inputs changed during verification"}
             )
+        receipt_id = write_receipt(receipt_to, rows, pin, tree) if receipt_to and pin else None
         code = report(
             rows,
             argv,
@@ -795,10 +798,9 @@ def main(argv: list[str]) -> int:
                 "base": pin["base_commit"] if pin else None,
                 "policy_digest": pin["digest"] if pin else None,
                 "input_digest": tree,
+                "receipt_id": receipt_id,
             },
         )
-        if receipt_to and pin:
-            write_receipt(receipt_to, rows, pin, tree)
         return code
     changed = "--changed" in argv
     if changed and receipt_to:
@@ -866,6 +868,7 @@ def main(argv: list[str]) -> int:
             on_row(row)
     elif len(passed) > len(saved):
         write_evidence(passed)
+    receipt_id = write_receipt(receipt_to, rows, pin, tree) if receipt_to and pin else None
     code = report(
         rows,
         argv,
@@ -880,10 +883,9 @@ def main(argv: list[str]) -> int:
             "base": pin["base_commit"] if pin else None,
             "policy_digest": pin["digest"] if pin else None,
             "input_digest": tree,
+            "receipt_id": receipt_id,
         },
     )
-    if receipt_to and pin:
-        write_receipt(receipt_to, rows, pin, tree)
     return code
 
 
@@ -928,7 +930,9 @@ def report(
     """Write the last verdict to `marker` and print it; the verdict is the returned code.
 
     `binding` (base, policy_digest, input_digest) is what the verdict was measured over; receipt.py reads it back."""
-    tally = {v: sum(r["verdict"] == v for r in rows) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")}
+    tally = {v: sum(r.get("verdict") == v for r in rows) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")}
+    tally["FAIL"] = sum(receipt.check_state(r.get("verdict")) == "FAIL" for r in rows)
+    tally["NOT RUN"] += sum(r.get("verdict") == "SKIP" for r in rows)
     local_only = sum(1 for r in rows if r.get("machine_dependent") and r["verdict"] == "PASS")
     code = verdict_code(rows)
     wall_seconds = round(time.monotonic() - overall_start, 2) if overall_start is not None else 0.0
@@ -955,8 +959,8 @@ def report(
             {
                 "exit": code,
                 "tally": tally,
-                "failed": [r["id"] for r in rows if r["verdict"] == "FAIL"],
-                "not_run": [r["id"] for r in rows if r["verdict"] == "NOT RUN"],
+                "failed": [r["id"] for r in rows if receipt.check_state(r.get("verdict")) == "FAIL"],
+                "not_run": [r["id"] for r in rows if r.get("verdict") in ("NOT RUN", "SKIP")],
                 "input_digest": (binding or {}).get("input_digest"),
                 "wall_seconds": wall_seconds,
             },
