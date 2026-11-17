@@ -1393,9 +1393,9 @@ version_sites:
 generated_files:
   - agreement.lock
   - llms.txt
-  - llms-zh.txt
-  - llms-ja.txt
-  - llms-ko.txt
+  - translations/llms-zh.txt
+  - translations/llms-ja.txt
+  - translations/llms-ko.txt
   - Brewfile
   - CHAT.md
   - models/chat/headron/SKILL.md
@@ -5097,6 +5097,12 @@ directory_scopes:
     proves: [contract]
     never: []
     traps: [a_second_declaration_of_one_value, a_check_satisfied_by_a_rendering]
+  translations:
+    is: the short entry guide in other languages, generated from one English source
+    label: area/docs
+    proves: [contract]
+    never: []
+    traps: [a_generated_block_carrying_a_relative_link]
   fuzz:
     is: property and fuzz targets, whose value is the input shapes nobody thought to write
     label: area/atlas

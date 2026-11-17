@@ -3,23 +3,23 @@
 from collections.abc import Callable
 
 GUIDES = {
-    "llms-zh.txt": (
+    "translations/llms-zh.txt": (
         "简体中文",
         "Headron 为编码代理提供规则与构建检查。它不能证明代码完全正确；未运行的检查不是通过。",
         "命令和 JSON 字段使用英语。修改文件前运行 `headron port <file>`，完成前运行 `headron verify`。",
-        "完整的规范、安装说明和限制以 [llms.txt](llms.txt) 和 [README.md](README.md) 为准。",
+        "完整的规范、安装说明和限制以 [llms.txt](../llms.txt) 和 [README.md](../README.md) 为准。",
     ),
-    "llms-ja.txt": (
+    "translations/llms-ja.txt": (
         "日本語",
         "Headron はコーディングエージェント向けのルールとビルド検査を提供します。コードの正しさを保証せず、未実行の検査は合格ではありません。",
         "コマンドと JSON フィールドは英語です。編集前に `headron port <file>`、完了前に `headron verify` を実行してください。",
-        "完全な仕様、インストール方法、制限は [llms.txt](llms.txt) と [README.md](README.md) を参照してください。",
+        "完全な仕様、インストール方法、制限は [llms.txt](../llms.txt) と [README.md](../README.md) を参照してください。",
     ),
-    "llms-ko.txt": (
+    "translations/llms-ko.txt": (
         "한국어",
         "Headron은 코딩 에이전트를 위한 규칙과 빌드 검사를 제공합니다. 코드의 정확성을 보장하지 않으며 실행하지 않은 검사는 통과가 아닙니다.",
         "명령과 JSON 필드는 영어입니다. 파일을 수정하기 전에 `headron port <file>`, 완료하기 전에 `headron verify`를 실행하세요.",
-        "전체 계약, 설치 방법과 제한은 [llms.txt](llms.txt) 및 [README.md](README.md)를 참조하세요.",
+        "전체 계약, 설치 방법과 제한은 [llms.txt](../llms.txt) 및 [README.md](../README.md)를 참조하세요.",
     ),
 }
 

@@ -31,7 +31,7 @@ flowchart LR
 | `gate_tools/*/role` | gate_role | 64 |
 | `decision_tables/gate_categories/*/*` | done_gate | 9 |
 | `drift_review/structural/*` | tree | 10 |
-| `directory_scopes/@` | directory | 22 |
+| `directory_scopes/@` | directory | 23 |
 | `directory_scopes/*/never/*` | tree | 6 |
 | `identity/banner` | tree | 1 |
 | `public_surface/network_modules/*` | file | 9 |
