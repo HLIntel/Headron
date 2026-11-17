@@ -1,0 +1,224 @@
+{
+  "_why": "Headron Bench, first freebench run: an external, unassisted (blind) run of free model routes over this repository's task families. Only lanes the source scored are here; its N/A lanes are counted in `excluded` and carry no numbers.",
+  "ingested_at": "3.63.0",
+  "run": "one overnight run; the contract version it ran against was not reported",
+  "obtained_by": "reported_external",
+  "raw_records": "not in this repository: this file holds the run's reported summary, so no number here is re-derivable from a record",
+  "arm": "blind: no Headron contract in any prompt. These numbers rank model capability; Headron's effect was not measured",
+  "error_policy": "errored records scored 0 inside each mean (INFERRED: the source counts answers as records minus errors, and its means fit only that). A score is therefore not a score over answers; errors and records are stored so it can be recomputed",
+  "repeats": 1,
+  "excluded": {
+    "na_rows": 10,
+    "na_why": "N/A in the source (a partial or all-error run): freeroute-backend and -vision on main; freeroute-small and -deep on advanced and context; kilo-dots and freeroute-small, -deep and -judge on enterprise. The host went to idle sleep at 02:15 ET and took the router and tunnel down, so these are transport failures, not capability results",
+    "not_run": "six Kaggle egress lanes and the local Qwen kernel, freeroute-offline and freeroute-train, and freeroute-judge on advanced and context: no records"
+  },
+  "rounds": {
+    "main": {
+      "tasks": 64,
+      "lanes": {
+        "kilo-ernie": {
+          "score": 0.966,
+          "records": 64,
+          "errors": 1,
+          "avg_out_tokens": 259
+        },
+        "kilo-glyph": {
+          "score": 0.96,
+          "records": 64,
+          "errors": 0,
+          "avg_out_tokens": 187
+        },
+        "kilo-nemotron-ultra": {
+          "score": 0.937,
+          "records": 64,
+          "errors": 0,
+          "avg_out_tokens": 266
+        },
+        "kilo-auto": {
+          "score": 0.934,
+          "records": 64,
+          "errors": 0,
+          "avg_out_tokens": 315
+        },
+        "kilo-openrouter": {
+          "score": 0.927,
+          "records": 64,
+          "errors": 0,
+          "avg_out_tokens": 376
+        },
+        "freeroute-deep": {
+          "score": 0.877,
+          "records": 64,
+          "errors": 0,
+          "avg_out_tokens": 46,
+          "resolved_model": "codestral (Mistral)"
+        },
+        "freeroute-judge": {
+          "score": 0.869,
+          "records": 64,
+          "errors": 2,
+          "avg_out_tokens": 47,
+          "resolved_model": "codestral (Mistral)"
+        },
+        "freeroute-longout": {
+          "score": 0.869,
+          "records": 64,
+          "errors": 5,
+          "avg_out_tokens": 80,
+          "resolved_model": "llama-3.3-70b (Cloudflare)"
+        },
+        "kilo-dots": {
+          "score": 0.864,
+          "records": 64,
+          "errors": 3,
+          "avg_out_tokens": 507
+        },
+        "freeroute-small": {
+          "score": 0.861,
+          "records": 64,
+          "errors": 0,
+          "avg_out_tokens": 46,
+          "resolved_model": "codestral (Mistral)"
+        },
+        "freeroute-code": {
+          "score": 0.861,
+          "records": 64,
+          "errors": 1,
+          "avg_out_tokens": 45,
+          "resolved_model": "codestral (Mistral)"
+        },
+        "freeroute-cheap": {
+          "score": 0.861,
+          "records": 64,
+          "errors": 2,
+          "avg_out_tokens": 45,
+          "resolved_model": "codestral (Mistral)"
+        },
+        "kilo-north-mini": {
+          "score": 0.857,
+          "records": 64,
+          "errors": 4,
+          "avg_out_tokens": 347
+        }
+      }
+    },
+    "advanced": {
+      "tasks": 24,
+      "lanes": {
+        "kilo-glyph": {
+          "score": 1.0,
+          "records": 24,
+          "errors": 0,
+          "avg_out_tokens": 281
+        },
+        "kilo-ernie": {
+          "score": 0.979,
+          "records": 24,
+          "errors": 0,
+          "avg_out_tokens": 377
+        },
+        "kilo-nemotron-ultra": {
+          "score": 0.938,
+          "records": 24,
+          "errors": 0,
+          "avg_out_tokens": 352
+        },
+        "kilo-openrouter": {
+          "score": 0.861,
+          "records": 24,
+          "errors": 2,
+          "avg_out_tokens": 359
+        },
+        "kilo-dots": {
+          "score": 0.833,
+          "records": 24,
+          "errors": 2,
+          "avg_out_tokens": 594
+        },
+        "kilo-north-mini": {
+          "score": 0.701,
+          "records": 24,
+          "errors": 1,
+          "avg_out_tokens": 410
+        }
+      }
+    },
+    "enterprise": {
+      "tasks": 15,
+      "lanes": {
+        "kilo-nemotron-ultra": {
+          "score": 0.767,
+          "records": 15,
+          "errors": 1,
+          "avg_out_tokens": 450,
+          "route_avg": 0.773
+        },
+        "kilo-north-mini": {
+          "score": 0.633,
+          "records": 15,
+          "errors": 1,
+          "avg_out_tokens": 731,
+          "route_avg": 0.591
+        },
+        "kilo-ernie": {
+          "score": 0.633,
+          "records": 15,
+          "errors": 2,
+          "avg_out_tokens": 557,
+          "route_avg": 0.591
+        }
+      },
+      "fixes": "dedupe, duration and window solved and ratelimit 0.0 in every scored lane, so the fixes do not separate lanes; the 11 route-label tasks decide this round",
+      "void": {
+        "FIX_ratelimit": "its plant passed its own test, so an unchanged file would have scored 1.0; the universal 0.0 has an UNCERTAIN cause. Plant and test fixed after this run",
+        "FIX_dedupe": "its plant (list(set(...))) passed its own test on some hash seeds, so a solve could be free. Plant made deterministic after this run"
+      }
+    },
+    "context": {
+      "tasks": 8,
+      "lanes": {
+        "kilo-nemotron-ultra": {
+          "score": 0.938,
+          "records": 8,
+          "errors": 0,
+          "avg_out_tokens": 203
+        },
+        "kilo-north-mini": {
+          "score": 0.938,
+          "records": 8,
+          "errors": 0,
+          "avg_out_tokens": 246
+        },
+        "kilo-ernie": {
+          "score": 0.938,
+          "records": 8,
+          "errors": 0,
+          "avg_out_tokens": 202
+        },
+        "kilo-dots": {
+          "score": 0.938,
+          "records": 8,
+          "errors": 0,
+          "avg_out_tokens": 435
+        },
+        "kilo-openrouter": {
+          "score": 0.938,
+          "records": 8,
+          "errors": 0,
+          "avg_out_tokens": 342
+        },
+        "kilo-glyph": {
+          "score": 0.938,
+          "records": 8,
+          "errors": 0,
+          "avg_out_tokens": 100
+        }
+      },
+      "note": "every lane scores the same: the round carries no ranking signal, and its prompts are short, so it is not a long-context test"
+    }
+  },
+  "reading": [
+    "chain lanes (freeroute-*) are router chains: resolved_model is the model the router served that night, from its log. Five chain lanes resolved to one model and scored 0.861 to 0.877, which is this run's measured noise",
+    "one run per lane: a gap smaller than that noise is not an ordering, and no lane is named a winner here"
+  ]
+}

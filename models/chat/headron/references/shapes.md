@@ -16,6 +16,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_guard_matched_on_the_tool_name_rather_than_the_act` (any): the guard has no misses to show
 - `a_flow_value_split_on_a_comma` (headron): the loaded record has a key made of words and no value, and the field it split from ends mid-sentence
 - `a_generator_that_reads_the_disk_not_the_tree` (any): the generated table links to files under an ignored build directory that exist only on the machine that ran the example
+- `a_non_answer_scored_as_wrong` (any): a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
 - `a_count_typed_into_prose` (any): a number in a document disagrees with what the tool prints today, and no tool generated that number
 - `a_blanket_rule_over_unlike_things` (any): after the fix, files that were fine before start failing, because the rule matched a suffix or folder whose members are not alike
 - `a_generated_block_carrying_a_relative_link` (any): the same generated block links correctly in one document and to a missing page in another
@@ -28,7 +29,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_runtime_inspection_exposes_sensitive_fields` (any): `launchctl print` or an unrestricted `ps -ax` is used even though lifecycle state and process identity are available without rendering sensitive fields
 - `a_wait_that_matches_itself` (any): the job's output file already holds its final line while the wait loop keeps sleeping
 - `a_check_satisfied_by_a_rendering` (any): the navigation line names an old version, and the check passes because a generated table in the same file carries the new one
-- `a_non_answer_scored_as_wrong` (any): a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
+- `a_plant_that_does_not_fail` (any): the unchanged plant exits 0 under the task test: ratelimit's test never asked for the first call, and dedupe's list(set(...)) kept first-seen order on 8 of 41 hash seeds
 - `a_suite_that_writes_the_owners_state` (any): a ledger or registry under the owner's home holding a planted fixture's name, or one session re-firing the same refusal shape dozens of times
 - `a_turn_spent_rewording_instead_of_building` (any): a ratchet breach fixed by trimming and re-running the check, once per sentence, until it passes
 - `a_read_only_audit_that_ran_a_mutating_suite` (any): an agent told to read only ran the planted suite in a worktree another session was editing
@@ -63,6 +64,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_search_that_skips_what_it_cannot_see` (any): a Python scanner over the same paths finds hits that grep in an agent shell did not
 - `a_gate_that_aliases_another` (any): race_detection resolves to `go test` without -race, and so do timeout, auth and contract tests
 - `a_class_that_skipped_its_base` (any): an API or security change must pass its own gates but not the compile, format and unit tests every code change needs
+- `a_chain_lane_read_as_a_model` (any): small, code, judge, cheap and deep all served codestral after their first choices returned 400, and scored 0.861 to 0.877 in one external run
 - `a_named_mechanism_that_does_not_exist` (any): the policy says a scheduled workflow runs these examples, and the workflows directory holds no such file
 - `a_bad_result_captioned_and_passed` (any): a surprising score is published beside a baseline or caveat, with no miss ever printed
 - `a_mutation_planted_where_the_checker_never_reads` (any): the planted file differs on disk and the in-process verdict does not move
