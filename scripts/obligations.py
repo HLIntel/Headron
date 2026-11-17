@@ -6,7 +6,12 @@ early in a long task is the first thing a summary drops, and a "done" the agent 
 check. This ledger keeps each obligation on disk, under HEADRON_HOME, as append-only observations:
 
   add    an obligation: a statement and the procedure that proves it (a microprogram name or a command)
+  cover  the changed files an extracted obligation answers for
   close  it: the evidence ref that proved it and the git tree that evidence covers
+
+An agent need not type its own list. `extract` derives it from a task contract (scripts/headronlang.py) and the
+files the task changed: each changed file x required gate resolves through the atlas as `headron gate` does, and
+each acceptance check is owed. `coverage` names every way the ledger falls short of that list.
 
 The current state is derived by folding the observations, never stored. An obligation is PROVEN only while its
 evidence covers the tree being read; after any commit, or with uncommitted changes, the same evidence reads
@@ -16,18 +21,26 @@ when every obligation is proven on the current tree, and names the first open on
   python scripts/obligations.py add <task> <id> --statement TEXT --check PROCEDURE
   python scripts/obligations.py close <task> <id> --evidence REF [--state proven|not-run|unknown]
   python scripts/obligations.py show <task> [--json]          # exit 0 only when every obligation is proven
+  python scripts/obligations.py extract <task> <contract> [--root DIR]   # exit 1 when a changed file is a gap
+  python scripts/obligations.py coverage <task> <contract> [--root DIR]  # exit 0 only when the ledger is whole
 
 proves: an obligation names a procedure before it can be recorded, a proven obligation names evidence and the
   tree it covers, evidence on another, a dirty or an unknown tree reads unknown, the log is append-only, and a corrupt
-  line is refused rather than skipped
-does_not_prove: that the evidence ref checks what the statement says; the procedure named is the instrument
+  line is refused rather than skipped; extraction is idempotent, a changed file no route reads is a gap, a file
+  changed after extraction, a dropped obligation and a drifted check each read short, and a drift refuses extract
+does_not_prove: that the evidence ref checks what the statement says (the procedure named is the instrument); what
+  the objective's prose asks for; that a deleted file needed nothing; that the changes stay inside allowed_paths
 closed_by: microprogram_test.py (obligation_cases), which plants stale evidence, a procedure-less obligation,
-  a done claim with no evidence, a close outside any git tree, a corrupt line, and the ledger read back by a fresh process
+  a done claim with no evidence, a close outside any git tree, a corrupt line, and the ledger read back by a fresh process;
+  (extract_cases), which plants a dropped obligation, an unrouted file, a file changed after extraction, a drifted
+  check, a second extraction and a root outside any git tree
 """
 
 from __future__ import annotations
 
 import argparse
+import contextlib
+import hashlib
 import json
 import re
 import subprocess
@@ -97,7 +110,10 @@ def current(task: str) -> dict[str, dict[str, Any]]:
     for row in read(task):
         if row.get("op") == "add":
             state[row["id"]] = {"statement": row["statement"], "check": row["check"], "state": "pending"}
-        elif row["id"] in state:
+        elif row.get("op") == "cover" and row["id"] in state:  # extract: the files this obligation answers for
+            held = set(state[row["id"]].get("paths") or ()) | {str(p) for p in row.get("paths") or ()}
+            state[row["id"]]["paths"] = sorted(held)
+        elif row.get("op") == "close" and row["id"] in state:
             state[row["id"]].update(state=row["state"], evidence=row.get("evidence", ""), tree=row.get("tree", ""))
     return state
 
@@ -141,6 +157,127 @@ def close(task: str, oid: str, evidence: str, state: str = "proven", at: str | N
     return _append(task, {"op": "close", "id": oid, "state": state, "evidence": evidence.strip(), "tree": at})
 
 
+def _contract(contract_path: str | Path) -> dict[str, Any]:
+    import headronlang  # noqa: PLC0415
+
+    try:
+        contract = headronlang.load_contract(contract_path)
+    except (OSError, ValueError, SystemExit) as error:
+        raise LedgerError(f"{contract_path}: not a readable task contract ({error})") from None
+    if not isinstance(contract, dict):
+        raise LedgerError(f"{contract_path}: a task contract is one object")
+    return contract
+
+
+def _changed(contract: dict[str, Any], root: Path) -> list[str]:
+    """Every file the task changed: against its base_commit (HEAD when the plan named none), plus untracked
+    files. A deleted file owes no gate; a git that cannot answer refuses, since no files would pass every check."""
+    from atlascore import diff_names, ls_files  # noqa: PLC0415
+
+    base = str(contract.get("base_commit") or "HEAD")
+    try:
+        tracked = diff_names(root, "--diff-filter=d", base)
+    except ValueError as error:
+        raise LedgerError(f"cannot list what changed against {base} in {root}: {error}") from None
+    try:
+        new = ls_files(root, flags=("--others", "--exclude-standard"))
+    except SystemExit as error:  # the one reader refuses a git that cannot answer; here it is a ledger error
+        raise LedgerError(f"cannot list untracked files in {root}: {error}") from None
+    return sorted(set(tracked) | set(new))
+
+
+def _gates(contract: dict[str, Any]) -> list[str]:
+    import agentpolicy  # noqa: PLC0415
+
+    try:
+        gates = agentpolicy.required_gates(contract)
+    except SystemExit as error:  # an unknown class or modifier refuses there; here it is a ledger error
+        raise LedgerError(str(error)) from None
+    return list(dict.fromkeys([*gates, *(str(g) for g in contract.get("required_gates") or [])]))
+
+
+def _accept_id(check: str) -> str:
+    slug = re.sub(r"[^a-z0-9._]+", "-", check.lower()).strip("-._")[:60]
+    exact = slug == check
+    return f"accept.{slug}" if exact else f"accept.{slug or 'check'}.{hashlib.sha256(check.encode()).hexdigest()[:6]}"
+
+
+def owed(contract: dict[str, Any], root: Path) -> tuple[dict[str, dict[str, Any]], list[str], list[str]]:
+    """What a contract owes on the files it changed: ({id: statement, check, paths}, gaps, not owed).
+
+    Each changed file x required gate resolves through the atlas, as `headron gate` does. A runnable gate is an
+    obligation keyed by its command, so one `pytest` answers for every file it covers. A gate the repository does
+    not adopt (unplaced) is not owed. A gate the atlas declares has no tool for that language (absent) is listed as
+    unprovable: named, never a pass, never an obligation, since no run could close it. A file no route reads
+    (undeclared) is a GAP: the task touched something the contract cannot see. acceptance.required_checks are owed."""
+    import atlas  # noqa: PLC0415
+
+    owe: dict[str, dict[str, Any]] = {}
+    gaps: list[str] = []
+    not_owed: list[str] = []
+    gates = _gates(contract)
+    with contextlib.chdir(root):  # gate_record reads a relative path from the working directory
+        for name in _changed(contract, root):
+            for gate in gates:
+                record = atlas.gate_record(name, gate)
+                if record["state"] == "runnable" and record["argv"]:
+                    cmd = atlas._pasteable(record)  # noqa: SLF001 -- the one renderer `headron gate` prints
+                    oid = f"gate.{gate}.{hashlib.sha256(cmd.encode()).hexdigest()[:8]}"
+                    owe.setdefault(oid, {"statement": f"{gate} passes", "check": cmd, "paths": []})["paths"].append(
+                        name
+                    )
+                elif record["state"] in ("unplaced", "absent"):
+                    label = "not adopted" if record["state"] == "unplaced" else "unprovable"
+                    not_owed.append(f"{gate} {name}: {label}, {record['why']}")
+                else:
+                    gaps.append(f"{gate} {name}: {record['state']}, {record['why']}")
+    for check in (contract.get("acceptance") or {}).get("required_checks") or []:
+        owe[_accept_id(str(check))] = {"statement": "acceptance check passes", "check": str(check), "paths": []}
+    return owe, gaps, not_owed
+
+
+def _drift(oid: str, row: dict[str, Any], want: dict[str, Any]) -> str:
+    if (row["statement"], row["check"]) == (want["statement"], want["check"]):
+        return ""
+    return f"{oid}: recorded as {row['check']!r}, the contract now owes {want['check']!r}"
+
+
+def extract(task: str, contract_path: str | Path, root: Path | None = None) -> dict[str, Any]:
+    """Record what the contract owes into the ledger. Idempotent: a recorded obligation adds no row, a newly
+    changed file it answers for appends one cover row. A drifted obligation refuses before anything is written."""
+    root = Path.cwd() if root is None else Path(root)
+    owe, gaps, not_owed = owed(_contract(contract_path), root)
+    have = current(task)
+    drifted = [d for oid, want in owe.items() if oid in have and (d := _drift(oid, have[oid], want))]
+    if drifted:
+        raise LedgerError("; ".join(drifted) + ": a changed obligation is a new task, never an edit")
+    written = []
+    for oid, want in owe.items():
+        if oid not in have:
+            written.append(add(task, oid, want["statement"], want["check"]))
+        new = sorted(set(want["paths"]) - set(have.get(oid, {}).get("paths") or ()))
+        if new:
+            written.append(_append(task, {"op": "cover", "id": oid, "paths": new}))
+    return {"written": written, "gaps": gaps, "not_owed": not_owed}
+
+
+def coverage(task: str, contract_path: str | Path, root: Path | None = None) -> list[str]:
+    """Every way the ledger falls short of the contract on the files changed now; empty only when it is whole."""
+    root = Path.cwd() if root is None else Path(root)
+    owe, gaps, _ = owed(_contract(contract_path), root)
+    have = current(task)
+    findings = [f"gap {gap}" for gap in gaps]
+    for oid, want in owe.items():
+        row = have.get(oid)
+        if row is None:
+            findings.append(f"{oid} not recorded ({want['check']})")
+        elif drift := _drift(oid, row, want):
+            findings.append(drift)
+        elif missing := sorted(set(want["paths"]) - set(row.get("paths") or ())):
+            findings.append(f"{oid} does not cover {', '.join(missing[:5])}")
+    return findings
+
+
 def report(task: str, now: str) -> tuple[str, dict[str, dict[str, Any]], str]:
     """(status, rows, next) for task.obligations: ok only when every obligation is proven on `now`."""
     rows = {oid: {**row, "state": standing(row, now)} for oid, row in current(task).items()}
@@ -152,6 +289,17 @@ def report(task: str, now: str) -> tuple[str, dict[str, dict[str, Any]], str]:
     oid, row = open_rows[0]
     status = "unknown" if all(r["state"] == "unknown" for _, r in open_rows) else "refused"
     return status, rows, f"prove {oid}: run `{row['check']}`, then close it with the evidence ref"
+
+
+def _contract_verb(args: argparse.Namespace) -> int:
+    """extract: record, print rows written and gaps; coverage: print findings. 0 whole, 1 a gap or finding."""
+    if args.cmd == "extract":
+        done = extract(args.task, args.contract, args.root)
+        print(json.dumps(done))
+        return 1 if done["gaps"] else 0
+    findings = coverage(args.task, args.contract, args.root)
+    print("\n".join(f"  {f}" for f in findings) or f"{args.task}: every owed obligation is recorded")
+    return 1 if findings else 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -170,8 +318,15 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("show")
     s.add_argument("task")
     s.add_argument("--json", action="store_true")
+    for verb in ("extract", "coverage"):  # what the task contract owes on the files changed, against the ledger
+        e = sub.add_parser(verb)
+        e.add_argument("task")
+        e.add_argument("contract")
+        e.add_argument("--root", type=Path, default=None)
     args = parser.parse_args(argv)
     try:
+        if args.cmd in ("extract", "coverage"):
+            return _contract_verb(args)
         if args.cmd == "add":
             print(json.dumps(add(args.task, args.id, args.statement, args.check)))
             return 0

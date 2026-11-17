@@ -247,7 +247,8 @@ class ContextCredit:
 class TaskObligations:
     """Whether a task may be called done: every obligation in its ledger (scripts/obligations.py) is proven on
     the tree being read. context: {"task": slug} (or the CLI's first arg), optional "root" (the repo, default
-    cwd) or "tree" to read against.
+    cwd) or "tree" to read against, optional "contract" (a task contract path) whose owed obligations must all be
+    recorded: a changed file or required check the ledger does not hold is refused before any proof is read.
 
     ok when all are proven on this tree; refused when one is pending or not-run, naming the first open one and
     its procedure; unknown when only stale-tree evidence stands, nothing is recorded, or the ledger is corrupt.
@@ -255,7 +256,7 @@ class TaskObligations:
 
     name = "task.obligations"
     version = "1"
-    timeout_s = 30.0  # two git calls and one file read
+    timeout_s = 60.0  # git calls, one file read, and with a contract one atlas resolution per changed file x gate
 
     def run(self, context: Mapping[str, Any]) -> MicroResult:
         import obligations  # noqa: PLC0415
@@ -268,10 +269,20 @@ class TaskObligations:
         try:
             root = Path(context["root"]) if context.get("root") else None
             now = str(context.get("tree") or obligations.tree(root))
+            findings = obligations.coverage(task, context["contract"], root) if context.get("contract") else []
             status, rows, next_step = obligations.report(task, now)
         except obligations.LedgerError as error:
             return MicroResult(
                 self.name, self.version, "unknown", evidence_refs=(str(error),), next="repair the ledger line it names"
+            )
+        if findings:  # an obligation never recorded cannot be proven; the ledger is short of the contract
+            return MicroResult(
+                self.name,
+                self.version,
+                "refused",
+                rows,
+                evidence_refs=tuple(findings[:20]),
+                next=f"record what the contract owes: `python scripts/obligations.py extract {task} {context['contract']}`",
             )
         refs = tuple(f"{row['state']} {oid}" for oid, row in rows.items()) + (f"tree {now}",)
         return MicroResult(self.name, self.version, status, rows, evidence_refs=refs, next=next_step or None)
