@@ -57,7 +57,7 @@ Pick the class, satisfy its gates, verify on the exit code — never on a line o
 
 - Repeated fact: `atlas.yaml` plus a generated block.
 - Language tool: its pack's `tools.yaml`.
-- New rule: its own `*_errors()` and planted defect.
+- New rule: its own `*_errors()` and seeded defect.
 - Example: `examples/`, and it must run.
 
 ## Intents

@@ -28,7 +28,7 @@ handed the tree spends its window on navigation — the same failure the atlas e
 one level down.
 
 **An audit is read-only, and says so in its environment.** Start it with `HEADRON_READ_ONLY=1`: the
-mutating suite refuses to run, because it plants defects in tracked files and restores them — beside
+mutating suite refuses to run, because it seeds defects in tracked files and restores them — beside
 a live editor that is a lost edit. Scripted edits refuse while another process's suite holds the
 worktree (`safeedit.suite_holds_worktree`). Read-only checks are the contract, shape and cost gates.
 

@@ -39,7 +39,7 @@ Never read the tree breadth-first.
 
 ## Landing
 
-- Land with `python scripts/branchstate.py --land`; `.githooks/pre-push` refuses a bare push of a lane.
+- Land with `python scripts/branchstate.py --land`; `.githooks/pre-push` refuses a bare push of a topic branch.
 - Never force-push.
 - Records that cross agents: `tools/atlas-output.schema.json`, `tools/agent-task.schema.json`.
 - Verdicts carry receipts: `headron verify --receipt <file>`; history `headron mind --receipts`.

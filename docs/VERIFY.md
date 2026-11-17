@@ -73,7 +73,7 @@ Every gate above is a requirement on evidence, not on a command. The pack suppli
 | `python scripts/verify.py` | does every gate in `verification_policy/done_set` pass — PASS, FAIL or NOT RUN per gate, exit 0 only when all pass? |
 | `python scripts/verify.py --changed [--change <class>]` | fast loop: runs only the gates mapped to the changed files and change class in seconds |
 | `python scripts/atlas.py check` | does the tree still satisfy its own contract? |
-| `python scripts/atlas_test.py` | does the contract still fail on a planted defect? |
+| `python scripts/atlas_test.py` | does the contract still fail on a seeded defect? |
 | `python scripts/astshape.py` | any duplicate AST structures, blobs or over-nesting? |
 | `python scripts/exrun.py` | does every example still run and hold its own assertions? |
 | `python scripts/packprobe.py --mode smoke` | which declared commands exist and run here? |
@@ -114,3 +114,27 @@ reproduce -> isolate -> root cause -> fix -> targeted verify -> broader verify -
 
 **Never repair forward through a failing gate.** A fix that makes a symptom move downstream is a
 defect with a new address, and the gate that would have caught it is now the one you disabled.
+
+## Glossary
+
+House words, each with its plain meaning. A name in code font is a wire name (a CLI verb, flag,
+file or JSON key) and keeps its spelling; the prose around it uses the plain term.
+
+| Term | Plain meaning |
+|---|---|
+| atlas (`atlas.yaml`) | the single machine-readable contract every check reads |
+| route | the language or area a file belongs to, resolved from its path |
+| pack | one language's guide, operating card and `tools.yaml` |
+| operating card (`operating_card`) | the short checklist section of a language guide |
+| gate | a required check; a change is not done until its gates pass |
+| instrument | a check or measurement declared in the atlas, with what it proves and does not prove |
+| receipt | the proof record of one run: every gate's verdict, with the contract version |
+| ledger | an append-only log of failures or successes, keyed by id |
+| failure shape / success move | a recorded failure mode / a proven fix pattern |
+| seeded defect (`planted`) | a fault injected on purpose to prove a check fails when it should (mutation testing) |
+| topic branch (`lane`) | a one-task branch in its own worktree |
+| land (`branchstate.py --land`) | merge: rebase, run the suite, push, open the pull request, arm auto-merge |
+| ratchet | a limit that may only tighten |
+| ladder / rung | an ordered list of fallbacks / one step on it |
+| guard | a test that enforces one rule |
+| mind (`headron mind`) | the orchestration API: classify a change, plan its gates, diagnose and recover a failure |

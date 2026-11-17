@@ -41,7 +41,7 @@ Everything above compresses to these. Each line was earned by a specific defect,
 8. **A generator is judged on its diff**, not its logic. Write only when content actually changed.
 
 **While testing**
-9. **When a test passes first try, check that it could have failed.** Three tests passed and were wrong in one day: a window smaller than the defect, a threshold below the planted value, a target outside the roster.
+9. **When a test passes first try, check that it could have failed.** Three tests passed and were wrong in one day: a window smaller than the defect, a threshold below the seeded value, a target outside the roster.
 10. **Mutation-test for sensitivity AND specificity.** A check that fires on correct input gets switched off, and a switched-off check catches nothing. Declare which way the bias runs.
 11. **Assert the roster is not empty.** A clean pass and an empty pass must never print the same thing.
 

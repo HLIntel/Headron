@@ -41,7 +41,7 @@ See [docs/CERTIFICATION.md](../CERTIFICATION.md) for what each one is worth and 
 The ladder is real commands with real exit codes, and each instrument declares what it does NOT
 prove plus who closes that gap — `atlas.yaml/instruments` refuses an empty `closed_by`.
 
-- `atlas_test.py` and `agent_test.py` plant a defect per rule and assert their own case counts, so
+- `atlas_test.py` and `agent_test.py` seed a defect per rule and assert their own case counts, so
   a skipped case cannot print a full pass.
 - `gate_tools` joins every declared gate to the manifest role that runs it, so a gate is a command
   rather than a word; `tool_claims` separates declared, available, version-compatible, executed,

@@ -1,4 +1,4 @@
-# Git Worktrees and Branch Lanes
+# Git Worktrees and Topic Branches
 
 Git worktrees allow one repository to have multiple checked-out working directories at once. They are useful for keeping a stable branch available while an AI agent works independently on a feature, experiment, benchmark, migration, or security fix.
 
@@ -15,7 +15,7 @@ Use short-lived topic branches:
 - `security/<topic>` for security work
 - `lang/<language>/<topic>` for changes primarily isolated to one language
 
-A `lang/*` branch is a temporary development lane, not a permanent branch for that language.
+A `lang/*` branch is a temporary development branch, not a permanent branch for that language.
 
 ### Why not one permanent branch per language?
 
@@ -29,7 +29,7 @@ This repository is one atlas/control system, not a set of independently released
 
 The directory structure already provides language isolation. Branches should isolate **work**, not permanently divide the repository by language.
 
-## When to use a language lane
+## When to use a language branch
 
 Use `lang/<language>/<topic>` when:
 - the change is dominated by one language guide or language-specific implementation
@@ -67,7 +67,7 @@ Inspect:
 git worktree list --porcelain
 ```
 
-Remove: after a merge, `python scripts/branchstate.py --sync` removes every lane worktree whose work is
+Remove: after a merge, `python scripts/branchstate.py --sync` removes every topic-branch worktree whose work is
 already in the default branch (by ancestry or by patch), that no running process stands in, that holds no
 uncommitted or untracked file, and that has been idle past the unpushed age bound. Each tree it keeps
 prints the reason. By hand:

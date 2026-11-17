@@ -345,10 +345,7 @@ def _populate_routes_and_instruments(g: Graph, data: dict) -> None:
         route_id = f"route:{target}" if str(target) in g.nodes else str(target)
         route_ids[str(target)] = route_id
         g.add_node(Node(id=route_id, type=NodeType.ROUTE, tags=["route", "language"]))
-        for doc in (
-            f"languages/{target}/README.md",
-            f"languages/{target}/tools.yaml",
-        ):
+        for doc in (f"languages/{target}/README.md", f"languages/{target}/tools.yaml"):
             if (ROOT / doc).is_file():
                 g.add_node(Node(id=doc, type=NodeType.FILE, tags=["doc", str(target)]))
                 g.add_edge(Edge(source=route_id, target=doc, type=EdgeType.REFERENCES))

@@ -120,7 +120,7 @@ NOT RUN 138 to 144, 0 tracebacks, and `git status --porcelain --ignored` unchang
 
 - **A per-file `rustc` or `scalac` writes nothing into the checkout.** Per-file `rustc` now runs `--emit=metadata --out-dir` and `scalac`
   runs `-d`, both into one fixed directory under Headron's home, outside every checkout. For `rustc` this is CONFIRMED on a loose file: the
-  tree is left clean and a planted type error still fails. `scalac` was not installed, so its behaviour is INFERRED.
+  tree is left clean and a seeded type error still fails. `scalac` was not installed, so its behaviour is INFERRED.
 - **A file a build names is left to that build.** Per-file `clang`, `clang++` and `swiftc` are NOT RUN when a
   Makefile, CMakeLists.txt or meson.build at or above the file, inside its repository, names it. 6 benchmark FAIL
   rows moved to NOT RUN, each named in its folder's Makefile: the 5 compiled without the project's flags, and

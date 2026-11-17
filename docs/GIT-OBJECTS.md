@@ -62,8 +62,8 @@ is not wired into `.githooks/pre-commit`.
 ## The bug the work found
 
 `.githooks/pre-push` and `claude_hook.py` compared a remote ref with forty zeros, written by hand. In a SHA-256
-repository an absent object is sixty-four zeros, so pre-push refused a new lane as "non-fast-forward" and refused a
-delete outright. Both failed closed and gave the wrong reason. A new lane now fails with the right reason, and a delete
+repository an absent object is sixty-four zeros, so pre-push refused a new topic branch as "non-fast-forward" and refused a
+delete outright. Both failed closed and gave the wrong reason. A new topic branch now fails with the right reason, and a delete
 passes, in both formats.
 
 Five sites held the same assumption. `gitobject` owns the shape now, and the invariant `object_ids_are_format_agnostic`

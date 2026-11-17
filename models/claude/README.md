@@ -37,7 +37,7 @@ than assumed:
 | a frontier model | `headron steps <file> --tier frontier` — the commands and the return point, nothing else |
 | unsure what the user wants | `headron intake "<their words>"` — it routes the files, reads the change class, and asks only what blocks action |
 | directed into a role | `headron role <name>` — what that role may do, may not do, hands back, and when it ends |
-| picking up interrupted work | `headron resume` — the lane, the leftovers and one next action, rebuilt from the tree, never from memory |
+| picking up interrupted work | `headron resume` — the topic branch, the leftovers and one next action, rebuilt from the tree, never from memory |
 | working to a clock | `headron cadence` — the phases, the reserved verification budget, and what to do when the box expires |
 
 Two things follow from this. A measured figure belongs in a generated block, never typed into a page that

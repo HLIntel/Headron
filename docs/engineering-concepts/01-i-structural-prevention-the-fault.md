@@ -40,7 +40,7 @@ The highest-leverage tier. A fault that cannot be represented needs no guard, no
 | **Observability** | Every check prints the **count it resolved** and its **own blind spot**, every run. A silent clean pass and a silent empty pass must never look identical. |
 | **Grounding** | Verify against the shipped instrument — the binary's own symbol table, `lsof`, `ps`, `--porcelain` — never against documentation. Every wrong verdict in one measured day came from docs or memory; every verdict that held came from an instrument. |
 | **Cybernetics (self-regulating loops)** | Budgets are **ratchets**: they only move down, and raising one must name what was added and why. A threshold that drifts upward silently is not a bound. |
-| **Shadow validation** | A new check must (1) fail on a planted defect and (2) sweep the entire existing tree clean before it is trusted. Sensitivity proves nothing about specificity. |
+| **Shadow validation** | A new check must (1) fail on a seeded defect and (2) sweep the entire existing tree clean before it is trusted. Sensitivity proves nothing about specificity. |
 | **Contextual drift** | Always-loaded instructions are metered and budgeted separately from lazily-loaded bodies. A description is paid on every request; a body is not. **An unused cluster is a subscription.** |
 
 ## V. Minimalism
