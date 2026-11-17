@@ -12,9 +12,9 @@ Start with the task below and follow the linked page; the index is a map, not a 
 |---|---|
 | install, then wire a repository | [README quickstart](../README.md#quickstart) |
 | using this atlas from another repository | [CONSUMING.md](CONSUMING.md) |
-| verification: gates, verdicts, receipts | [VERIFY.md](VERIFY.md) |
+| verification: gates, verdicts, receipts | [VERIFY.md](VERIFY.md) · [task to proof](../README.md#from-task-to-proof) |
 | what each instrument proves | [instruments table](INSTRUMENTS.md) · [certification, per check](CERTIFICATION.md) |
-| how the code fits | [module map](MODULES.md) · [pointers](POINTERS.md) |
+| how the code fits | [module map](MODULES.md) · [pointers](POINTERS.md) · [computation](COMPUTATION.md) |
 | reported measurements | [recorded results](../README.md#recorded-results), [polyglot benchmark](BENCHMARK-POLYGLOT.md) |
 | the `.headron` task surface | [HEADRON-LANGUAGE.md](HEADRON-LANGUAGE.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
