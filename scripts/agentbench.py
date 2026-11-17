@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import shlex
 import shutil
 import subprocess
@@ -221,6 +222,54 @@ def record_errors(doc: dict[str, Any]) -> list[str]:
                 errors.append(f"{where}: {errs} errored records and no error_policy, so a 0 may be a non-answer")
             if lane.startswith("freeroute-") and not got.get("resolved_model"):
                 errors.append(f"{where}: a router-chain lane names no resolved_model, so its score has no model")
+    return errors
+
+
+SCREEN_RECORDS = "benchmarks/screen-*.json"  # cross-model screens measured here by multimodel_bench, kept as measured
+
+
+def screen_record_errors(doc: dict[str, Any]) -> list[str]:
+    """What a measured screen record must hold before any of its numbers is read (the universal census screen):
+    every lane it scores ANSWERED (a lane with no answer sits in `excluded` with its cause, never as 0% or N/A),
+    each rate carries its interval, tokens are counted or "unmeasured" (never a 0 standing for no usage), the
+    error samples hold no account id, request hash or date, and nothing is crowned inside one run's noise."""
+    errors: list[str] = []
+    if doc.get("obtained_by") != "measured_live" or not doc.get("raw_records"):
+        errors.append("a screen record declares obtained_by: measured_live and where its raw records are")
+    if doc.get("repeats") != 1 or not isinstance(doc.get("tasks"), int):
+        errors.append("a screen record declares repeats: 1 and its task count, so no reader takes a rate for an edge")
+    blob = json.dumps(doc)
+    for word in ("winner", "champion"):
+        if f'"{word}' in blob.lower():
+            errors.append(f"a key names a {word}: one run per lane does not order lanes inside its noise")
+    if (
+        re.search(r"[0-9a-f]{32,}", blob)
+        or re.search(r"\d{4}-\d{2}-\d{2}", blob)
+        or re.search(r"user_[A-Za-z0-9]{6,}", blob)
+    ):
+        errors.append("a vendor body kept a request hash, an account id or a date: the public record carries none")
+    lanes, excluded = doc.get("lanes") or {}, doc.get("excluded") or {}
+    if not lanes:
+        errors.append("a screen record scores no lane: it would prove nothing")
+    for lane, got in lanes.items():
+        if lane in excluded:
+            errors.append(f"{lane}: both scored and excluded")
+        arms = got.get("arms") or {}
+        if not arms:
+            errors.append(f"{lane}: no answered arm; a lane with no answer belongs in `excluded`")
+        for arm, a in arms.items():
+            where, n, c, ci = f"{lane}/{arm}", a.get("answered"), a.get("correct"), a.get("ci95")
+            if not (isinstance(n, int) and isinstance(c, int) and 0 <= c <= n and n > 0):
+                errors.append(f"{where}: correct {c} of answered {n}; an arm with no answer is left out, never 0%")
+                continue
+            if not (isinstance(ci, list) and len(ci) == 2 and 0 <= ci[0] <= c / n <= ci[1] <= 1):
+                errors.append(f"{where}: no 95% interval around {c}/{n}; a rate without one reads as a ranking")
+            tok = a.get("tokens")
+            if tok != "unmeasured" and not (isinstance(tok, int) and tok > 0):
+                errors.append(f'{where}: tokens {tok!r}; an answer with no usage is "unmeasured", never 0')
+    for lane, why in excluded.items():
+        if not (isinstance(why, dict) and why.get("reason")) or {"score", "correct", "ci95"} & set(why):
+            errors.append(f"{lane}: an excluded lane names its reason and carries no number")
     return errors
 
 
