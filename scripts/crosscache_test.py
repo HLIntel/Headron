@@ -90,8 +90,28 @@ def test_dag_invalidation() -> None:
     assert "formatter" in inv_tree_moved
 
 
+def test_cache_prune_and_stats() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = Path(tmp)
+        (repo / ".git").mkdir()
+
+        # Seed with 10 entries
+        for i in range(10):
+            crosscache.put_cached_node(f"c-{i}", f"g-{i}", "tree", {"ran": True, "exit_code": 0}, repo=repo)
+
+        stats = crosscache.cache_stats(repo=repo)
+        assert stats["entries"] == 10
+        assert stats["bytes"] > 0
+
+        # Prune to 4 entries
+        pruned = crosscache.prune_cache(max_entries=4, repo=repo)
+        assert pruned == 6
+        assert crosscache.cache_stats(repo=repo)["entries"] == 4
+
+
 if __name__ == "__main__":
     test_crosscache_node_key()
     test_crosscache_put_and_get()
     test_dag_invalidation()
+    test_cache_prune_and_stats()
     print("crosscache_test: PASS")

@@ -75,7 +75,8 @@ def put_cached_node(
         return
     cache = _read_cache(repo)
     key = compute_node_key(contract_hash, gate, tree, inputs_digest)
-    cache.setdefault("entries", {})[key] = {
+    entries = cache.setdefault("entries", {})
+    entries[key] = {
         "gate": gate,
         "exit_code": 0,
         "ran": True,
@@ -83,7 +84,33 @@ def put_cached_node(
         "contract": contract_hash,
         "tree": tree,
     }
+    if len(entries) > 500:
+        sorted_keys = sorted(entries.keys())
+        for k in sorted_keys[: len(entries) - 500]:
+            del entries[k]
     _write_cache(cache, repo)
+
+
+def prune_cache(max_entries: int = 500, repo: Path = ROOT) -> int:
+    """Cap cross-session cache size by pruning excess entries deterministically."""
+    cache = _read_cache(repo)
+    entries = cache.get("entries", {})
+    if len(entries) <= max_entries:
+        return 0
+    sorted_keys = sorted(entries.keys())
+    to_remove = sorted_keys[: len(entries) - max_entries]
+    for k in to_remove:
+        del entries[k]
+    _write_cache(cache, repo)
+    return len(to_remove)
+
+
+def cache_stats(repo: Path = ROOT) -> dict[str, int]:
+    """Report execution cache entry count and byte footprint."""
+    path = cache_path(repo)
+    cache = _read_cache(repo)
+    size = path.stat().st_size if path.is_file() else 0
+    return {"entries": len(cache.get("entries", {})), "bytes": size}
 
 
 def dag_invalidation_set(

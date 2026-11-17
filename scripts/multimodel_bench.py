@@ -59,7 +59,10 @@ def benchmark_single(
         )
         for arm in ("blind", "headron"):
             t0 = time.monotonic()
-            ans, tok = providers.complete(provider, model, q[arm], timeout, max_tokens)
+            try:
+                ans, tok = providers.complete(provider, model, q[arm], timeout, max_tokens)
+            except (OSError, ValueError, KeyError):
+                ans, tok = "", 0
             elapsed = time.monotonic() - t0
             tok_count = tok or 0
             v = taskbench.score(q, ans) if ans.strip() else None
@@ -95,12 +98,16 @@ def benchmark_cooperative(
     }
     for q in questions:
         t0 = time.monotonic()
-        lead_ans, lead_tok = providers.complete(lead_provider, lead_model, q["headron"], timeout, max_tokens)
-        review_prompt = (
-            f"{q['headron']}\n\nA teammate drafted this answer:\n{lead_ans}\n"
-            "Review the draft against the rules above. Output the verified final answer only."
-        )
-        peer_ans, peer_tok = providers.complete(peer_provider, peer_model, review_prompt, timeout, max_tokens)
+        try:
+            lead_ans, lead_tok = providers.complete(lead_provider, lead_model, q["headron"], timeout, max_tokens)
+            review_prompt = (
+                f"{q['headron']}\n\nA teammate drafted this answer:\n{lead_ans}\n"
+                "Review the draft against the rules above. Output the verified final answer only."
+            )
+            peer_ans, peer_tok = providers.complete(peer_provider, peer_model, review_prompt, timeout, max_tokens)
+        except (OSError, ValueError, KeyError):
+            lead_ans, lead_tok = "", 0
+            peer_ans, peer_tok = "", 0
         elapsed = time.monotonic() - t0
         v = taskbench.score(q, peer_ans) if peer_ans.strip() else None
         results["correct"] += int(bool(v))
@@ -173,6 +180,7 @@ def parse_model_spec(spec: str) -> tuple[str, str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=cast(str, __doc__).split("\n", 1)[0])
     parser.add_argument("--models", default="router:small,router:code", help="comma-separated provider:model pairs")
+    parser.add_argument("--auto", action="store_true", help="auto-discover available providers")
     parser.add_argument("--kinds", default="hygiene,plan", help="comma-separated kinds: hygiene,plan,diagnose")
     parser.add_argument("--sample-diagnose", type=int, default=5, help="max diagnose questions to include")
     parser.add_argument("--peer", default="", help="optional reviewer provider:model for cooperative ensemble")
@@ -182,7 +190,20 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     providers.set_live(args.live)
-    model_pairs = [parse_model_spec(s) for s in args.models.split(",") if s.strip()]
+    if args.auto:
+        active = providers.available_providers()
+        print(f"Auto-discovered active providers: {', '.join(active)}")
+        # Default models for active providers
+        specs: list[str] = []
+        if "router" in active:
+            specs.extend(["router:small", "router:code"])
+        if "kilo" in active:
+            specs.append("kilo:small")
+        if "google-ai-studio" in active:
+            specs.append("google-ai-studio:gemini-2.0-flash")
+        model_pairs = [parse_model_spec(s) for s in specs] if specs else [parse_model_spec("router:small")]
+    else:
+        model_pairs = [parse_model_spec(s) for s in args.models.split(",") if s.strip()]
     peer_pair = parse_model_spec(args.peer) if args.peer.strip() else None
     kinds_list = [k.strip() for k in args.kinds.split(",") if k.strip()]
 

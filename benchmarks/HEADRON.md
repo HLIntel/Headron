@@ -14,5 +14,6 @@ recorded measurements, and the PLANTED bug tasks an agent benchmark asks a model
 - **a_non_answer_scored_as_wrong** — a large, clean improvement
   - do: judge an answer by the fields it must carry; a 200 or an exit 0 with an empty payload is unanswered, and a zero or false stays a value
 - **a_bad_result_captioned_and_passed** — an honest report — the number is true, and the defect behind it ships
+  - do: verify changes across both a primary and peer review model against declared ground truth contracts before landing
 
 Declared in `atlas.yaml/directory_scopes/benchmarks`; `headron route benchmarks` prints it as a record.

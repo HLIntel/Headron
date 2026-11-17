@@ -3597,6 +3597,15 @@ agent_success_patterns:
     proven_by: [branchstate._land_once, handoff_test.land_empty_cases]
     kinds: [reusable, ai_beneficial]
     reused: 1
+  cooperative_peer_audit_before_land:
+    move: 'verify changes across both a primary and peer review model against declared ground truth contracts before landing'
+    when: 'executing multi-model benchmarks, gate plans or complex contract synthesis'
+    verification: 'multimodel_bench_test.TestMultiModelBench verifies peer audit and consensus scoring'
+    evidence: 'single model planning missed gate requirements that peer auditing against verification profiles caught'
+    pairs: [a_bad_result_captioned_and_passed]
+    proven_by: [multimodel_bench.benchmark_cooperative]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
   name_only_verbs_the_parser_has:
     move: 'when a verb or flag is cut, grep entry surfaces for it in spans, fences and prose, and rewrite each step to a verb the parser has'
     when: 'a command, alias or flag is removed or renamed'
@@ -6185,7 +6194,9 @@ orphan_exemptions:
   scripts/economic_benchmark.py: 'analytical economic benchmark engine comparing assisted vs unassisted agents; run on demand'
   scripts/workflow_runner.py: 'declared gates run or reported NOT RUN, with a receipt binding the target bytes and tree; run on demand'
   scripts/multimodel_bench.py: 'multi-model cross-evaluation benchmark comparing Headron lift, tokens, and multi-model collaboration across providers; run on demand'
-  multimodel_bench_test.TestMultiModelBench: 'test case suite for multi-model benchmark evaluation, executed via runner'
+  crosscache.prune_cache: 'cross-session execution cache size management and deterministic pruning; run on demand'
+  crosscache.cache_stats: 'cross-session execution cache metrics and footprint reporting; run on demand'
+  providers.resolve_fallback: 'fallback provider chain resolution for resilient multi-provider routing; run on demand'
   testgroups.scrub_git_env: the case harness every test module takes it from; a test is its only caller by design
   testgroups.run_counted: the case harness a test module runs its cases under; a test is its only caller by design
   testgroups.micro_shreds: the case harness that splits a test module's cases; a test is its only caller by design
