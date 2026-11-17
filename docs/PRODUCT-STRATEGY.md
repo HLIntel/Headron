@@ -1,6 +1,6 @@
 # Product boundary and package architecture
 
-**Repository contract: v3.63.0**
+**Repository contract: v3.64.0**
 
 Headron is an open-source verification foundation for AI-assisted engineering. It provides local verification, contracts, receipts, agent integrations, and a read-only MCP interface. The local core does not require an account.
 
