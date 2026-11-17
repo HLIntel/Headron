@@ -3,7 +3,7 @@
 Part of [HEADRON](HEADRON.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-139 modules and 428 imports between them, read from the source; 69 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 97 modules use it. These 66 rows are the modules at least 2 others use; the other 73, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+139 modules and 429 imports between them, read from the source; 69 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 97 modules use it. These 66 rows are the modules at least 2 others use; the other 73, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -77,6 +77,7 @@ flowchart LR
 | [consumergates](../scripts/consumergates.py) | Consumer gate discovery, shared by landing and verification | 3 | consumerimpact, verify | [consumer_test](../scripts/consumer_test.py) |
 | [gaterunner](../scripts/gaterunner.py) | Bounded process capture shared by verification, landing and local… | 3 |  | [readiness_test](../scripts/readiness_test.py) |
 | [mind](../scripts/mind.py) | Headron Mind API — unified orchestration layer for agent workflows | 3 | adaptive, agentpolicy, atlasindex, decide, graph, knowledge, microprogram, mind_diagnostics, port, receipt, reflex, safeedit, slot, sweep, verify | [mcp_test](../scripts/mcp_test.py), [microprogram_test](../scripts/microprogram_test.py) +1 |
+| [obligations](../scripts/obligations.py) | Task Obligation Ledger: a task's requirements kept outside the… | 3 |  | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [receiptsign](../scripts/receiptsign.py) | Who wrote a receipt: a detached SSH signature over its exact bytes | 3 | receipt | [receiptsign_test](../scripts/receiptsign_test.py) |
 | [reflex](../scripts/reflex.py) | Command classification primitives — single-pass diff and command… | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |
 | [roster](../scripts/roster.py) | instrument_roster: which scripts are instruments, and which… | 3 | cidrift, cipipeline, dirscope, importgraph | [atlas_rules_test](../scripts/atlas_rules_test.py) |
@@ -101,7 +102,6 @@ flowchart LR
 | [impact](../scripts/impact.py) | The runtime test-impact map: which repository files each planted… | 2 | atomicfile, importgraph, safeedit, testgroups, verify | [atlas_rules_test](../scripts/atlas_rules_test.py), [impact_test](../scripts/impact_test.py) |
 | [micrograph](../scripts/micrograph.py) | A DAG of microprogram steps: run each node once its needs… | 2 | microprogram | [cilocal_test](../scripts/cilocal_test.py) |
 | [mind_diagnostics](../scripts/mind_diagnostics.py) | Headron Mind API Diagnostics & Recovery — failure diagnosis and… | 2 | adaptive, knowledge, mind |  |
-| [obligations](../scripts/obligations.py) | Task Obligation Ledger: a task's requirements kept outside the… | 2 |  | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [onboard](../scripts/onboard.py) | `headron init`: the first five minutes in a repository, in one… | 2 | branchstate, consumergates, enforce, localtools, verify |  |
 | [providers](../scripts/providers.py) | Where a measurement may send a prompt: OpenAI-compatible… | 2 | atomicfile, resilience | [agent_test](../scripts/agent_test.py) |
 | [slot](../scripts/slot.py) | A few heavy suites per MACHINE, across every repository and every… | 2 | resilience |  |
