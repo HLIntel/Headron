@@ -27,13 +27,15 @@ when every obligation is proven on the current tree, and names the first open on
 proves: an obligation names a procedure before it can be recorded, a proven obligation names evidence and the
   tree it covers, evidence on another, a dirty or an unknown tree reads unknown, the log is append-only, and a corrupt
   line is refused rather than skipped; extraction is idempotent, a changed file no route reads is a gap, a file
-  changed after extraction, a dropped obligation and a drifted check each read short, and a drift refuses extract
+  changed after extraction (committed or not), a dropped obligation and a drifted check each read short, a drift
+  refuses extract, and a contract with no base_commit is refused
 does_not_prove: that the evidence ref checks what the statement says (the procedure named is the instrument); what
-  the objective's prose asks for; that a deleted file needed nothing; that the changes stay inside allowed_paths
+  the objective's prose asks for; that a deleted file needed nothing; that the changes stay inside allowed_paths;
+  extract chdirs the whole process into the task root while it resolves gates (an overrun leaves it there)
 closed_by: microprogram_test.py (obligation_cases), which plants stale evidence, a procedure-less obligation,
   a done claim with no evidence, a close outside any git tree, a corrupt line, and the ledger read back by a fresh process;
-  (extract_cases), which plants a dropped obligation, an unrouted file, a file changed after extraction, a drifted
-  check, a second extraction and a root outside any git tree
+  (extract_cases), which plants a dropped obligation, an unrouted file, a file changed and then committed after
+  extraction, a drifted check, a second extraction, a contract with no base_commit and a root outside any git tree
 """
 
 from __future__ import annotations
@@ -170,11 +172,14 @@ def _contract(contract_path: str | Path) -> dict[str, Any]:
 
 
 def _changed(contract: dict[str, Any], root: Path) -> list[str]:
-    """Every file the task changed: against its base_commit (HEAD when the plan named none), plus untracked
-    files. A deleted file owes no gate; a git that cannot answer refuses, since no files would pass every check."""
+    """Every file the task changed since its base_commit, committed or not, plus untracked files. A contract with
+    no base_commit is refused: against HEAD, a change committed after extraction would vanish from the list. A
+    deleted file owes no gate; a git that cannot answer refuses, since no files would pass every check."""
     from atlascore import diff_names, ls_files  # noqa: PLC0415
 
-    base = str(contract.get("base_commit") or "HEAD")
+    if not contract.get("base_commit"):
+        raise LedgerError("the task contract names no base_commit; without it a committed change is invisible")
+    base = str(contract["base_commit"])
     try:
         tracked = diff_names(root, "--diff-filter=d", base)
     except ValueError as error:
