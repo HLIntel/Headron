@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -63,8 +64,8 @@ SECRET_SHAPES = [
     ("Google API key", re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b")),
     ("Clerk secret", re.compile(r"\bsk_(?:live|test)_[0-9A-Za-z]{20,}\b")),
     ("PEM private key", re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY")),
-    ("OpenAI key", re.compile(r"\boai-[A-Za-z0-9-_]{20,}\b")),
-    ("Anthropic key", re.compile(r"\bsk-ant-[A-Za-z0-9-_]{20,}\b")),
+    ("OpenAI key", re.compile(r"\bsk-(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}")),
+    ("Anthropic key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}")),
     ("Generic API key", re.compile(r"(?:api[_-]?key|apikey)\s*[=:]\s*['\"][A-Za-z0-9_\-]{20,}['\"]")),
     ("npm token", re.compile(r"\bnpm_[A-Za-z0-9]{36}\b")),
     ("PyPI token", re.compile(r"\bpypi-AgEIcHlwaS5vcmc[A-Za-z0-9_\-]{50,}\b")),
@@ -75,9 +76,18 @@ EMAIL = re.compile(r"(?<![\w.+-])[A-Za-z0-9._%+-]{2,}@[A-Za-z0-9-]+(?:\.[A-Za-z0
 HOME = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)")
 
 
+GIT_TIMEOUT_S = 60
+
+
 def git(*args: str, check: bool = True) -> str:
-    """Run git through atlascore's centralized git_run() for consistency."""
-    done = git_run(None, *args)
+    """git through atlascore.git_run, decoded with replacement: a staged non-UTF-8 byte is content, not a crash.
+
+    A hung git is a usage error (exit 2), never a traceback, which a hook would read as exit 1, a finding."""
+    try:
+        done = git_run(None, *args, errors="replace", timeout=GIT_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        sys.stderr.write(f"privacy_guard: git {' '.join(args)} timed out after {GIT_TIMEOUT_S}s\n")
+        raise SystemExit(2) from None
     if check and done.returncode != 0:
         sys.stderr.write(f"privacy_guard: git {' '.join(args)} failed: {done.stderr.strip()}\n")
         raise SystemExit(2)
@@ -192,7 +202,10 @@ def mode_tree(names: list[re.Pattern[str]] | None, findings: list[str]) -> None:
 
 def default_base() -> str | None:
     """Find the merge base of origin/main and HEAD using centralized git_run()."""
-    done = git_run(None, "merge-base", "origin/main", "HEAD")
+    try:
+        done = git_run(None, "merge-base", "origin/main", "HEAD", timeout=GIT_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        return None
     if done.returncode != 0:
         return None
     return done.stdout.strip() or None

@@ -10,3 +10,5 @@ names unchecked	for rx in names or []:	for rx in []:
 noreply local widened	local == "noreply"	local == "noreplyX"
 noreply domain boundary ignored	domain.endswith(".noreply.github.com")	domain.endswith("noreply.github.com")
 help falls through	if {"-h", "--help"} & set(argv):	if False:
+non-utf8 decoded strictly	git_run(None, *args, errors="replace", timeout=GIT_TIMEOUT_S)	git_run(None, *args, timeout=GIT_TIMEOUT_S)
+hung git escapes as traceback	raise SystemExit(2) from None	raise
