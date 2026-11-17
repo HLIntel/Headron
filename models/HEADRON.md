@@ -39,6 +39,7 @@ one adapter per runtime — how each one loads this atlas and what it loads firs
 - [headron-desktop/README.md](headron-desktop/README.md)
 - [hermes/README.md](hermes/README.md)
 - [junie/README.md](junie/README.md)
+- [kilo/README.md](kilo/README.md)
 - [llm/README.md](llm/README.md)
 - [openai/README.md](openai/README.md)
 - [opencode/README.md](opencode/README.md)

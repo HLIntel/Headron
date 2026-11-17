@@ -36,6 +36,7 @@ FAMILIES = {
     "hermes": "hermes",
     "github_actions": "github_actions",
     "vscode": "vscode",
+    "kilo": "kilo",
     "chat": "chat",
     "headron-desktop": "headron-desktop",
     "unknown": "unknown",

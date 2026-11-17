@@ -89,6 +89,22 @@ PROVIDERS: dict[str, dict] = {
         "keys": ["CLOUDFLARE_API_TOKEN"],
         "rpm": 60,
     },
+    "kilo": {
+        "url": "http://127.0.0.1:8080/v1/chat/completions",
+        "keys": ["KILO_API_KEY"],
+        "optional_key": True,
+        "rpm": 60,
+    },
+    "kaggle": {
+        "url": "https://api.kaggle.com/v1/chat/completions",
+        "keys": ["KAGGLE_API_TOKEN", "KAGGLE_KEY"],
+        "rpm": 30,
+    },
+    "google-ai-studio": {
+        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        "keys": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+        "rpm": 30,
+    },
     # CLAUDE THROUGH THE CLAUDE CODE CLI, on whatever login that CLI holds — no key here. The A/B had
     # 8 models on 4 providers and NOT ONE was Claude, the runtime this contract is written for first.
     # Bedrock was probed first and refused (the IAM user may not invoke models); the CLI reaches the
@@ -131,9 +147,10 @@ def endpoint(name: str) -> tuple[str, dict[str, str]]:
     headers = {"Content-Type": "application/json", "User-Agent": "headron-atlas-abtest/1.0"}
     if spec["keys"]:
         key = next((os.environ[k] for k in spec["keys"] if os.environ.get(k)), None)
-        if key is None:
+        if key is None and not spec.get("optional_key"):
             raise ValueError(f"provider {name} needs one of {spec['keys']} in the environment")
-        headers["Authorization"] = f"Bearer {key}"
+        if key is not None:
+            headers["Authorization"] = f"Bearer {key}"
     return url, headers
 
 

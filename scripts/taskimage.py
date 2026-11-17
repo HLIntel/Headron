@@ -192,8 +192,11 @@ def compile_image(path: Path, repo: Path = ROOT) -> tuple[dict, int]:
     return json.loads(files["state.json"]), 0
 
 
-def run_image(path: Path, execute: bool, resume: bool, repo: Path = ROOT) -> tuple[dict, int]:
+def run_image(
+    path: Path, execute: bool, resume: bool, repo: Path = ROOT, *, incremental: bool = False
+) -> tuple[dict, int]:
     import agentrun  # noqa: PLC0415 - the runner pulls in the policy stack; inspect never needs it
+    import crosscache  # noqa: PLC0415
 
     if repo.resolve() != resolved_once(ROOT):
         raise Refused("task execution is only supported in the runner's repository")
@@ -201,6 +204,7 @@ def run_image(path: Path, execute: bool, resume: bool, repo: Path = ROOT) -> tup
     task_id = str(contract["task_id"])
     found = read(task_id, repo)
     tree = obligations.tree(repo)
+    cached_nodes = None
     if resume:
         if found is None:
             raise Refused(f"no image at {PREFIX}{task_id}: compile or run it first")
@@ -208,7 +212,14 @@ def run_image(path: Path, execute: bool, resume: bool, repo: Path = ROOT) -> tup
         reason = stale_reason(state, contract)
         if reason:
             raise Refused(f"stale contract, resume refused: {reason}")
-    record, code = agentrun.execute_contract(path, execute)
+        if incremental:
+            invalidated = crosscache.dag_invalidation_set(contract, state, tree)
+            cached_nodes = {k: v for k, v in (state.get("nodes") or {}).items() if k not in invalidated}
+    record, code = (
+        agentrun.execute_contract(path, execute, incremental=incremental, cached_nodes=cached_nodes)
+        if incremental
+        else agentrun.execute_contract(path, execute)
+    )
     if "outcome" not in record:
         raise Refused("agentrun refused the contract: " + "; ".join(map(str, record.get("refusals") or [])))
     outcome = record["outcome"]
@@ -220,6 +231,26 @@ def run_image(path: Path, execute: bool, resume: bool, repo: Path = ROOT) -> tup
     verb = "resume" if resume else "run"
     write(task_id, files, f"task {task_id}: {verb} ({outcome['status']})", found[0] if found else None, repo)
     return json.loads(files["state.json"]), code
+
+
+def export_image(task_id: str, dest: Path, repo: Path = ROOT) -> tuple[dict, int]:
+    ref = ref_for(task_id, repo)
+    found = read(task_id, repo)
+    if found is None:
+        raise Refused(f"no image at {ref}")
+    dest_path = Path(dest)
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    _git(repo, "bundle", "create", str(dest_path), ref)
+    return {"task_id": task_id, "ref": ref, "bundle": str(dest_path), "status": "exported"}, 0
+
+
+def import_image(bundle_path: Path, repo: Path = ROOT) -> tuple[dict, int]:
+    path = Path(bundle_path).resolve()
+    if not path.is_file():
+        raise Refused(f"bundle file {bundle_path} does not exist")
+    _git(repo, "bundle", "verify", str(path))
+    out = _git(repo, "fetch", str(path), f"{PREFIX}*:{PREFIX}*")
+    return {"bundle": str(path), "status": "imported", "output": out}, 0
 
 
 def verified_image(task_id: str, state: dict, files: dict[str, bytes], repo: Path = ROOT) -> bool:
@@ -287,15 +318,18 @@ def show(view: dict) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="taskimage.py", description=(__doc__ or "").split("\n", 1)[0])
-    parser.add_argument("action", choices=("compile", "run", "resume", "inspect"))
-    parser.add_argument("target", help="a .headron or .json contract; for inspect, a task id")
+    parser.add_argument("action", choices=("compile", "run", "resume", "inspect", "export", "import"))
+    parser.add_argument(
+        "target", help="a .headron or .json contract; for inspect/export, a task id; for import, a bundle path"
+    )
     parser.add_argument("--execute", action="store_true", help="run each resolvable gate (default: controls only)")
+    parser.add_argument("--incremental", action="store_true", help="incrementally recompute only invalidated DAG nodes")
     parser.add_argument("--json", action="store_true", help="emit the image state as JSON")
     args = parser.parse_args(argv)
-    return cli(args.action, args.target, args.execute, args.json)
+    return cli(args.action, args.target, args.execute, args.json, incremental=args.incremental)
 
 
-def cli(action: str, target: str, execute: bool, as_json: bool) -> int:
+def cli(action: str, target: str, execute: bool, as_json: bool, incremental: bool = False) -> int:
     try:
         if Path(_git(Path.cwd(), "rev-parse", "--show-toplevel")).resolve() != resolved_once(ROOT):
             raise Refused("task images are only supported in the runner's repository")
@@ -303,8 +337,12 @@ def cli(action: str, target: str, execute: bool, as_json: bool) -> int:
             view, code = inspect(target)
         elif action == "compile":
             view, code = compile_image(Path(target))
+        elif action == "export":
+            view, code = export_image(target, Path(f"{target}.bundle"))
+        elif action == "import":
+            view, code = import_image(Path(target))
         else:
-            view, code = run_image(Path(target), execute, resume=action == "resume")
+            view, code = run_image(Path(target), execute, resume=action == "resume", incremental=incremental)
     except Refused as why:
         if as_json:
             print(json.dumps({"schema": SCHEMA, "command": "task", "action": action, "refused": str(why)}, indent=2))
