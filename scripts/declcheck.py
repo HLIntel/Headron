@@ -139,7 +139,7 @@ def landed_state_errors() -> list[str]:
     ] or ([] if states else ["branch_policy/landed_states is empty"])
 
 
-SLOW_GUIDES = ("integrations/", "docs/patterns/", "docs/systems/", "docs/wiki/", "languages/")
+SLOW_GUIDES = ("integrations/", "docs/systems/", "docs/wiki/", "languages/")
 
 
 def guide_reference_errors() -> list[str]:

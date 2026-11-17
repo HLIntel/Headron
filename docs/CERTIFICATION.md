@@ -71,7 +71,7 @@ Derived from `config/openssf-best-practices.json` — 30 criteria at the **passi
 | `warnings` | Met | [pyproject.toml](../pyproject.toml) — ruff enabled only for rules the tree already satisfies, so the gate is never silenced |
 | `warnings_fixed` | Met | [pyproject.toml](../pyproject.toml) — clean, enforced in CI |
 | `know_secure_design` | Met | [docs/ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) — least privilege, fail-safe defaults, and every concept paired with its mechanism |
-| `know_common_errors` | Met | [docs/patterns/BOUNDARY-BREAKAGE.md](patterns/BOUNDARY-BREAKAGE.md) — boundary contracts and the failure tests for them |
+| `know_common_errors` | Met | [docs/PATTERNS.md#safe-boundaries](PATTERNS.md#safe-boundaries) — boundary contracts and the failure tests for them |
 | `no_leaked_credentials` | Met | [config/github-controls.json](../config/github-controls.json) — secret scanning and push protection, compared by ghaudit; the contract fails on a tracked .env |
 | `static_analysis` | Met | [scripts/cipipeline.py](../scripts/cipipeline.py) — the native CI jobs declare static-analysis gates; hosted CodeQL is not required |
 | `static_analysis_fixed` | ? | [SECURITY.md](../SECURITY.md) — the policy describes security fixes; timely remediation of confirmed static-analysis vulnerabilities has not been established |
