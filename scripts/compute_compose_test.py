@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import decimal
 from copy import deepcopy
 from datetime import date
 
+import receipt
 from compute_compose import Compose
 
 
@@ -127,8 +129,26 @@ def test_variance_above_reconcile_limit_is_refused() -> None:
     assert result.output is None
 
 
+def test_output_reproducible_with_explicit_units() -> None:
+    """Same graph, same bytes: twice, and under a caller's coarse decimal context; every number a string with a unit."""
+    graph = _graph()
+    graph["nodes"][2] = _variance("a", "1234567.891", "0.003")  # needs 10 digits; a 2-digit context would round it
+    out = Compose().run(graph).output
+    assert out["nodes"]["a"]["value"] == "1234567.888", out["nodes"]["a"]
+    first = receipt.digest(out)
+    assert receipt.digest(Compose().run(deepcopy(graph)).output) == first
+    with decimal.localcontext() as ctx:
+        ctx.prec, ctx.rounding = 2, decimal.ROUND_DOWN
+        assert receipt.digest(Compose().run(deepcopy(graph)).output) == first, "a caller's decimal context leaked in"
+    for node in Compose().run(_graph()).output["nodes"].values():
+        for row in [node, *node.get("matched", [])]:
+            assert not any(isinstance(v, float) for v in row.values()), row
+            assert row.get("type") == "reconciliation" or row.get("unit"), row
+
+
 def run_cases() -> None:
     test_known_answer_and_provenance()
+    test_output_reproducible_with_explicit_units()
     test_matched_metadata_must_agree()
     test_invalid_graph_refused()
     test_unmatched_keys_do_not_invent_a_comparison()
