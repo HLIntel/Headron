@@ -94,6 +94,18 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
     verdicts = (agentrun.run_status(rows, []), agentrun.run_status(every, []), agentrun.run_status([], []))
     after, _ = taskimage.inspect(task, repo)
 
+    # A successful runner must not publish a verified image for dirty, unknown, or changed source.
+    passed_record = _record(contract, dict.fromkeys(gates, (True, 0)))
+    import obligations  # noqa: PLC0415
+
+    tree_refusals = []
+    for identities in (("tree+dirty",), (obligations.UNKNOWN_TREE,), ("tree-a", "tree-b")):
+        with (
+            mock.patch.object(obligations, "tree", side_effect=identities),
+            mock.patch.object(agentrun, "execute_contract", return_value=(passed_record, 0)),
+        ):
+            tree_refusals.append(_refused(lambda: taskimage.run_image(EXAMPLE, True, False, repo)))
+
     # A private path in the contract is never written; the escape comment does not opt it out.
     leaky = top / "leaky.headron"
     home = "/" + "Users/alice/notes"
@@ -134,6 +146,7 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
             len(runner_args) == 2
             and [taskimage.node_state(r) for r in rows] == [taskimage.NOT_RUN] * len(gates)
             and verdicts == ("controls_verified", "controls_verified", "controls_verified")
+            and all("clean source tree" in reason for reason in tree_refusals)
             and after["checkpoints"] == 3,
             (runner_args, verdicts, after["checkpoints"]),
         ),
