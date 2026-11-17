@@ -279,10 +279,24 @@ def list_models(name: str, timeout: float = 20.0) -> list[dict]:
         payload = json.load(response)
     rows = payload.get("data", []) if isinstance(payload, dict) else payload
     return [
-        {"id": str(m["id"]), "free": m["isFree"] if isinstance(m.get("isFree"), bool) else None}
+        {
+            "id": str(m["id"]),
+            "free": m["isFree"] if isinstance(m.get("isFree"), bool) else _priced_free(m.get("pricing")),
+        }
         for m in rows
         if isinstance(m, dict) and m.get("id")
     ]
+
+
+def _priced_free(pricing: object) -> bool | None:
+    """True when every listed price is zero, False when any is not, None with no price list. An OpenRouter
+    listing flags no `isFree`; without this a free-only census canaried every PAID model on the key."""
+    if not isinstance(pricing, dict) or not pricing:
+        return None
+    try:
+        return all(float(v) == 0 for v in pricing.values() if v is not None)
+    except (TypeError, ValueError):
+        return False  # an unreadable price is not a free one
 
 
 def identity(requested: str, served: object) -> str:

@@ -56,6 +56,9 @@ def benchmark_single(
             "total": 0,
             "blind_tokens": 0,
             "headron_tokens": 0,
+            # an ANSWERED call whose server reported no usage: its tokens are UNMEASURED, never 0
+            "blind_tokens_unmeasured": 0,
+            "headron_tokens_unmeasured": 0,
         },
     }
     for q in questions:
@@ -63,7 +66,7 @@ def benchmark_single(
         k_entry = summary["kinds"].setdefault(
             kind,
             {
-                arm: {"correct": 0, "asked": 0, "not_run": 0, "tokens": 0, "latency_s": 0.0}
+                arm: {"correct": 0, "asked": 0, "not_run": 0, "tokens": 0, "tokens_unmeasured": 0, "latency_s": 0.0}
                 for arm in ("blind", "headron")
             },
         )
@@ -89,11 +92,14 @@ def benchmark_single(
             cell["asked"] += 1
             cell["not_run"] += int(verdict == "not_run")
             cell["correct"] += int(verdict == "correct")
+            unmeasured = int(verdict != "not_run" and tok is None)
             cell["tokens"] += tok or 0
+            cell["tokens_unmeasured"] += unmeasured
             cell["latency_s"] += elapsed
             summary["overall"][f"{arm}_correct"] += int(verdict == "correct")
             summary["overall"][f"{arm}_not_run"] += int(verdict == "not_run")
             summary["overall"][f"{arm}_tokens"] += tok or 0
+            summary["overall"][f"{arm}_tokens_unmeasured"] += unmeasured
         summary["overall"]["total"] += 1
     return summary
 
@@ -115,6 +121,7 @@ def benchmark_cooperative(
         "not_run": 0,
         "total": len(questions),
         "tokens": 0,
+        "tokens_unmeasured": 0,
         "latency_s": 0.0,
     }
     for q in questions:
@@ -138,6 +145,7 @@ def benchmark_cooperative(
         results["correct"] += int(v is True)
         results["not_run"] += int(v is None)  # a non-answer leaves the denominator, never scores wrong
         results["tokens"] += (lead_tok or 0) + (peer_tok or 0)
+        results["tokens_unmeasured"] += int(v is not None and (lead_tok is None or peer_tok is None))
         results["latency_s"] += elapsed
     return results
 
@@ -204,15 +212,20 @@ def format_matrix_markdown(benchmarks: list[dict[str, Any]], cooperative: dict[s
     for b in benchmarks:
         ov = b["overall"]
         tot = ov["total"] or 1
-        b_acc = ov["blind_correct"] / max(ov["total"] - ov.get("blind_not_run", 0), 1) * 100
-        h_acc = ov["headron_correct"] / max(ov["total"] - ov.get("headron_not_run", 0), 1) * 100
-        lift = h_acc - b_acc
-        b_tok = ov["blind_tokens"] // tot
-        h_tok = ov["headron_tokens"] // tot
+        # NOTHING ANSWERED IS "not run", never 0.0%; a usage-less answer makes the tokens "unmeasured", never 0
+        cells: dict[str, tuple[str, float | None, str]] = {}
+        for arm in ("blind", "headron"):
+            answered = ov["total"] - ov.get(f"{arm}_not_run", 0)
+            acc = ov[f"{arm}_correct"] / answered * 100 if answered else None
+            tok = "unmeasured" if ov.get(f"{arm}_tokens_unmeasured") else str(ov[f"{arm}_tokens"] // tot)
+            cells[arm] = ("not run" if acc is None else f"{acc:.1f}%", acc, tok)
+        b_cell, b_acc, b_tok = cells["blind"]
+        h_cell, h_acc, h_tok = cells["headron"]
+        lift = "—" if b_acc is None or h_acc is None else f"{h_acc - b_acc:+.1f}%"
         latencies = [c["latency_s"] / max(c["asked"], 1) for k in b["kinds"].values() for c in k.values()]
         avg_lat = sum(latencies) / max(len(latencies), 1)
         name = f"`{b['provider']}:{b['model']}`"
-        lines.append(f"| {name} | {b_acc:.1f}% | {h_acc:.1f}% | +{lift:.1f}% | {b_tok} / {h_tok} | {avg_lat:.2f}s |")
+        lines.append(f"| {name} | {b_cell} | {h_cell} | {lift} | {b_tok} / {h_tok} | {avg_lat:.2f}s |")
     if cooperative:
         tot_c = cooperative["total"] or 1
         c_acc = cooperative["correct"] / max(cooperative["total"] - cooperative.get("not_run", 0), 1) * 100

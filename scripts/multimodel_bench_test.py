@@ -88,6 +88,27 @@ class TestMultiModelBench(unittest.TestCase):
         coop = multimodel_bench.benchmark_cooperative("router", "small", "router", "code", qs, timeout=5)
         self.assertEqual((coop["correct"], coop["not_run"]), (0, 1))
 
+    @patch("providers.complete")
+    def test_usage_less_answers_are_unmeasured_not_zero(self, mock_complete: Any) -> None:
+        # junie and any vendor without a usage block return None: 0 tokens would be a fabricated number
+        mock_complete.side_effect = lambda *a, **k: ("yes", None)
+        qs = [{"kind": "hygiene", "task": "h0", "truth": ["yes"], "blind": "ask", "headron": "Rule A:\nask"}]
+        res = multimodel_bench.benchmark_single("junie", "default", qs, timeout=5)
+        self.assertEqual(res["overall"]["headron_tokens_unmeasured"], 1)
+        self.assertEqual(res["kinds"]["hygiene"]["blind"]["tokens_unmeasured"], 1)
+        md = multimodel_bench.format_matrix_markdown([res])
+        self.assertIn("unmeasured / unmeasured", md)
+        coop = multimodel_bench.benchmark_cooperative("junie", "default", "junie", "default", qs, timeout=5)
+        self.assertEqual(coop["tokens_unmeasured"], 1)
+
+    @patch("providers.complete")
+    def test_a_lane_with_no_answer_reads_not_run_not_zero_percent(self, mock_complete: Any) -> None:
+        mock_complete.side_effect = OSError("reset")
+        qs = [{"kind": "hygiene", "task": "h0", "truth": ["yes"], "blind": "ask", "headron": "Rule A:\nask"}]
+        md = multimodel_bench.format_matrix_markdown([multimodel_bench.benchmark_single("p", "m", qs, timeout=5)])
+        self.assertIn("| not run | not run | — |", md)
+        self.assertNotIn("0.0%", md)
+
     def test_discrimination_drops_flat_tasks(self) -> None:
         def lane(model: str, verdicts: dict[str, str]) -> dict[str, Any]:
             return {"provider": "p", "model": model, "questions": {t: {"blind": v} for t, v in verdicts.items()}}
@@ -119,6 +140,14 @@ class TestMultiModelBench(unittest.TestCase):
         self.assertEqual(providers.identity("meta-llama/llama-3.3-70b:free", "llama-3.3-70b"), "match")
         self.assertEqual(providers.identity("x/glm-4.5-air:free", "openrouter/auto"), "differs")
         self.assertEqual(providers.identity("x/glm-4.5-air", ""), "unreported")
+
+    def test_a_priced_listing_marks_free_only_at_zero(self) -> None:
+        import providers
+
+        self.assertIs(providers._priced_free({"prompt": "0", "completion": "0"}), True)
+        self.assertIs(providers._priced_free({"prompt": "0", "completion": "0.000002"}), False)
+        self.assertIs(providers._priced_free({"prompt": "-1"}), False)
+        self.assertIsNone(providers._priced_free(None))
 
     def test_error_text_redacts_account_ids(self) -> None:
         import urllib.error
