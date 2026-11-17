@@ -42,7 +42,13 @@ case "${1:-}" in
 esac
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-"$runner" -m venv "$work/venv" || python3 -m venv "$work/venv"
+# uv makes the venv in under a second (stdlib venv: 4-15 s, MEASURED) and seeds pip for any step that calls it;
+# with no uv, the stdlib venv, and the install steps answer unknown (scripts/cipipeline.py install).
+if command -v uv >/dev/null 2>&1; then
+    uv venv --quiet --seed --python "$runner" "$work/venv"
+else
+    "$runner" -m venv "$work/venv" || python3 -m venv "$work/venv"
+fi
 export VIRTUAL_ENV="$work/venv" PATH="$work/venv/bin:$PATH"
 # THE RUN: scripts/cilocal.py runs the declared jobs through scripts/micrograph.py. No job list here: it defaults
 # to $CI_LOCAL_JOBS (what ~/.claude/bin/ci-local -j picked), else the CONTRACT jobs, edge-coverage included.
