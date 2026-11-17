@@ -106,7 +106,7 @@ def evidence_problems(bundle: Path, rows: list[dict[str, Any]]) -> dict[str, str
     """{obligation id: why} for each proven row whose evidence does not hold inside the bundle.
 
     The ledger's evidence is a free string; pack stores a file as receipts/<name> or evidence/<name>. A ref holds
-    when it is one of those paths, or its last segment names one, and when that file is a receipt, its verdict is
+    when it is one of those paths, or its last segment names exactly one, and when that file is a receipt, its verdict is
     PASS (status ok for a computation receipt). Read after verify(): every listed file already matches its digest."""
     files = json.loads((bundle / MANIFEST).read_bytes())["files"]
     found: dict[str, str] = {}
@@ -115,9 +115,12 @@ def evidence_problems(bundle: Path, rows: list[dict[str, Any]]) -> dict[str, str
             continue
         ref = str(row.get("evidence") or "").strip()
         name = PurePosixPath(ref.replace("\\", "/")).name
-        hits = [ref] if ref in files else [rel for rel in (f"receipts/{name}", f"evidence/{name}") if rel in files]
+        candidates = [rel for rel in (f"receipts/{name}", f"evidence/{name}") if rel in files]
+        hits = [ref] if ref in candidates else candidates if ref != CONTRACT else []
         if not ref or not hits:
             found[row["id"]] = f"evidence {ref!r} is not in the bundle"
+        elif len(hits) > 1:
+            found[row["id"]] = f"evidence {ref!r} is ambiguous: {', '.join(hits)}"
         elif hits[0].startswith("receipts/"):
             held = json.loads((bundle / hits[0]).read_bytes())
             said = held.get("verdict", {"ok": "PASS"}.get(held.get("status"), held.get("status")))

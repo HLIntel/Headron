@@ -393,6 +393,9 @@ def ron_evidence_cases(module: ModuleType) -> None:
             built = receipt_module.build(rows, base_commit="a" * 40, policy_digest="b" * 64, input_digest="c" * 64)
             receipts[name].write_text(receipt_module.dumps(built), encoding="utf-8")
         bound = {  # task: (evidence ref the close names, receipt packed), and the exit verify owes
+            "lane-contract": ("contract.json", "run.json", 3),
+            "lane-ambiguous": ("run.json", "run.json", 3),
+            "lane-explicit": ("receipts/run.json", "run.json", 0),
             "lane-failed": ("receipts/fail.json", "fail.json", 3),
             "lane-elsewhere": ("the CI log on the runner", "run.json", 3),
             "lane-basename": (str(receipts["run.json"]), "run.json", 0),
@@ -403,13 +406,17 @@ def ron_evidence_cases(module: ModuleType) -> None:
             obligations.add(task, "tests", "the suite passes", "pytest")
             obligations.close(task, "tests", ref, at="t1")
             bundle = top / f"{task}.ron"
-            ronbundle.pack(task, bundle, [receipts[packed]], [], at="t1")
+            evidence = [receipts[packed]] if task in {"lane-ambiguous", "lane-explicit"} else []
+            ronbundle.pack(task, bundle, [receipts[packed]], evidence, at="t1")
             rows = json.loads((bundle / "contract.json").read_text(encoding="utf-8"))["obligations"]
             why[task] = ronbundle.evidence_problems(bundle, rows).get("tests", "")
             with contextlib.redirect_stdout(io.StringIO()):
                 exits[task] = ronbundle.main(["verify", str(bundle)])
     ok = (
         exits == {task: want for task, (_, _, want) in bound.items()}
+        and "not in the bundle" in why["lane-contract"]
+        and "ambiguous" in why["lane-ambiguous"]
+        and why["lane-explicit"] == ""
         and "answers FAIL" in why["lane-failed"]
         and "not in the bundle" in why["lane-elsewhere"]
         and why["lane-basename"] == why["lane-path"] == ""
