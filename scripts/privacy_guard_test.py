@@ -96,6 +96,36 @@ def expect(
         FAILED.append(f"{label}: rc={rc} want={rc_want} out={out[-300:]!r}")
 
 
+def git_timeout_exits_2() -> None:
+    """A hung git is a usage error (exit 2), never a traceback a hook would read as exit 1, a finding."""
+    sys.path.insert(0, str(GUARD.parent))
+    import privacy_guard
+
+    bin_dir = Path(tempfile.mkdtemp(dir=SCRATCH.name))
+    (bin_dir / "git").write_text("#!/bin/sh\nsleep 5\n", encoding="utf-8")
+    (bin_dir / "git").chmod(0o755)
+    saved_path, saved_timeout = os.environ.get("PATH", ""), privacy_guard.GIT_TIMEOUT_S
+    os.environ["PATH"] = f"{bin_dir}{os.pathsep}{saved_path}"
+    privacy_guard.GIT_TIMEOUT_S = 0.5
+    try:
+        try:
+            privacy_guard.git("status")
+            FAILED.append("git timeout: a hung git returned instead of exiting 2")
+        except SystemExit as exc:
+            if exc.code != 2:
+                FAILED.append(f"git timeout: exit {exc.code}, want 2")
+        except subprocess.TimeoutExpired:
+            FAILED.append("git timeout: TimeoutExpired escaped as a traceback")
+        try:
+            if privacy_guard.default_base() is not None:
+                FAILED.append("git timeout: default_base answered a base from a hung git")
+        except subprocess.TimeoutExpired:
+            FAILED.append("git timeout: default_base let TimeoutExpired escape")
+    finally:
+        os.environ["PATH"] = saved_path
+        privacy_guard.GIT_TIMEOUT_S = saved_timeout
+
+
 def main() -> int:
     hook_env_stays_out()
     # email: a real-looking address is refused, a placeholder domain is not
@@ -135,12 +165,32 @@ def main() -> int:
     expect("name clean without term", 0, "--staged", {"a.txt": b"written by nobody\n"}, denylist="zorblax\n")
     # binary files are skipped by the tree sweep; the text rules run on text only
     expect("binary skipped", 0, "--tree", {"b.bin": b"\x00\x01AKIA" + b"ABCDEFGHIJKLMNOP"})
+    # a staged non-UTF-8 byte is content, not a crash: clean alone, and a leak beside it is still refused
+    expect("non-utf8 clean", 0, "--staged", {"a.txt": b"caf\xe9 latin1\n"}, "clean")
+    expect("non-utf8 leak refused", 1, "--staged", {"a.txt": b"caf\xe9\n" + key}, "AWS access key")
+    # each declared key shape fires on its prefix (fillers split and low-entropy, so no scanner reads them)
+    fill = b"x" * 40
+    for label, value in (
+        ("OpenAI key", b"sk-" + b"proj-" + fill),
+        ("Anthropic key", b"sk-" + b"ant-" + fill),
+        ("npm token", b"npm" + b"_" + b"x" * 36),
+        ("Docker token", b"dckr" + b"pat_" + fill),
+        ("Vercel token", b"vercel" + b"_" + fill),
+        ("PyPI token", b"pypi-" + b"AgEIcHlwaS5vcmc" + b"x" * 50),
+        ("Generic API key", b"api_" + b'key = "' + fill + b'"'),
+    ):
+        expect(f"{label} refused", 1, "--staged", {"a.txt": b"k = " + value + b"\n"}, label)
+    # near misses: too short, or a word that only starts like a prefix
+    expect("short sk-ant clean", 0, "--staged", {"a.txt": b"sk-" + b"ant-abc\n"})
+    expect("task-proj word clean", 0, "--staged", {"a.txt": b"desk-proj-" + fill + b"\n"})
+    expect("short api key clean", 0, "--staged", {"a.txt": b"api_" + b'key = "abc"\n'})
+    git_timeout_exits_2()
     # --help answers and scans nothing: the leak below would refuse if the flag fell through to a mode
     expect("help answers", 0, "--help", {"a.txt": key}, "--staged")
     if FAILED:
         print("privacy_guard_test: FAILED", *FAILED, sep="\n  ")
         return 1
-    print("privacy_guard_test: ok (17 cases)")
+    print("privacy_guard_test: ok (30 cases)")
     return 0
 
 

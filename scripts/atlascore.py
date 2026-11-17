@@ -700,9 +700,20 @@ def changed_paths(tree: Path, *, expand_untracked: bool = False) -> list[str]:
     return sorted(out)
 
 
-def git_run(cwd: Path | None, *args: str) -> subprocess.CompletedProcess:
-    """`git <args>` in `cwd` (None: the caller's), captured, never raising: ONE runner, one timeout, for every module."""
-    return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=False, timeout=600)  # noqa: S603, S607
+def git_run(cwd: Path | None, *args: str, errors: str = "strict", timeout: float = 600) -> subprocess.CompletedProcess:
+    """`git <args>` in `cwd` (None: the caller's), captured: ONE runner, one timeout, for every module.
+
+    A non-zero exit is returned, not raised. A hung git still raises TimeoutExpired. `errors` is the decode policy:
+    a reader of diffs or user content passes "replace", so a non-UTF-8 byte in a staged file is not a crash."""
+    return subprocess.run(  # noqa: S603
+        ["git", *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        errors=errors,
+        check=False,
+        timeout=timeout,  # noqa: S607
+    )
 
 
 def diff_names(tree: Path, *revs: str) -> list[str]:
