@@ -17,8 +17,12 @@ closed_by: microprogram_test.py, which plants an undeclared status, a raising pr
 
 from __future__ import annotations
 
+import hashlib
+import json
+import pickle
 import threading
 import time
+from collections import OrderedDict
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -457,6 +461,76 @@ def stats() -> dict[str, dict[str, Any]]:
         }
 
 
+# THE CONTENT CACHE, this process only. A program whose declaration validates with cache_policy "content" (a
+# deterministic program with no effects: effects.PURE) answers the same context with the same result, so an "ok"
+# result is kept and a later run() with the same program object, version and context returns it without starting
+# a thread. Only "ok" is kept: "unknown" is a timeout that depends on load, and a refusal costs little to recompute.
+# Not on disk: version is a hand-bumped string, so a stored answer could outlive a code edit that did not bump it;
+# within one process the code cannot change under the cache.
+CACHE_MAX_ENTRIES = 1024
+CACHE_MAX_BYTES = 8 * 1024 * 1024
+CACHE_MAX_ENTRY_BYTES = 256 * 1024
+_CACHE_LOCK = threading.Lock()
+# key -> (the program object, the pickled result). Holding the object keeps its id from being reused by another.
+_CACHE: OrderedDict[tuple[str, str, str], tuple[object, bytes]] = OrderedDict()
+_CACHE_COUNTS = {"bytes": 0}
+
+
+def _cacheable(program: object) -> bool:
+    # validate, not cache_policy alone: Declared does not check itself, so Declared({"write"}, cache_policy="content")
+    # constructs, and only validate says a program with effects may not be reused.
+    return effects.declared_of(program).cache_policy == "content" and not effects.validate(program)
+
+
+def _cache_key(program: MicroProgram, context: Mapping[str, Any]) -> tuple[str, str, str] | None:
+    """name, version and a digest of the context's strict JSON; None when JSON would merge distinct contexts.
+
+    Strict: no default=str (Decimal("1") would read as "1"), no NaN, and the text must load back equal, so a tuple
+    (read back as a list) or an int key (read back as a str) is not cached rather than confused with another.
+    """
+    try:
+        text = json.dumps(context, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        if json.loads(text) != context:
+            return None
+    except (TypeError, ValueError):
+        return None
+    return program.name, str(program.version), hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _cached(key: tuple[str, str, str], program: object) -> MicroResult | None:
+    with _CACHE_LOCK:
+        entry = _CACHE.get(key)
+        if entry is None or entry[0] is not program:
+            return None
+        _CACHE.move_to_end(key)
+        stored = entry[1]
+    # A fresh copy per hit: a caller that changes a hit's output must not change the next caller's.
+    return pickle.loads(stored)  # noqa: S301 - bytes this process pickled itself, never read from outside
+
+
+def _store(key: tuple[str, str, str], program: object, result: MicroResult) -> None:
+    try:
+        stored = pickle.dumps(result, protocol=pickle.HIGHEST_PROTOCOL)
+    except (pickle.PicklingError, TypeError, AttributeError):
+        stored = b""
+    with _CACHE_LOCK:
+        if not stored or len(stored) > CACHE_MAX_ENTRY_BYTES:
+            return
+        old = _CACHE.pop(key, None)
+        _CACHE_COUNTS["bytes"] -= len(old[1]) if old else 0
+        _CACHE[key] = (program, stored)
+        _CACHE_COUNTS["bytes"] += len(stored)
+        while len(_CACHE) > CACHE_MAX_ENTRIES or _CACHE_COUNTS["bytes"] > CACHE_MAX_BYTES:
+            _CACHE_COUNTS["bytes"] -= len(_CACHE.popitem(last=False)[1][1])
+
+
+def cache_clear() -> None:
+    """Drop every cached result, e.g. to run a deterministic program twice for real."""
+    with _CACHE_LOCK:
+        _CACHE.clear()
+        _CACHE_COUNTS.update(dict.fromkeys(_CACHE_COUNTS, 0))
+
+
 def _bounded(program: MicroProgram, context: Mapping[str, Any]) -> MicroResult:
     """Run the program on a daemon thread and wait at most its timeout_s.
 
@@ -517,6 +591,11 @@ def run(name: str, context: Mapping[str, Any] | None = None) -> MicroResult:
             next="run `headron mind --micro list` and pass a registered name",
         )
         return _record(UNREGISTERED, refused, started, context=context)
+    key = None
+    if _cacheable(program):
+        key = _cache_key(program, context or {})
+        if key is not None and (hit := _cached(key, program)) is not None:
+            return _record(program.name, hit, started, context=context)
     try:
         result = _bounded(program, context or {})
     except Exception as exc:  # noqa: BLE001 - the contract turns every raise into a declared status
@@ -527,7 +606,10 @@ def run(name: str, context: Mapping[str, Any] | None = None) -> MicroResult:
             evidence_refs=(f"{type(exc).__name__}: {exc}",),
             next=f"read the exception, fix its cause in {program.name}'s wrapped function, then rerun",
         )
-    return _record(program.name, result, started, context=context)
+    stamped = _record(program.name, result, started, context=context)
+    if key is not None and stamped.status == ACTIONABLE:
+        _store(key, program, stamped)
+    return stamped
 
 
 def cli(name: str, args: list[str], as_json: bool) -> int:
@@ -537,8 +619,6 @@ def cli(name: str, args: list[str], as_json: bool) -> int:
     does_not_prove: that a caller reads the status rather than only the exit code
     closed_by: microprogram_test.py, which runs the CLI on each status
     """
-    import json  # noqa: PLC0415
-
     if name == "list":
         rows = [
             {"name": p.name, "version": p.version, "declared": effects.declared_of(p).to_dict()}

@@ -183,7 +183,10 @@ def deterministic_cases() -> None:
     if deterministic != set(contexts):
         _fail(f"deterministic programs {sorted(deterministic)} have no sample context here: {sorted(contexts)}")
     for name, context in contexts.items():
-        first, second = microprogram.run(name, context), microprogram.run(name, context)
+        microprogram.cache_clear()  # each run computes: a cache hit would make the second run prove nothing
+        first = microprogram.run(name, context)
+        microprogram.cache_clear()
+        second = microprogram.run(name, context)
         if first.status != "ok" or first.output != second.output:
             _fail(f"{name} declares deterministic but two runs differ ({first.status})", second)
 

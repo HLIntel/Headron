@@ -49,6 +49,9 @@ def run_never_raises_cases(module: ModuleType) -> None:
     import microprogram
 
     effects_test.run_cases()  # an undeclared write, spawn or connect is refused and ends the run as error
+    import microcache_test
+
+    microcache_test.run_cases()  # a hit needs the same program, version and context; effects are never reused
 
     missing = microprogram.run("no.such.program")
     if missing.status != "refused" or "no.such.program" not in missing.evidence_refs[0]:

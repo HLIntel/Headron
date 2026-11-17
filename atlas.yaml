@@ -423,6 +423,7 @@ instrument_roster:
     compute_compose_test.py: 'focused cases for bounded computation composition, run by microprogram_test.py'
     computation_contract.py: 'calculation request contracts, enforced by calculation.py'
     computation_contract_test.py: 'contract cases, run by microprogram_test.py'
+    microcache_test.py: 'content-cache cases (context, version, collision, effects, non-ok, copy), run by microprogram_test.py'
     effects_test.py: 'effects cases (planted undeclared write, spawn, connect; validate; determinism), run by microprogram_test.py'
     computation_receipt_test.py: 'case module for computation receipts (execution-to-evidence chain); run by its own cases and microprogram_test.py'
     calculation.py: 'shared calculation result and refusal handling; its proof is microprogram_test.py'
