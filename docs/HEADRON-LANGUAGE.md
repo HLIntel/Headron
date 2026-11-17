@@ -123,6 +123,7 @@ are local, and an agent editing one place should not have to read all of them.
 | [`scripts/`](../scripts/HEADRON.md) | `area/atlas` | `contract`, `planted_suite`, `code_shape`, `lint` | 5 |
 | [`skills/`](../skills/HEADRON.md) | `area/agent` | `contract`, `context_cost` | 2 |
 | [`tools/`](../tools/HEADRON.md) | `area/agent` | `contract`, `agent_controls` | 2 |
+| [`translations/`](../translations/HEADRON.md) | `area/docs` | `contract` | 1 |
 <!-- END generated: headron-places -->
 
 ## The program that holds the notation to the contract

@@ -6,7 +6,7 @@ Headron 为编码代理提供规则与构建检查。它不能证明代码完全
 
 命令和 JSON 字段使用英语。修改文件前运行 `headron port <file>`，完成前运行 `headron verify`。
 
-完整的规范、安装说明和限制以 [llms.txt](llms.txt) 和 [README.md](README.md) 为准。
+完整的规范、安装说明和限制以 [llms.txt](../llms.txt) 和 [README.md](../README.md) 为准。
 
 ## Commands
 
