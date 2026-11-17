@@ -4436,7 +4436,7 @@ topologies:
     how: 'the one line `atlas.py gate` returns, as the whole context'
     hands: 'one command, the context measured cheapest and most accurate'
   agent to agent:
-    how: 'a lane each (worktree and branch), landed with `branchstate.py --land`'
+    how: 'a branch and worktree each, landed with `branchstate.py --land`'
     hands: 'a pull request and the ledger entries it added'
   agent to person or chat:
     how: '`atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract'

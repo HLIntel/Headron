@@ -121,7 +121,7 @@ Match the extension or filename, then fetch `languages/<pack>/tools.yaml` and no
 - **person and chat:** the Install block in CHAT.md, pasted once — hands over an answer with labelled claims and the gate that proves it.
 - **chat to agent:** the handoff process in CHAT.md — hands over a task contract valid against tools/agent-task.schema.json.
 - **agent to model:** the one line `atlas.py gate` returns, as the whole context — hands over one command, the context measured cheapest and most accurate.
-- **agent to agent:** a lane each (worktree and branch), landed with `branchstate.py --land` — hands over a pull request and the ledger entries it added.
+- **agent to agent:** a branch and worktree each, landed with `branchstate.py --land` — hands over a pull request and the ledger entries it added.
 - **agent to person or chat:** `atlas.py gate <file> --json` and the outcome agentrun.py writes into the contract — hands over machine-checkable records, never a summary.
 - **chat and chat:** the same Install block in each — hands over pasted ledger entries, so one chat's mistake teaches the next.
 - **anyone to Headron:** `headron failures <id> --draft`, or skills/headron/SKILL.md — hands over a ledger entry that becomes a guard, or an intake that must graduate.

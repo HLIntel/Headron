@@ -52,13 +52,13 @@ gates, then verify **on the exit code**, never on output:
 python scripts/verify.py    # PASS / FAIL / NOT RUN per gate; exit 0 only if every gate passed
 ```
 
-It runs `verification_policy/done_set` and prints each gate. Both suites plant a real defect per rule and assert their own case counts: new rule, new planted
-defect. Land with `python scripts/branchstate.py --land`; a bare push of a lane is refused.
+It runs `verification_policy/done_set` and prints each gate. Both suites seed a real defect per rule and assert their own case counts: new rule, new seeded
+defect. Land with `python scripts/branchstate.py --land`; a bare push of a branch is refused.
 
 ## Where to put what
 
 Repeated fact: `atlas.yaml` plus a generated block. Language tool: its pack's `tools.yaml`. New
-rule: its own `*_errors()` and planted defect. Example: `examples/`, and it must run.
+rule: its own `*_errors()` and seeded defect. Example: `examples/`, and it must run.
 
 ## Runtime notes
 

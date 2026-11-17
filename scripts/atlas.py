@@ -674,7 +674,7 @@ def route(path_value: str, as_json: bool = False) -> int:
     print(f"resolved by the CALLER, not here: {', '.join(caller)}")
     print(f"evidence: {record['evidence']}")
     print(f"guide: {record['guide']}")
-    print(f"operating card: {record['operating_card']}")
+    print(f"operating card: {record['operating_card'].split('#')[0]} (section: Operating card)")
     print(f"tool manifest: {manifest}")
     for name, tools in (record.get("authority_by_class") or {}).items():
         named = ", ".join(f"{r}={v}" for r, v in tools.items() if v)
@@ -749,7 +749,7 @@ def plan_text(record: dict, language: str, task: str, change: str | None,
     """The same record, rendered. A reader gets prose; a consumer gets the record."""
     print(f"language/domain: {language}")
     print(f"guide: {record['guide']}")
-    print(f"operating card: {record['operating_card']}")
+    print(f"operating card: {record['operating_card'].split('#')[0]} (section: Operating card)")
     print(f"tool manifest: {record['tool_manifest']}")
     print(f"task: {task}")
     print("tools:")
@@ -809,7 +809,7 @@ def learn(language: str) -> int:
     auth = {k: " + ".join(str(i) for i in v) if isinstance(v, list) else v for k, v in raw_auth.items()}
     verify = (tools.get("provenance") or {}).get("verify") or []
     print(f"language: {target}")
-    print(f"card: {operating_card_ref(target)}")
+    print(f"card: {operating_card_ref(target).split('#')[0]} (section: Operating card)")
     print(f"fast path: {field('Fast path')}")
     print(f"native authority: {field('Native authority')}")
     print(f"research: {field('Research')}")
