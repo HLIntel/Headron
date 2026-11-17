@@ -96,13 +96,13 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Instrument | Recorded result |
 | :--- | :--- |
 | Enforcement | 31/31 breaks refused across 20 toolchains; **859** declared planted cases |
-| Failure ledger | 130 shapes, 224 sightings; 106 in-tree guarded, 24 host-only |
+| Failure ledger | 131 shapes, 226 sightings; 107 in-tree guarded, 24 host-only |
 | Field ledger | 940 verifications (136 clean); 1133 refusals; 394 landings; 711 lessons; 394 sessions |
 | Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,634 tokens. The 216 documents (739 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,634 tokens. The 216 documents (740 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -158,7 +158,7 @@ Generated on every build; `check` refuses drift.
 <!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
 
 - **52** hard invariants — enforced on every change, zero unowned
-- **371** agreement edges — each a file tied to the declaration it answers for
+- **376** agreement edges — each a file tied to the declaration it answers for
 - **95** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
 - **222** harness Python files — every one held by `lint` · `format` · `typecheck`

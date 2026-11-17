@@ -65,18 +65,18 @@ Before you answer, check your own draft against these. Each one was a real, repe
 - **a_generated_block_whose_input_is_the_index**: tell: the same block named twice in one session, each time after staging. Do instead: regenerate AFTER staging and stage again.
 - **an_allowed_binary_whose_argument_nothing_adjudicated**: tell: the sandbox function is correct and complete, and grep finds no call site that passes it a command argument. Do instead: argument_paths resolves the paths a command carries and hands each to the same path_verdict the sandbox control already names, so there is no second copy of the rules.
 - **a_success_rendering_read_as_an_answer**: tell: one answer path in the same file refuses an empty payload and another returns it, so the predicate was written twice and one copy is missing a clause. Do instead: every answer path judges its payload through one predicate that names the paths it requires, and a numeric zero or false stays an answer because those are values.
+- **a_non_answer_scored_as_wrong**: tell: a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess. Do instead: score returns None for a non-answer, and a run holding any None is refused.
 - **a_fixture_that_names_what_it_could_read**: tell: the test's hard-coded value no longer exists in the file, so its planted edit changes nothing and the test still passes. Do instead: atlas_test.mutated, which refuses when the planted text equals the original.
 - **an_instrument_wrong_in_its_scope**: tell: every sum is correct, but it was computed over the wrong set of items. Do instead: every instrument declaring what it does NOT measure, and a closer that disagrees.
 - **a_test_that_inherits_the_host_environment**: tell: the same commit passes on one host and fails on another. Do instead: spawn sys.executable, put a python shim for it first on PATH, and pass a noreply author and committer identity in env= to every planted commit, and declare toolchain-gated cases with testgroups.host_skipped so the pin counts them and CI refuses them.
 - **a_guard_matched_on_the_tool_name_rather_than_the_act**: tell: the guard has no misses to show. Do instead: match the ACT, never the tool that performs it.
 - **a_generator_that_reads_the_disk_not_the_tree**: tell: the generated table links to files under an ignored build directory that exist only on the machine that ran the example. Do instead: example walks read the tracked tree.
-- **a_non_answer_scored_as_wrong**: tell: a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess. Do instead: score returns None for a non-answer, and a run holding any None is refused.
 - **a_count_typed_into_prose**: tell: a number in a document disagrees with what the tool prints today, and no tool generated that number. Do instead: the generated blocks, and a reviewer who asks where a number came from.
 
 ## Load only when needed
 
 - `references/routes.md`: file extension → language pack → the command for each gate
-- `references/shapes.md`: one line per recorded failure shape (130): id, scope, tell. Find the one that fits, then read only its `## <id>` section of `references/failures.md`
+- `references/shapes.md`: one line per recorded failure shape (131): id, scope, tell. Find the one that fits, then read only its `## <id>` section of `references/failures.md`
 - `references/moves.md`: every proven move (52), with when it applies and how to verify it
 
 ## When you or the user get something wrong

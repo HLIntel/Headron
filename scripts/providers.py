@@ -22,6 +22,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -91,12 +93,15 @@ PROVIDERS: dict[str, dict] = {
         "keys": ["CLOUDFLARE_API_TOKEN"],
         "rpm": 60,
     },
+    # THE KILO GATEWAY, as the first external freebench run reached it. Its listing flags each free
+    # model (`isFree`); those answer without a key. Every other model on it bills the key.
     "kilo": {
-        "url": "http://127.0.0.1:8080/v1/chat/completions",
+        "url": "https://api.kilo.ai/api/gateway/v1/chat/completions",
+        "models_url": "https://api.kilo.ai/api/gateway/models",
         "url_keys": ["HEADRON_KILO_URL", "KILO_BASE_URL"],
-        "keys": ["KILO_API_KEY"],
+        "keys": ["KILOCODE_API_KEY", "KILO_API_KEY"],
         "optional_key": True,
-        "rpm": 60,
+        "rpm": 20,
     },
     "kaggle": {
         "url": "https://api.kaggle.com/v1/chat/completions",
@@ -197,6 +202,86 @@ def resolve_fallback(chain: list[str], timeout: float = 2.0) -> str | None:
         if probe_provider(name, timeout=timeout):
             return name
     return None
+
+
+def list_models(name: str, timeout: float = 20.0) -> list[dict]:
+    """[{id, free}] from a provider's model listing; `free` is None where the listing carries no flag.
+
+    A LISTING IS NOT A MODEL THAT ANSWERS: an id here is a candidate until `canary` drives a request through it."""
+    url, headers = endpoint(name)
+    url = PROVIDERS[name].get("models_url") or url.replace("/chat/completions", "/models")
+    request = urllib.request.Request(url, headers=headers, method="GET")  # noqa: S310 — declared endpoints
+    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+        payload = json.load(response)
+    rows = payload.get("data", []) if isinstance(payload, dict) else payload
+    return [
+        {"id": str(m["id"]), "free": m["isFree"] if isinstance(m.get("isFree"), bool) else None}
+        for m in rows
+        if isinstance(m, dict) and m.get("id")
+    ]
+
+
+def identity(requested: str, served: object) -> str:
+    """match | differs | unreported. A router lane serves some OTHER model under its own name, so a
+    record is named by what answered, never by what was asked for (`a_chain_lane_read_as_a_model`)."""
+    if not isinstance(served, str) or not served.strip():
+        return "unreported"
+    want, got = requested.lower().split(":")[0], served.lower().split(":")[0]
+    tail = lambda s: s.rsplit("/", 1)[-1]  # noqa: E731 — vendors add or drop an org prefix
+    return "match" if tail(got) == tail(want) or tail(got).startswith(tail(want)) else "differs"
+
+
+CANARY = "Reply with exactly this token and nothing else: HEADRON-{n}"
+
+
+def canary(name: str, model: str, timeout: int = 60, max_tokens: int = 400) -> dict:
+    """One live request through one model: whether it answered, what served it, how long it took.
+
+    ONE ATTEMPT, NO RETRY, NO REPLAY: a census records the lane as it is now. A refusal of any kind is
+    `not_run` with its class, never a wrong answer — the transport failed, the model was not asked."""
+    n = int(hashlib.sha256(f"{name}/{model}".encode()).hexdigest()[:6], 16) % 10000
+    token = f"HEADRON-{n}"
+    row: dict = {"provider": name, "model": model, "status": "not_run", "error": None, "served": None}
+    try:
+        url, headers = endpoint(name)
+        _PACERS.setdefault(name, resilience.Pacer(PROVIDERS[name]["rpm"])).wait()
+        body = {"model": model, "temperature": 0, "max_tokens": max_tokens}
+        body["messages"] = [{"role": "user", "content": CANARY.format(n=n)}]
+        request = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)  # noqa: S310
+        t0 = time.monotonic()
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+            payload = json.load(response)
+        row["seconds"] = round(time.monotonic() - t0, 2)
+        resilience.answer_or_refuse(name, payload, ("choices.0.message.content",))
+    except (OSError, ValueError, KeyError, resilience.BreakerOpen) as err:
+        status = getattr(err, "code", None)
+        row["error"] = f"{resilience.classify(error=err)}:{status or type(err).__name__}"
+        return row
+    answer = str(payload["choices"][0]["message"]["content"] or "")
+    usage = payload.get("usage") or {}
+    row.update(
+        status="alive",
+        served=payload.get("model"),
+        identity=identity(model, payload.get("model")),
+        followed=answer.strip().strip(".`'\"") == token,
+        tokens_out=usage.get("completion_tokens"),
+    )
+    return row
+
+
+def census(names: list[str], free_only: bool = True, limit: int | None = None) -> list[dict]:
+    """Every listed model on each named provider, canaried once. With `free_only`, a listing that FLAGS
+    price keeps only its free models; a listing with no flag is kept whole (its key's tier decides)."""
+    rows: list[dict] = []
+    for name in names:
+        try:
+            listed = list_models(name)
+        except (OSError, ValueError, KeyError) as err:
+            rows.append({"provider": name, "model": None, "status": "not_run", "error": f"listing:{err}"[:160]})
+            continue
+        keep = [m for m in listed if not free_only or m["free"] is not False][:limit]
+        rows += [{**canary(name, m["id"]), "free": m["free"]} for m in keep]
+    return rows
 
 
 _PACERS: dict[str, resilience.Pacer] = {}
@@ -325,7 +410,26 @@ def _claude_cli(provider: str, model: str, prompt: str, timeout: int) -> tuple[s
 
 
 def main(argv: list[str] | None = None) -> int:
-    """`providers.py` lists each provider and whether its key NAME is set — values are never shown."""
+    """`providers.py` lists each provider and whether its key NAME is set — values are never shown.
+
+    `providers.py --census groq,kilo [--all-prices] [--limit N] [--out FILE]` canaries every listed model
+    once and writes the rows as JSON (outside the repository: a census is derived from vendors)."""
+    argv = sys.argv[1:] if argv is None else argv
+    if "--census" in argv:
+        names = argv[argv.index("--census") + 1].split(",")
+        limit = int(argv[argv.index("--limit") + 1]) if "--limit" in argv else None
+        rows = census(names, free_only="--all-prices" not in argv, limit=limit)
+        for name in names:
+            mine = [r for r in rows if r["provider"] == name]
+            alive = [r for r in mine if r["status"] == "alive"]
+            print(
+                f"  {name:<11} listed-and-asked {len(mine):<4} alive {len(alive):<4} followed "
+                f"{sum(bool(r.get('followed')) for r in alive):<4} served-as-other "
+                f"{sum(r.get('identity') == 'differs' for r in alive)}"
+            )
+        if "--out" in argv:
+            atomicfile.write_text(Path(argv[argv.index("--out") + 1]), json.dumps(rows, indent=1) + "\n")
+        return 0 if any(r["status"] == "alive" for r in rows) else 1
     for name, spec in sorted(PROVIDERS.items()):
         ready = not spec["keys"] or any(os.environ.get(k) for k in spec["keys"])
         print(
@@ -335,8 +439,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    import sys
-
     if {"-h", "--help"} & set(sys.argv[1:]):  # a script with no parser would RUN on --help
         print((__doc__ or sys.argv[0]).strip())
         sys.exit(0)

@@ -85,7 +85,7 @@ flowchart LR
 | [gaterunner](../scripts/gaterunner.py) | Bounded process capture shared by verification,… | 3 |  | [gaterunner_test](../scripts/gaterunner_test.py), [readiness_test](../scripts/readiness_test.py) |
 | [gitobject](../scripts/gitobject.py) | Git's object identity, computed in this… | 3 |  | [gitobject_test](../scripts/gitobject_test.py) |
 | [mind](../scripts/mind.py) | Headron Mind API — unified orchestration layer… | 3 | adaptive, agentpolicy, atlasindex, decide, graph, knowledge, microprogram, mind_diagnostics, port, receipt, reflex, safeedit, slot, sweep, verify | [mcp_test](../scripts/mcp_test.py), [microprogram_test](../scripts/microprogram_test.py) +1 |
-| [providers](../scripts/providers.py) | Where a measurement may send a prompt:… | 3 | atomicfile, resilience | [agent_test](../scripts/agent_test.py) |
+| [providers](../scripts/providers.py) | Where a measurement may send a prompt:… | 3 | atomicfile, resilience | [agent_test](../scripts/agent_test.py), [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
 | [receiptsign](../scripts/receiptsign.py) | Who wrote a receipt: a detached SSH signature… | 3 | receipt | [receiptsign_test](../scripts/receiptsign_test.py) |
 | [reflex](../scripts/reflex.py) | Command classification primitives — single-pass… | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |
 | [roster](../scripts/roster.py) | instrument_roster: which scripts are… | 3 | cidrift, cipipeline, dirscope, importgraph | [atlas_rules_test](../scripts/atlas_rules_test.py) |

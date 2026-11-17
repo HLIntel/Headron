@@ -2629,14 +2629,23 @@ agent_failure_modes:
     sightings: 1
     prevented_by: profiles declare `extends`, and required_gates resolves the base first
   a_non_answer_scored_as_wrong:
-    enforced_by: [taskbench.score, agentbench.record_errors]
+    enforced_by: [taskbench.score, agentbench.record_errors, multimodel_bench.benchmark_single, multimodel_bench.benchmark_cooperative]
     shape: a scorer maps a refusal, a decline or an unparsed format onto WRONG, so the number
       measures the prompt or the parser instead of the model
     looks_like: a large, clean improvement
     tell: 'a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess'
-    sightings: 3
+    sightings: 4
     prevented_by: score returns None for a non-answer, and a run holding any None is refused; an
       external cross-model record with any errored record must declare its error_policy
+  a_flat_task_read_as_a_ranking:
+    enforced_by: [multimodel_bench.discrimination, multimodel_bench.screen_ranking]
+    shape: a task every lane passes, or every lane fails, moves every lane's score by the same amount
+      and is read as part of the ranking, so it adds width to a table and no information to an order
+    looks_like: a suite whose totals differ by less than one task's weight, or a round with one score for every lane
+    tell: 'one task at 0.0 in every lane, or one round at the same rate in every lane'
+    sightings: 1
+    prevented_by: the screen splits tasks into flat_pass, flat_fail, discriminating and unmeasured over the
+      lanes that answered, ranks on the discriminating tasks only, and reports each lane with a Wilson interval
   a_plant_that_does_not_fail:
     enforced_by: [agentbench.plant_errors]
     shape: a benchmark task's planted bug passes the task's own test, always or on some hash seeds,
@@ -2648,7 +2657,7 @@ agent_failure_modes:
     prevented_by: agentbench runs each task's tests against its plant under 32 hash seeds and spends
       no agent unless every seed fails by assertion; a reference fix kept outside the task must pass
   a_chain_lane_read_as_a_model:
-    enforced_by: [agentbench.record_errors]
+    enforced_by: [agentbench.record_errors, providers.identity]
     shape: a router-chain lane is ranked as if it were a model, while the router served whichever
       model answered first, so several lanes are one model and a dead first choice is invisible
     looks_like: five distinct free models clustered at one score

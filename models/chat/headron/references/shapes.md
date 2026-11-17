@@ -9,6 +9,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_generated_block_whose_input_is_the_index` (any): the same block named twice in one session, each time after staging
 - `an_allowed_binary_whose_argument_nothing_adjudicated` (any): the sandbox function is correct and complete, and grep finds no call site that passes it a command argument
 - `a_success_rendering_read_as_an_answer` (any): one answer path in the same file refuses an empty payload and another returns it, so the predicate was written twice and one copy is missing a clause
+- `a_non_answer_scored_as_wrong` (any): a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
 - `a_fixture_that_names_what_it_could_read` (any): the test's hard-coded value no longer exists in the file, so its planted edit changes nothing and the test still passes
 - `a_guard_that_crashes_on_another_guards_input` (headron): one checker throws a traceback on malformed input, and the checker whose job is to report that input never runs
 - `an_instrument_wrong_in_its_scope` (any): every sum is correct, but it was computed over the wrong set of items
@@ -16,7 +17,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_guard_matched_on_the_tool_name_rather_than_the_act` (any): the guard has no misses to show
 - `a_flow_value_split_on_a_comma` (headron): the loaded record has a key made of words and no value, and the field it split from ends mid-sentence
 - `a_generator_that_reads_the_disk_not_the_tree` (any): the generated table links to files under an ignored build directory that exist only on the machine that ran the example
-- `a_non_answer_scored_as_wrong` (any): a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
 - `a_count_typed_into_prose` (any): a number in a document disagrees with what the tool prints today, and no tool generated that number
 - `a_blanket_rule_over_unlike_things` (any): after the fix, files that were fine before start failing, because the rule matched a suffix or folder whose members are not alike
 - `a_generated_block_carrying_a_relative_link` (any): the same generated block links correctly in one document and to a missing page in another
@@ -64,6 +64,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_search_that_skips_what_it_cannot_see` (any): a Python scanner over the same paths finds hits that grep in an agent shell did not
 - `a_gate_that_aliases_another` (any): race_detection resolves to `go test` without -race, and so do timeout, auth and contract tests
 - `a_class_that_skipped_its_base` (any): an API or security change must pass its own gates but not the compile, format and unit tests every code change needs
+- `a_flat_task_read_as_a_ranking` (any): one task at 0.0 in every lane, or one round at the same rate in every lane
 - `a_chain_lane_read_as_a_model` (any): small, code, judge, cheap and deep all served codestral after their first choices returned 400, and scored 0.861 to 0.877 in one external run
 - `a_named_mechanism_that_does_not_exist` (any): the policy says a scheduled workflow runs these examples, and the workflows directory holds no such file
 - `a_bad_result_captioned_and_passed` (any): a surprising score is published beside a baseline or caveat, with no miss ever printed
