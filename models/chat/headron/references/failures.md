@@ -51,6 +51,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: one answer path in the same file refuses an empty payload and another returns it, so the predicate was written twice and one copy is missing a clause
 - do instead: every answer path judges its payload through one predicate that names the paths it requires, and a numeric zero or false stays an answer because those are values
 
+## a_non_answer_scored_as_wrong
+
+- shape: a scorer maps a refusal, a decline or an unparsed format onto WRONG, so the number measures the prompt or the parser instead of the model
+- looks like: a large, clean improvement
+- tell: a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
+- do instead: score returns None for a non-answer, and a run holding any None is refused; an external cross-model record with any errored record must declare its error_policy
+
 ## a_fixture_that_names_what_it_could_read
 
 - shape: a test anchoring on a literal — a version, a budget, a file list — that later moves
@@ -99,13 +106,6 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a green pre-commit and a red Contract job on the same commit
 - tell: the generated table links to files under an ignored build directory that exist only on the machine that ran the example
 - do instead: example walks read the tracked tree. DECLARED BLIND SPOT, a promise to come back — about 25 other globs still walk the disk, over directories no build writes into today
-
-## a_non_answer_scored_as_wrong
-
-- shape: a scorer maps a refusal, a decline or an unparsed format onto WRONG, so the number measures the prompt or the parser instead of the model
-- looks like: a large, clean improvement
-- tell: a blind arm scores near zero on a yes/no question, below a coin flip, because the model declined to guess
-- do instead: score returns None for a non-answer, and a run holding any None is refused; an external cross-model record with any errored record must declare its error_policy
 
 ## a_count_typed_into_prose
 
@@ -435,6 +435,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a complete checklist for the special case
 - tell: an API or security change must pass its own gates but not the compile, format and unit tests every code change needs
 - do instead: profiles declare `extends`, and required_gates resolves the base first
+
+## a_flat_task_read_as_a_ranking
+
+- shape: a task every lane passes, or every lane fails, moves every lane's score by the same amount and is read as part of the ranking, so it adds width to a table and no information to an order
+- looks like: a suite whose totals differ by less than one task's weight, or a round with one score for every lane
+- tell: one task at 0.0 in every lane, or one round at the same rate in every lane
+- do instead: the screen splits tasks into flat_pass, flat_fail, discriminating and unmeasured over the lanes that answered, ranks on the discriminating tasks only, and reports each lane with a Wilson interval
 
 ## a_chain_lane_read_as_a_model
 

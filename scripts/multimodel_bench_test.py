@@ -70,6 +70,76 @@ class TestMultiModelBench(unittest.TestCase):
         self.assertEqual(calls[0], ("router", "small"))
         self.assertEqual(calls[1], ("router", "code"))
 
+    @patch("providers.complete")
+    def test_a_non_answer_is_not_scored(self, mock_complete: Any) -> None:
+        # transport error on blind, empty reply on headron: both NOT RUN, neither wrong, neither in the denominator
+        def fake_complete(provider: str, model: str, prompt: str, timeout: int, max_tokens: int) -> tuple[str, int]:
+            if "Rule A:" in prompt:
+                return "  ", 0
+            raise OSError("reset")
+
+        mock_complete.side_effect = fake_complete
+        qs = [{"kind": "hygiene", "task": "h0", "truth": ["yes"], "blind": "ask", "headron": "Rule A:\nask"}]
+        res = multimodel_bench.benchmark_single("router", "small", qs, timeout=5)
+        self.assertEqual(res["questions"]["h0"], {"blind": "not_run", "headron": "not_run"})
+        self.assertEqual(res["overall"]["blind_not_run"], 1)
+        self.assertEqual(res["overall"]["headron_not_run"], 1)
+        self.assertEqual(res["kinds"]["hygiene"]["blind"]["not_run"], 1)
+        coop = multimodel_bench.benchmark_cooperative("router", "small", "router", "code", qs, timeout=5)
+        self.assertEqual((coop["correct"], coop["not_run"]), (0, 1))
+
+    def test_discrimination_drops_flat_tasks(self) -> None:
+        def lane(model: str, verdicts: dict[str, str]) -> dict[str, Any]:
+            return {"provider": "p", "model": model, "questions": {t: {"blind": v} for t, v in verdicts.items()}}
+
+        lanes = [
+            lane("a", {"all_pass": "correct", "all_fail": "wrong", "split": "correct", "solo": "correct"}),
+            lane("b", {"all_pass": "correct", "all_fail": "wrong", "split": "wrong", "solo": "not_run"}),
+            lane("c", {"all_pass": "correct", "all_fail": "not_run", "split": "not_run"}),
+        ]
+        d = multimodel_bench.discrimination(lanes)
+        self.assertEqual(d["flat_pass"], ["all_pass"])
+        self.assertEqual(d["flat_fail"], ["all_fail"])
+        self.assertEqual(d["discriminating"], ["split"])
+        self.assertEqual(d["unmeasured"], ["solo"])
+        rank = multimodel_bench.screen_ranking(lanes)
+        self.assertEqual([(r["lane"], r["correct"], r["answered"]) for r in rank][0], ("p:a", 1, 1))
+        by = {r["lane"]: r for r in rank}
+        self.assertEqual((by["p:c"]["answered"], by["p:c"]["not_run"]), (0, 1))
+
+    def test_wilson_interval(self) -> None:
+        self.assertEqual(multimodel_bench.wilson(0, 0), (0.0, 1.0))
+        lo, hi = multimodel_bench.wilson(8, 10)
+        self.assertEqual((lo, hi), (0.49, 0.943))
+        self.assertLess(multimodel_bench.wilson(80, 100)[1] - multimodel_bench.wilson(80, 100)[0], hi - lo)
+
+    def test_identity_names_the_served_model(self) -> None:
+        import providers
+
+        self.assertEqual(providers.identity("meta-llama/llama-3.3-70b:free", "llama-3.3-70b"), "match")
+        self.assertEqual(providers.identity("x/glm-4.5-air:free", "openrouter/auto"), "differs")
+        self.assertEqual(providers.identity("x/glm-4.5-air", ""), "unreported")
+
+    def test_canary_failure_is_not_run_with_a_class(self) -> None:
+        import urllib.error
+
+        import providers
+
+        err = urllib.error.HTTPError("u", 429, "slow down", {}, None)  # type: ignore[arg-type]
+        with (
+            patch("providers.endpoint", return_value=("http://x", {})),
+            patch("urllib.request.urlopen", side_effect=err),
+        ):
+            row = providers.canary("groq", "m")
+        self.assertEqual(row["status"], "not_run")
+        self.assertTrue(row["error"].startswith("transient:"), row)
+        spent = urllib.error.HTTPError("u", 402, "", {}, None)  # type: ignore[arg-type]
+        with (
+            patch("providers.endpoint", return_value=("http://x", {})),
+            patch("urllib.request.urlopen", side_effect=spent),
+        ):
+            self.assertTrue(providers.canary("groq", "m")["error"].startswith("exhausted:"))
+
     def test_format_matrix_markdown(self) -> None:
         benchmarks = [
             {

@@ -18,7 +18,7 @@ from typing import Any, cast
 import providers
 import taskbench
 from abtest import _reader_lock
-from atlascore import atlas
+from atlascore import atlas, text_of
 
 
 def select_questions(kinds: list[str], sample_diagnose: int | None = None) -> list[dict[str, Any]]:
@@ -46,15 +46,24 @@ def benchmark_single(
         "provider": provider,
         "model": model,
         "kinds": {},
-        "overall": {"blind_correct": 0, "headron_correct": 0, "total": 0, "blind_tokens": 0, "headron_tokens": 0},
+        "questions": {},
+        "overall": {
+            "blind_correct": 0,
+            "headron_correct": 0,
+            "blind_not_run": 0,
+            "headron_not_run": 0,
+            "total": 0,
+            "blind_tokens": 0,
+            "headron_tokens": 0,
+        },
     }
     for q in questions:
         kind = q["kind"]
         k_entry = summary["kinds"].setdefault(
             kind,
             {
-                "blind": {"correct": 0, "asked": 0, "tokens": 0, "latency_s": 0.0},
-                "headron": {"correct": 0, "asked": 0, "tokens": 0, "latency_s": 0.0},
+                arm: {"correct": 0, "asked": 0, "not_run": 0, "tokens": 0, "latency_s": 0.0}
+                for arm in ("blind", "headron")
             },
         )
         for arm in ("blind", "headron"):
@@ -64,16 +73,20 @@ def benchmark_single(
             except (OSError, ValueError, KeyError):
                 ans, tok = "", 0
             elapsed = time.monotonic() - t0
-            tok_count = tok or 0
+            # A NON-ANSWER IS NOT A WRONG ANSWER (`a_non_answer_scored_as_wrong`). A transport error, an
+            # empty reply or a decline the scorer cannot read is NOT RUN: it leaves the denominator.
             v = taskbench.score(q, ans) if ans.strip() else None
-            is_correct = bool(v)
+            verdict = "not_run" if v is None else "correct" if v else "wrong"
+            summary["questions"].setdefault(q["task"], {})[arm] = verdict
             cell = k_entry[arm]
             cell["asked"] += 1
-            cell["correct"] += int(is_correct)
-            cell["tokens"] += tok_count
+            cell["not_run"] += int(verdict == "not_run")
+            cell["correct"] += int(verdict == "correct")
+            cell["tokens"] += tok or 0
             cell["latency_s"] += elapsed
-            summary["overall"][f"{arm}_correct"] += int(is_correct)
-            summary["overall"][f"{arm}_tokens"] += tok_count
+            summary["overall"][f"{arm}_correct"] += int(verdict == "correct")
+            summary["overall"][f"{arm}_not_run"] += int(verdict == "not_run")
+            summary["overall"][f"{arm}_tokens"] += tok or 0
         summary["overall"]["total"] += 1
     return summary
 
@@ -92,6 +105,7 @@ def benchmark_cooperative(
         "lead": f"{lead_provider}:{lead_model}",
         "peer": f"{peer_provider}:{peer_model}",
         "correct": 0,
+        "not_run": 0,
         "total": len(questions),
         "tokens": 0,
         "latency_s": 0.0,
@@ -110,10 +124,64 @@ def benchmark_cooperative(
             peer_ans, peer_tok = "", 0
         elapsed = time.monotonic() - t0
         v = taskbench.score(q, peer_ans) if peer_ans.strip() else None
-        results["correct"] += int(bool(v))
+        results["correct"] += int(v is True)
+        results["not_run"] += int(v is None)  # a non-answer leaves the denominator, never scores wrong
         results["tokens"] += (lead_tok or 0) + (peer_tok or 0)
         results["latency_s"] += elapsed
     return results
+
+
+def wilson(correct: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95% Wilson interval for a pass rate. Two lanes whose intervals overlap are a TIE, not a ranking."""
+    if n == 0:
+        return (0.0, 1.0)
+    p = correct / n
+    centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / (1 + z * z / n)
+    return (round(max(centre - half, 0.0), 3), round(min(centre + half, 1.0), 3))
+
+
+def discrimination(benchmarks: list[dict[str, Any]], arm: str = "blind") -> dict[str, list[str]]:
+    """Split tasks into flat_pass, flat_fail and discriminating over the lanes that ANSWERED each one.
+
+    A TASK EVERY LANE PASSES, OR EVERY LANE FAILS, RANKS NOBODY. MEASURED in the first freebench run:
+    FIX_ratelimit scored 0.0 in every lane and the context round .938 in every lane, so both moved
+    each lane by the same amount and read as a result. Such a task is reported and left out of the score.
+    A task fewer than two lanes answered cannot discriminate either, and is `unmeasured`."""
+    out: dict[str, list[str]] = {"flat_pass": [], "flat_fail": [], "discriminating": [], "unmeasured": []}
+    tasks = sorted({t for b in benchmarks for t in b.get("questions", {})})
+    for task in tasks:
+        verdicts = [b["questions"][task][arm] for b in benchmarks if task in b.get("questions", {})]
+        answered = [v for v in verdicts if v != "not_run"]
+        if len(answered) < 2:
+            out["unmeasured"].append(task)
+        elif all(v == "correct" for v in answered):
+            out["flat_pass"].append(task)
+        elif all(v == "wrong" for v in answered):
+            out["flat_fail"].append(task)
+        else:
+            out["discriminating"].append(task)
+    return out
+
+
+def screen_ranking(benchmarks: list[dict[str, Any]], arm: str = "blind") -> list[dict[str, Any]]:
+    """Each lane scored on the discriminating tasks only, with its Wilson interval, best first."""
+    keep = set(discrimination(benchmarks, arm)["discriminating"])
+    rows = []
+    for b in benchmarks:
+        verdicts = [b["questions"][t][arm] for t in keep if t in b.get("questions", {})]
+        answered = [v for v in verdicts if v != "not_run"]
+        correct = sum(v == "correct" for v in answered)
+        rows.append(
+            {
+                "lane": f"{b['provider']}:{b['model']}",
+                "correct": correct,
+                "answered": len(answered),
+                "not_run": len(verdicts) - len(answered),
+                "ci95": wilson(correct, len(answered)),
+            }
+        )
+    return sorted(rows, key=lambda r: (-r["ci95"][0], -r["correct"]))
 
 
 def format_matrix_markdown(benchmarks: list[dict[str, Any]], cooperative: dict[str, Any] | None = None) -> str:
@@ -125,8 +193,8 @@ def format_matrix_markdown(benchmarks: list[dict[str, Any]], cooperative: dict[s
     for b in benchmarks:
         ov = b["overall"]
         tot = ov["total"] or 1
-        b_acc = (ov["blind_correct"] / tot) * 100
-        h_acc = (ov["headron_correct"] / tot) * 100
+        b_acc = ov["blind_correct"] / max(ov["total"] - ov.get("blind_not_run", 0), 1) * 100
+        h_acc = ov["headron_correct"] / max(ov["total"] - ov.get("headron_not_run", 0), 1) * 100
         lift = h_acc - b_acc
         b_tok = ov["blind_tokens"] // tot
         h_tok = ov["headron_tokens"] // tot
@@ -136,7 +204,7 @@ def format_matrix_markdown(benchmarks: list[dict[str, Any]], cooperative: dict[s
         lines.append(f"| {name} | {b_acc:.1f}% | {h_acc:.1f}% | +{lift:.1f}% | {b_tok} / {h_tok} | {avg_lat:.2f}s |")
     if cooperative:
         tot_c = cooperative["total"] or 1
-        c_acc = (cooperative["correct"] / tot_c) * 100
+        c_acc = cooperative["correct"] / max(cooperative["total"] - cooperative.get("not_run", 0), 1) * 100
         c_tok = cooperative["tokens"] // tot_c
         c_lat = cooperative["latency_s"] / tot_c
         c_name = f"`cooperative:{cooperative['lead']}+{cooperative['peer']}`"
@@ -166,6 +234,8 @@ def run_matrix(
         "kinds": kinds,
         "models": benchmarks,
         "cooperative": coop,
+        "discrimination": discrimination(benchmarks),
+        "ranking": screen_ranking(benchmarks),
     }
 
 
@@ -181,6 +251,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=cast(str, __doc__).split("\n", 1)[0])
     parser.add_argument("--models", default="router:small,router:code", help="comma-separated provider:model pairs")
     parser.add_argument("--auto", action="store_true", help="auto-discover available providers")
+    parser.add_argument(
+        "--models-from", default="", help="a `providers.py --census` JSON: every lane that answered AS ITSELF"
+    )
     parser.add_argument("--kinds", default="hygiene,plan", help="comma-separated kinds: hygiene,plan,diagnose")
     parser.add_argument("--sample-diagnose", type=int, default=5, help="max diagnose questions to include")
     parser.add_argument("--peer", default="", help="optional reviewer provider:model for cooperative ensemble")
@@ -190,7 +263,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     providers.set_live(args.live)
-    if args.auto:
+    if args.models_from:
+        rows = json.loads(text_of(Path(args.models_from)))
+        # a lane served as another model is that other model's record, not this name's
+        model_pairs = [
+            (r["provider"], r["model"]) for r in rows if r["status"] == "alive" and r.get("identity") != "differs"
+        ]
+    elif args.auto:
         active = providers.available_providers()
         print(f"Auto-discovered active providers: {', '.join(active)}")
         # Default models for active providers
@@ -212,6 +291,13 @@ def main(argv: list[str] | None = None) -> int:
     print("\n# Headron Multi-Model Benchmark Matrix\n")
     print(table)
     print()
+    flat = matrix["discrimination"]
+    print(
+        f"discriminating {len(flat['discriminating'])} · flat pass {len(flat['flat_pass'])} · "
+        f"flat fail {len(flat['flat_fail'])} · unmeasured {len(flat['unmeasured'])} (flat tasks are left out)"
+    )
+    for r in matrix["ranking"]:
+        print(f"  {r['lane']:<60} {r['correct']}/{r['answered']}  ci95 {r['ci95']}  not run {r['not_run']}")
 
     if args.json_out:
         out_path = Path(args.json_out)
