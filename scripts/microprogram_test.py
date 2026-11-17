@@ -525,10 +525,17 @@ def extract_cases(module: ModuleType) -> None:
         git(root, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "base")
         (root / "a.py").write_text("x = 1\n", encoding="utf-8")
         contract = Path(tmp) / "task.json"
-        contract.write_text(
-            json.dumps({"change_class": "source_change", "acceptance": {"required_checks": ["smoke"]}}),
-            encoding="utf-8",
+        head = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True, text=True, check=True, timeout=60
         )
+        task_contract = {"change_class": "source_change", "acceptance": {"required_checks": ["smoke"]}}
+        contract.write_text(json.dumps(task_contract), encoding="utf-8")  # PLANTED: no base_commit
+        try:
+            obligations.extract("t", contract, root)
+            fail("a contract with no base_commit was read against HEAD: a committed change would vanish")
+        except obligations.LedgerError:
+            pass
+        contract.write_text(json.dumps({**task_contract, "base_commit": head.stdout.strip()}), encoding="utf-8")
         if obligations.coverage("t", contract, root) == []:
             fail("an empty ledger read as covering a changed file")
         first = obligations.extract("t", contract, root)
@@ -551,7 +558,12 @@ def extract_cases(module: ModuleType) -> None:
         ask = microprogram.run("task.obligations", {"task": "t", "contract": str(contract), "root": str(root)})
         if ask.status != "refused" or "extract" not in (ask.next or ""):
             fail(f"an uncovered change answered {ask.status} {ask.next!r}, not refused naming extract")
-        (root / "c.py").unlink()
+        git(root, "add", "-A")
+        git(root, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "late")  # PLANTED: committed
+        if not any("does not cover c.py" in finding for finding in obligations.coverage("t", contract, root)):
+            fail("a file committed after extraction read covered: the change list lost a committed file")
+        git(root, "rm", "-q", "c.py")
+        git(root, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "drop late")
         (root / "b.zzz").write_text("z\n", encoding="utf-8")  # PLANTED: a file no route reads
         if not any(f.startswith("gap ") and "b.zzz" in f for f in obligations.coverage("t", contract, root)):
             fail("a changed file no route reads was not a gap: a skipped check read as a pass")
