@@ -77,6 +77,15 @@ def test_unpaired_and_errored_tasks_left_out() -> None:
     assert metrics["paired_tasks"] == 2 and metrics["arms"]["blind"]["total_tasks"] == 2, metrics["arms"]
 
 
+def test_zero_baseline_says_unmeasured() -> None:
+    # A baseline arm that recorded no tokens, time or cost leaves its deltas None; the table must say so, not crash.
+    tasks = {"t": {"blind": _run(True, True, 0.0, 0, 0.0), "headron": _run(True, True, 0.0, 0, 0.0)}}
+    metrics = compute_economic_metrics({"agent": {"tasks": tasks}}, ci_cycle_s=0.0, ci_runner_usd=0.0)
+    assert metrics["advantages"]["direct_token_change_pct"] is None, metrics["advantages"]
+    table = format_summary_table(metrics)
+    assert "unmeasured (zero baseline)" in table and "None" not in table, table
+
+
 def test_empty_records_unmeasured() -> None:
     metrics = compute_economic_metrics({})
     assert (metrics["status"], metrics["arms"], metrics["advantages"], metrics["context_routing"]) == (
@@ -108,6 +117,7 @@ def run_cases() -> None:
         test_unpaired_and_errored_tasks_left_out,
         test_empty_records_unmeasured,
         test_sources_are_hashed,
+        test_zero_baseline_says_unmeasured,
     ):
         case()
         print(f"  ok    {case.__name__}")
