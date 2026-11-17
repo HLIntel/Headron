@@ -150,7 +150,7 @@
     {
       "id": "know_common_errors",
       "answer": "Met",
-      "evidence": "docs/patterns/BOUNDARY-BREAKAGE.md",
+      "evidence": "docs/PATTERNS.md#safe-boundaries",
       "note": "boundary contracts and the failure tests for them"
     },
     {

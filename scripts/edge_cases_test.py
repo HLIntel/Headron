@@ -151,7 +151,7 @@ def promoted_invariant_cases() -> None:
             "shipping an MCP server no published profile names",
         ),
         (
-            "docs/patterns/BOUNDARY-BREAKAGE.md",
+            "docs/PATTERNS.md",
             "timeout",
             "deadline",
             "production_boundaries_are_contracts",

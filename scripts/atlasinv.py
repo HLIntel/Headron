@@ -331,9 +331,9 @@ def _inv_mcp_is_task_scoped() -> str | None:
 
 
 def _inv_production_boundaries() -> str | None:
-    doc = read("docs/patterns/BOUNDARY-BREAKAGE.md")
+    doc = read("docs/PATTERNS.md")
     missing = [k for k in ("schema", "version", "timeout") if k not in doc.lower()]
-    return f"BOUNDARY-BREAKAGE.md does not name: {', '.join(missing)}" if missing else None
+    return f"PATTERNS.md does not name: {', '.join(missing)}" if missing else None
 
 
 def _inv_goal_acceptance_is_explicit() -> str | None:
@@ -799,7 +799,7 @@ def mechanism_doc_errors() -> list[str]:
     map of where the enforcement used to be missing.
 
     The roster is derived from atlas.yaml/instruments rather than typed, so an instrument added
-    beside these documents widens what counts automatically. `docs/patterns/` and the mechanism pages
+    beside these documents widens what counts automatically. `docs/PATTERNS.md` and the mechanism pages
     under `docs/systems/` are in scope; an index page is not, because a page whose job is to link
     elsewhere has no mechanism of its own.
     """

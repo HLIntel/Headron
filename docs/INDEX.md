@@ -58,7 +58,7 @@ Start with the task below; the index is a map, not a reading list.
 | Git/worktrees | [GIT-WORKTREES.md](GIT-WORKTREES.md) |
 | symlinks/paths | [SYMLINKS-PATHS.md](SYMLINKS-PATHS.md) |
 | entry and landing | [ENTRY-PLAN.md](ENTRY-PLAN.md) |
-| context efficiency | [CONTEXT-EFFICIENCY.md](patterns/CONTEXT-EFFICIENCY.md) · [ENCODING.md](ENCODING.md) |
+| context efficiency | [PATTERNS.md](PATTERNS.md#small-context) · [ENCODING.md](ENCODING.md) |
 | GitHub backend | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) · [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
 | OpenSSF Scorecard | [SCORECARD-IMPROVEMENT.md](SCORECARD-IMPROVEMENT.md) |
 | product strategy | [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md) |
@@ -66,13 +66,6 @@ Start with the task below; the index is a map, not a reading list.
 
 ## Assurance patterns
 
-- [No Unbounded](patterns/NO-UNBOUNDED.md)
-- [Anti-Mutation](patterns/ANTI-MUTATION.md)
-- [Anti-Drift](patterns/ANTI-DRIFT.md)
-- [Anti-Orphans](patterns/ANTI-ORPHANS.md)
-- [Boundary Breakage](patterns/BOUNDARY-BREAKAGE.md)
-- [Anti-Blobs](patterns/ANTI-BLOBS.md)
-- [High-Assurance Workflow](patterns/HIGH-ASSURANCE-WORKFLOW.md)
-- [Cognitive Code Design](patterns/COGNITIVE-CODE-DESIGN.md)
+One page, nine sections: [PATTERNS.md](PATTERNS.md) — [small parts](PATTERNS.md#small-parts) · [no drift](PATTERNS.md#no-drift) · [controlled change](PATTERNS.md#controlled-change) · [no orphans](PATTERNS.md#no-orphans) · [safe boundaries](PATTERNS.md#safe-boundaries) · [local reasoning](PATTERNS.md#local-reasoning) · [small context](PATTERNS.md#small-context) · [build in order](PATTERNS.md#build-in-order) · [everything bounded](PATTERNS.md#everything-bounded)
 
 **Reachability:** `atlas.py check` fails on a broken link, and on any durable document no other document reaches.
