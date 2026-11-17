@@ -64,7 +64,7 @@ SECRET_SHAPES = [
     ("Google API key", re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b")),
     ("Clerk secret", re.compile(r"\bsk_(?:live|test)_[0-9A-Za-z]{20,}\b")),
     ("PEM private key", re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY")),
-    ("OpenAI key", re.compile(r"\bsk-(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}")),
+    ("OpenAI key", re.compile(r"\b(?:oai-|sk-(?:proj|svcacct|admin)-)[A-Za-z0-9_-]{20,}")),
     ("Anthropic key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}")),
     ("Generic API key", re.compile(r"(?:api[_-]?key|apikey)\s*[=:]\s*['\"][A-Za-z0-9_\-]{20,}['\"]")),
     ("npm token", re.compile(r"\bnpm_[A-Za-z0-9]{36}\b")),
