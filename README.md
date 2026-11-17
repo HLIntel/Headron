@@ -3,9 +3,10 @@
 <!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
   <img src="https://raw.githubusercontent.com/HLIntel/Headron/main/docs/media/headron-banner.jpg"
-       alt="Headron Software: AI governance and verification"
+       alt="Headron Software: AI governance, contract verification, and adaptive execution"
        width="992">
   <h1>Headron Software</h1>
+  <p><strong>Deterministic AI Governance, Contract Verification & Adaptive Execution Substrate for Autonomous Agents</strong></p>
 </div>
 
 <!-- BEGIN generated: badges (python scripts/atlas.py index --write) -->
@@ -57,9 +58,10 @@ Done means every obligation is proven on the checked tree:
 
 1. **Owe:** `obligations.py extract <task> <contract>` binds each requirement to its check.
 2. **Check:** `headron verify --receipt verify.json` writes a receipt bound to the tree.
-3. **Seal:** `ronbundle.py pack <task> out.ron --receipt verify.json` writes a digest-named, optionally signed [`.ron` bundle](docs/HEADRON-LANGUAGE.md#what-a-finished-program-carries-the-ron-bundle).
+3. **Seal:** `ronbundle.py pack <task> out.ron --receipt verify.json` writes a digest-named [`.ron` bundle](docs/HEADRON-LANGUAGE.md#what-a-finished-program-carries-the-ron-bundle).
 4. **Trust:** `headron mind --micro ron.verify out.ron`: `ok`, `refused` or `unknown`; only `ok` is acted on.
 
+Tasks can also compile and checkpoint on git refs: `headron task compile|run|resume|inspect`.
 Steps 1 and 3 run `python scripts/…` in a clone.
 
 ## Quickstart
@@ -107,10 +109,10 @@ Entry context: ~1,634 tokens. The 214 documents (734 KiB) load on demand; instal
 
 ## Where it fits
 
-- **Agents and runtimes:** [adapters](models/README.md) describe supported integrations; the local MCP server is read-only.
-- **Machines:** [bootstrap](.agent/bootstrap.json) (this entry as JSON) · [facts](.agent/facts.json).
-- **Headron Harness:** a separate desktop dashboard and runtime; see [product boundaries](docs/PRODUCT-STRATEGY.md).
-- **Other repositories:** `headron init` sets up a repository; [CONSUMING](docs/CONSUMING.md) covers CI, the [GitHub Action](docs/CONSUMING.md#as-a-github-action) and the [hosted MCP](docs/CONSUMING.md#hosted-mind-api--mcp).
+- **Agents and runtimes:** [adapters](models/README.md) describe integrations; local MCP is read-only.
+- **Machines:** [bootstrap](.agent/bootstrap.json) (entry as JSON) · [facts](.agent/facts.json).
+- **Headron Harness:** separate desktop dashboard/runtime; see [boundaries](docs/PRODUCT-STRATEGY.md).
+- **Other repositories:** `headron init` sets up repos; [CONSUMING](docs/CONSUMING.md) covers CI, [GitHub Action](docs/CONSUMING.md#as-a-github-action) and [hosted MCP](docs/CONSUMING.md#hosted-mind-api--mcp).
 - **Languages:** routes declare available checks and identify checks without a tool.
 
 ## Agent contract
@@ -128,20 +130,21 @@ $ headron port . --line
 
 <!-- END generated: port-example -->
 
-- **Discover:** `headron find <query>` searches paths, symbols and terms; `headron sweep` maps topology.
-- **Route:** `headron port <file>`, or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only its names.
-- **Processes:** `headron process [<id>] --json` lists workflows, or one's steps and gates.
-- **Mind:** `headron mind --route <file>` routes; `headron mind --receipts` summarizes the latest local verification record.
-- **Compute:** `headron mind --micro list` names the [microprograms](docs/COMPUTATION.md); each returns a status, evidence and a receipt.
-- **Beliefs:** `headron revise` names what rests on a refuted claim; `headron propose` drafts each fix outside the tree.
-- **Automate:** add `--json`; records follow [the output schema](tools/atlas-output.schema.json).
-- **Before shell:** `headron shell --json "<cmd>"`; exit 3 means its verdict would be misread.
-- **Land:** `python scripts/branchstate.py --land`; check `headron landed <branch>` before deletion.
-- **Judge and report:** use the [judgment rungs](docs/systems/AGENT-HARNESS.md#judgment-rungs); file breaks with the [`headron` skill](skills/headron/SKILL.md).
+- **Discover:** `headron find <query>` searches paths and symbols; `headron sweep` maps topology.
+- **Route:** `headron port <file>` or parse [.agent/bootstrap.json](.agent/bootstrap.json); load only names.
+- **Tasks:** `headron task compile|run|resume|inspect --json` checkpoints state under git refs.
+- **Processes:** `headron process [<id>] --json` lists workflows, steps and gates.
+- **Mind:** `headron mind --route <file>` routes; `--receipts` summarizes verification records.
+- **Compute:** `headron mind --micro list` names [microprograms](docs/COMPUTATION.md) (status, evidence, receipt).
+- **Beliefs:** `headron revise` names what rests on refuted claims; `headron propose` drafts fixes.
+- **Automate:** add `--json`; records follow [output schema](tools/atlas-output.schema.json).
+- **Before shell:** `headron shell --json "<cmd>"`; exit 3 means misread verdict.
+- **Land:** `python scripts/branchstate.py --land`; check `headron landed <branch>` before delete.
+- **Judge & report:** [judgment rungs](docs/systems/AGENT-HARNESS.md#judgment-rungs); report with [`headron` skill](skills/headron/SKILL.md).
 
 ## Find your way
 
-- **Every document:** [docs index](docs/INDEX.md) · [wiki](docs/wiki/README.md)
+- **All documents:** [docs index](docs/INDEX.md) · [wiki](docs/wiki/README.md)
 - **Languages:** [atlas](languages/ATLAS.md) · [routing](docs/wiki/CODE-ROUTING.md) · [verification](docs/VERIFY.md)
 - **Agents:** [harness](docs/systems/AGENT-HARNESS.md) · [`.headron`](docs/HEADRON-LANGUAGE.md) · [runtimes](models/README.md)
 - **Why a rule:** `headron why` · `headron failures` · [instruments](docs/INSTRUMENTS.md)
