@@ -110,7 +110,7 @@ Entry context: ~1,644 tokens; the rest loads on demand. Each row is its own reco
 
 - **Agents and runtimes:** [adapters](models/README.md) describe integrations; local MCP is read-only.
 - **Machines:** [bootstrap](.agent/bootstrap.json) (entry as JSON) · [facts](.agent/facts.json).
-- **Headron Harness:** separate desktop dashboard/runtime; see [boundaries](docs/PRODUCT-STRATEGY.md).
+- **Architecture and boundaries:** [package architecture](docs/PRODUCT-STRATEGY.md) covers the five capabilities, open-core boundaries and keyless onboarding.
 - **Other repositories:** `headron init` sets up repos; [CONSUMING](docs/CONSUMING.md) covers CI, [GitHub Action](docs/CONSUMING.md#as-a-github-action) and [hosted MCP](docs/CONSUMING.md#hosted-mind-api--mcp).
 - **Languages:** routes declare available checks and identify checks without a tool.
 
