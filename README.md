@@ -6,7 +6,7 @@
        alt="Headron Software: AI governance, contract verification, and adaptive execution"
        width="992">
   <h1>Headron Software</h1>
-  <p><strong>Deterministic AI Governance, Contract Verification & Adaptive Execution Substrate for Autonomous Agents</strong></p>
+  <p><strong>The trust layer for agentic work: contract verification and receipts for autonomous agents</strong></p>
 </div>
 
 <!-- BEGIN generated: badges (python scripts/atlas.py index --write) -->
