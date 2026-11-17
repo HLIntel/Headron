@@ -4,9 +4,18 @@ Rules: [CLAUDE.md](../../CLAUDE.md), [AGENTS.md](../../AGENTS.md). Runtimes: [MO
 
 ## How it loads
 
-Kilo reads `AGENTS.md` at the repository root. Its session configuration lives under `.kilo/`. Keep any
+Kilo reads `AGENTS.md` at the repository root. Its session configuration lives under `.kilo/config.json`. Keep any
 Kilo-specific instruction file thin and let it point at `AGENTS.md`: a second copy of the rules is the drift
 this repository refuses.
+
+## Clean entry dev spot & model roles
+
+`.kilo/config.json` declares the local development base URL and companion model roles:
+- `companion`: fast iterative drafting and formatting
+- `reviewer`: gate policy validation and mutation audit
+- `audit`: contract checking and invariant proofs
+
+Use these roles to dispatch targeted subtasks without manual reconfiguration.
 
 ## Use its strength
 

@@ -31,12 +31,12 @@ flowchart LR
 | `gate_tools/*/role` | gate_role | 64 |
 | `decision_tables/gate_categories/*/*` | done_gate | 9 |
 | `drift_review/structural/*` | tree | 10 |
-| `directory_scopes/@` | directory | 21 |
+| `directory_scopes/@` | directory | 22 |
 | `directory_scopes/*/never/*` | tree | 6 |
 | `identity/banner` | tree | 1 |
 | `public_surface/network_modules/*` | file | 9 |
 | `instruments/*/script` | tree | 95 |
-| `instrument_roster/not_a_script/@` | script | 140 |
+| `instrument_roster/not_a_script/@` | script | 142 |
 | `instrument_roster/unreached/@` | script | 9 |
 | `language_selection/*/packs/*` | route | 60 |
 | `linguist_names/@` | route | 40 |

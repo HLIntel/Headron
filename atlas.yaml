@@ -451,6 +451,8 @@ instrument_roster:
     isolation_test.py: 'a case module that verifies worker capability isolation and environment sanitization'
     adaptive_scheduling_test.py: 'a case module that verifies cost-adaptive execution scheduling and fail-fast ordering'
     taskimage_portable_test.py: 'a case module that verifies portable task images and cross-checkout execution'
+    multimodel_bench.py: 'multi-model cross-evaluation benchmark comparing Headron lift, tokens, and multi-model collaboration across providers; proven by multimodel_bench_test.py'
+    multimodel_bench_test.py: 'a case module that verifies multi-model matrix computation and collaborative evaluation'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -4943,6 +4945,12 @@ directory_scopes:
     proves: [contract]
     never: []
     traps: [a_count_typed_into_prose]
+  .kilo:
+    is: Kilo runtime session configuration and dev-side model roles
+    label: area/agent
+    proves: [contract]
+    never: []
+    traps: [a_named_mechanism_that_does_not_exist]
   .claude:
     is: the Claude Code project settings that wire scripts/claude_hook.py in as the PreToolUse adapter
     label: area/agent
@@ -6176,6 +6184,8 @@ pointers:
 orphan_exemptions:
   scripts/economic_benchmark.py: 'analytical economic benchmark engine comparing assisted vs unassisted agents; run on demand'
   scripts/workflow_runner.py: 'declared gates run or reported NOT RUN, with a receipt binding the target bytes and tree; run on demand'
+  scripts/multimodel_bench.py: 'multi-model cross-evaluation benchmark comparing Headron lift, tokens, and multi-model collaboration across providers; run on demand'
+  multimodel_bench_test.TestMultiModelBench: 'test case suite for multi-model benchmark evaluation, executed via runner'
   testgroups.scrub_git_env: the case harness every test module takes it from; a test is its only caller by design
   testgroups.run_counted: the case harness a test module runs its cases under; a test is its only caller by design
   testgroups.micro_shreds: the case harness that splits a test module's cases; a test is its only caller by design
