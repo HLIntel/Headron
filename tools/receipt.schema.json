@@ -27,13 +27,13 @@
       "items": {"$ref": "#/$defs/check"}
     },
     "counts": {"$ref": "#/$defs/counts"},
-    "verdict": {"$ref": "#/$defs/state"}
+    "verdict": {"enum": ["PASS", "FAIL", "NOT RUN"]}
   },
   "allOf": [
     {
       "description": "A PASS verdict needs a base commit and a pinned policy digest.",
       "if": {"properties": {"verdict": {"const": "PASS"}}, "required": ["verdict"]},
-      "then": {"properties": {"base_commit": {"$ref": "#/$defs/commit"}, "policy": {"properties": {"digest": {"$ref": "#/$defs/sha256"}}, "required": ["digest"]}}}
+      "then": {"properties": {"base_commit": {"$ref": "#/$defs/commit"}, "policy": {"properties": {"digest": {"$ref": "#/$defs/sha256"}}, "required": ["digest"]}, "checks": {"minItems": 1, "items": {"properties": {"state": {"const": "PASS"}}}}, "counts": {"properties": {"PASS": {"minimum": 1}, "FAIL": {"const": 0}, "NOT RUN": {"const": 0}, "SKIP": {"const": 0}}}}}
     }
   ],
   "$defs": {

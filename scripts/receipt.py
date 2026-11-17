@@ -7,8 +7,8 @@ was read from, the tree the checks ran over, each check's state, and the verdict
 the ONE mapping from states to a verdict and the ONE checker of a receipt. It is stdlib only, so a receipt is
 verified from its bytes with no repository at hand.
 
-STATES. PASS, FAIL, NOT RUN, SKIP. A verdict is PASS only with at least one PASS and no FAIL and no NOT RUN;
-SKIP is counted apart and is never a pass. A verdict this module does not recognise is a FAIL finding.
+STATES. PASS, FAIL, NOT RUN, SKIP. A verdict is PASS only with at least one PASS and no FAIL, NOT RUN, or SKIP;
+SKIP is counted apart and makes the verdict incomplete. A verdict this module does not recognise is a FAIL finding.
 INTEGRITY, NOT AUTHENTICITY. receipt_id detects an edited receipt; it does not prove who wrote it. The optional
 detached signature in receiptsign.py does that, and leaves these bytes and this check as they are.
 
@@ -125,10 +125,10 @@ def check_state(verdict: object) -> str:
 
 
 def verdict_of(states: list[str]) -> str:
-    """FAIL on any FAIL; NOT RUN on any NOT RUN or on no PASS at all (SKIPs alone, or no checks); else PASS."""
-    if "FAIL" in states:
+    """FAIL on any FAIL; NOT RUN on any NOT RUN or SKIP, or on no checks; else PASS."""
+    if any(state not in STATES or state == "FAIL" for state in states):
         return "FAIL"
-    if "NOT RUN" in states or "PASS" not in states:
+    if "NOT RUN" in states or "SKIP" in states or "PASS" not in states:
         return "NOT RUN"
     return "PASS"
 
