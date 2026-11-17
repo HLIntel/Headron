@@ -51,6 +51,7 @@ crosscheck = ["jsonschema>=4"]       # optional: the reference validator atlas_t
 [project.scripts]
 headron = "atlas_cli:main"
 headron-mcp = "atlas_cli:mcp_main"   # Headron's commands as MCP tools on stdio, read-only
+headron-software = "atlas_cli:mcp_main"  # alias so `uvx headron-software` starts the MCP server
 atlas = "atlas_cli:main"   # the pre-3.7 name, still answered
 
 [build-system]

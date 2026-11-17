@@ -47,24 +47,29 @@ jobs:
           if [ -f scripts/requirements.lock.txt ]; then
             python3 -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
           fi
+          python3 -m pip install --quiet uv
+          mkdir -p "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" | tar -xz -C "$HOME/.local/bin" gitleaks
 
       - name: Verify gates and generate receipt
         id: verify
         env:
           HEADRON_BASE: ${{ inputs.base-ref || github.event.pull_request.base.sha || 'main' }}
         run: |
-          mkdir -p receipts
-          if [ -f receipts/verify.json ] && python3 scripts/receipt.py receipts/verify.json 2>/dev/null; then
+          git config core.hooksPath .githooks
+          mkdir -p .tmp/receipts
+          if [ -f .tmp/receipts/verify.json ] && python3 scripts/receipt.py .tmp/receipts/verify.json 2>/dev/null; then
             echo "Valid local receipt found; reusing receipt."
           else
             echo "Generating receipt for base $HEADRON_BASE..."
-            python3 scripts/verify.py --base "$HEADRON_BASE" --receipt receipts/verify.json
+            python3 scripts/verify.py --base "$HEADRON_BASE" --receipt .tmp/receipts/verify.json
           fi
 
       - name: Upload receipt artifact
-        uses: actions/upload-artifact@ea165f8d6556e18b8b80b72beea679df0739c9df # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: headron-receipt-${{ github.sha }}
-          path: receipts/verify.json
+          path: .tmp/receipts/verify.json
           if-no-files-found: warn

@@ -1,6 +1,6 @@
 name: 'Headron Agentic Code Verification'
 description: 'Deterministic verification gates and quad-state honest verdicts for human and AI code.'
-author: 'Heartland Intel LLC'
+author: 'HLIntel LLC'
 branding:
   icon: 'shield'
   color: 'gray-dark'
