@@ -36,7 +36,7 @@ def capsule(path: str, task: str | None = None, change: str = "source_change") -
 
     gates = sorted(required_gates({"change_class": change}))
     acceptance = [{"gate": gate, "command": gate_record(relative, gate).get("argv") or []} for gate in gates]
-    context = [f"languages/{route}/README.md", f"languages/{route}/OPERATING.md", f"languages/{route}/tools.yaml"]
+    context = [f"languages/{route}/README.md", f"languages/{route}/tools.yaml"]
     contract = atlas().get("delegation_contract") or {}
     required = contract.get("required") or {}
     return {

@@ -20,7 +20,7 @@ def run(module: ModuleType) -> None:
     import handoff
 
     record = handoff.capsule("scripts/intake.py", "tighten prompt routing")
-    expected = ["languages/python/README.md", "languages/python/OPERATING.md", "languages/python/tools.yaml"]
+    expected = ["languages/python/README.md", "languages/python/tools.yaml"]
     if (
         record["scope"] != ["scripts/intake.py"]
         or record["route"]["language"] != "python"

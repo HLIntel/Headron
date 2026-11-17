@@ -14,6 +14,7 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 
+import atlascore
 import chatskill
 import dirscope
 import i18n
@@ -40,7 +41,7 @@ def language_index_block() -> str:
     umbrellas = sorted({t.rsplit("/", 1)[0] for t in route_targets() if "/" in t})
     for language in umbrellas + route_targets():
         base = ROOT / "languages" / language
-        card = f"[card]({language}/OPERATING.md)" if (base / "OPERATING.md").exists() else "missing"
+        card = f"[card]({language}/README.md#operating-card)" if atlascore.operating_card(language) else "missing"
         manifest = "`tools.yaml`" if (base / "tools.yaml").exists() else "none"  # beside the card
         rows.append(f"| `{language}` | [guide]({language}/README.md) | {card} | {manifest} |")
     present = sum((ROOT / "languages" / lang / "tools.yaml").exists() for lang in route_targets())

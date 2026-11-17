@@ -66,7 +66,7 @@ def assisted(task: dict) -> dict:
     """One task under the route/plan arm: what the atlas returns, and whether it is right."""
     route, rule, _ = route_with_evidence(str(task["target"]))
     files = (
-        [f"languages/{route}/README.md", f"languages/{route}/OPERATING.md", f"languages/{route}/tools.yaml"]
+        [f"languages/{route}/README.md", f"languages/{route}/tools.yaml"]
         if route
         else []
     )

@@ -86,7 +86,7 @@ def questions(limit: int, every_pack: bool) -> list[dict]:
             rows.append(
                 {
                     "task": route,
-                    "target": f"languages/{route}/OPERATING.md",
+                    "target": f"languages/{route}/README.md",
                     "route": route,
                     "truth": truth,
                     "kind": "runner",
@@ -95,7 +95,7 @@ def questions(limit: int, every_pack: bool) -> list[dict]:
             rows.append(
                 {
                     "task": f"{route}:route",
-                    "target": f"languages/{route}/OPERATING.md",
+                    "target": f"languages/{route}/README.md",
                     "route": route,
                     "truth": route,
                     "kind": "route",
@@ -110,7 +110,7 @@ def questions(limit: int, every_pack: bool) -> list[dict]:
                 rows.append(
                     {
                         "task": f"{route}:format",
-                        "target": f"languages/{route}/OPERATING.md",
+                        "target": f"languages/{route}/README.md",
                         "route": route,
                         "truth": style,
                         "kind": "formatter",

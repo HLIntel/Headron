@@ -208,7 +208,7 @@ def _inv_one_source_of_truth() -> str | None:
 
 def _inv_atlas_consistency() -> str | None:
     for language in route_targets():
-        for artifact in ("README.md", "OPERATING.md", "tools.yaml"):
+        for artifact in ("README.md", "tools.yaml"):
             if not (ROOT / "languages" / language / artifact).exists():
                 return f"route {language} has no {artifact}"
     if str(atlas().get("version")) != read("VERSION").strip():

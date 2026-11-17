@@ -144,7 +144,7 @@ def run_once_cases() -> None:
     check("an absent library gate exposes its task guidance without claiming a runnable check",
           "a bare runner presented as a benchmark, or a missing route to project-specific instructions",
           benchmark.get("state") == "absent" and benchmark.get("argv") is None
-          and "languages/python/OPERATING.md" in benchmark.get("why", ""))
+          and "languages/python/README.md#operating-card" in benchmark.get("why", ""))
     for route in ("json", "yaml", "mojo"):
         check(f"{route} requires a configured target on each test gate",
               "a validator or runtime invoked without its schema or program reported as a test",

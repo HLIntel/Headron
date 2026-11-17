@@ -55,7 +55,7 @@ def replay_dir() -> Path:
 
 # MATCHES A BARE CHAT ENDPOINT, CHOSEN AFTER SEEING THE OUTCOME — so it is declared, and counted.
 # MEASURED at 2.28.0 with "Answer briefly.": Sonnet scored 30/39 given the gate, and 8 of its 9 misses
-# were not wrong answers but attempts to CALL A TOOL ("read_file languages/v/OPERATING.md") — the CLI's
+# were not wrong answers but attempts to CALL A TOOL (read_file on the v operating card) — the CLI's
 # residual preamble primes an agent, where an HTTP provider offers no tools at all. Those rows measured
 # the harness, not the model. Every Claude row is re-run under this prompt; none is mixed across the two.
 _CLI_SYSTEM = "You have no tools and cannot read files. Answer only from the text you are given, briefly."

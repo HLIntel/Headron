@@ -1591,7 +1591,7 @@ routing_policy:
     zsh: {route: bash, gates: {formatter: [shfmt, -ln, zsh, -d], compiler_or_typechecker: [zsh, -n]}}
   canonical_outputs:
     guide: languages/<route>/README.md
-    operating_card: languages/<route>/OPERATING.md
+    operating_card: languages/<route>/README.md#operating-card
     tool_manifest: languages/<route>/tools.yaml
     runtime: models/<runtime>/README.md
     mcp: integrations/MCP-LANGUAGE-MATRIX.md

@@ -603,7 +603,7 @@ def prompt_order_errors() -> list[str]:
     # and an IndexError there killed `check` on exactly the trees whose gates were under test.
     route = sorted(abtest.route_targets())[0]
     row, probe = (
-        {"task": route, "target": f"languages/{route}/OPERATING.md", "route": route, "truth": ""},
+        {"task": route, "target": f"languages/{route}/README.md", "route": route, "truth": ""},
         "<probe-task>",
     )
     built = {"delegate": (delegate.render(delegate.brief(probe)), f"<task>{probe}</task>")}
