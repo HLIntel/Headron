@@ -82,6 +82,9 @@ def _ci(repo: Path, shared: Path, *argv: str, **env: str) -> subprocess.Complete
             "CI_LOCAL_WORKERS": "2",
             "SHARED": str(shared),
             "HEADRON_SLOT_IDLE": "0",
+            "HEADRON_SLOT_LOCK": str(shared / "suite.lock"),
+            "HEADRON_SLOT_HELD": "",
+            "HEADRON_SLOTS": "1",
             **env,
         },
         capture_output=True,
@@ -327,6 +330,15 @@ def run_cases(module: ModuleType, base: Path) -> None:
         "on a machine with no spare cores, units run one at a time and still pass",
         "three suites on a loaded machine: the starved desktop and timed-out suites slot.py measured",
         loaded.returncode == 0 and "::: started pair" in loaded.stdout,
+    )
+    inherit = f'PYTHONPATH="{ROOT}/scripts" "{sys.executable}" -c "import slot, sys; sys.exit(slot.take(\'unit\') is not None)" || exit 6'
+    repo, shared = _repo(base, "handdown", f"{TOGETHER}\n{inherit}")
+    handdown = _ci(repo, shared)
+    _case(
+        module,
+        "the graph takes the machine slot once and every unit inherits it, so the admitter is the only gate",
+        "each unit's suite taking its own slot: three admitted units queued behind two slots (guards-1 231 s -> 651 s)",
+        handdown.returncode == 0 and "::: started pair" in handdown.stdout,
     )
     repo, shared = _repo(base, "unit", ALONE)
     one = _ci(repo, shared, "--unit", "pair:a")

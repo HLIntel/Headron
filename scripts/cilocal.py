@@ -40,7 +40,7 @@ import gaterunner
 import micrograph
 from atlascore import git_run, text_of
 from microprogram import MicroResult
-from slot import admitter
+from slot import admitter, take
 
 HOOK_MARK = "# installed by .github/ci-local.sh --install-hook"
 WIDTH = 3  # units at once: the contract DAG never has more ready, and each is one process beside a bounded example pool
@@ -204,7 +204,13 @@ def run_graph(jobs: Sequence[cipipeline.Job], runner_temp: Path, *, head: str | 
     job_of = {unit: job for job in jobs for unit in job.units()}
     artifacts = Path(os.environ.get("HEADRON_CI_ARTIFACTS") or runner_temp / ".artifacts")
     began = time.monotonic()
+    held = None
     if head and width > 1:
+        # ONE ADMISSION. Each unit's planted suite takes the machine slot (atlas_test.host_lock), so three
+        # admitted units queued behind two slots (MEASURED: guards-1 231 s -> 651 s, "slot: queued behind"
+        # in the ci-admit land). The graph takes the slot once and hands it down through HEADRON_SLOT_HELD,
+        # so the admitter above is the only gate on how many units run.
+        held = take(f"ci graph at {head[:12]}", wait=float(os.environ.get("HEADRON_SLOT_WAIT", "3600")))
         trees = runner_temp / "units"
         trees.mkdir(parents=True, exist_ok=True)
         env = {**os.environ, "HEADRON_CI_ARTIFACTS": str(artifacts)}
@@ -224,7 +230,12 @@ def run_graph(jobs: Sequence[cipipeline.Job], runner_temp: Path, *, head: str | 
             )
 
         admit = lambda: True  # noqa: E731
-    results = micrograph.run(graph, start, budget_s=sum(node.timeout_s for node in graph), width=width, admit=admit)
+    try:
+        results = micrograph.run(graph, start, budget_s=sum(node.timeout_s for node in graph), width=width, admit=admit)
+    finally:
+        if held is not None:
+            held.close()
+            os.environ.pop("HEADRON_SLOT_HELD", None)
     print(micrograph.summary(results.items()))
     print(
         f"ci: {sum(r.actionable for r in results.values())}/{len(results)} ok — width {width}, {time.monotonic() - began:.0f}s"
