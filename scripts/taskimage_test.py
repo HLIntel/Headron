@@ -1,6 +1,6 @@
 """Planted task-image cases (scripts/taskimage.py). Loaded by atlas_guards_test; each plants the defect an image
 could hide: a resume against a contract the image was not recorded for, a node with no result read as a pass, a
-dry run read as a pass, a pass reused on a dirty or different tree, a private path or token written into a pushable
+dry run read as a pass, a stale pass reused without identifying external inputs, a private path or token written into a pushable
 ref, and two writers overwriting one another's checkpoint.
 """
 
@@ -54,14 +54,12 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
     import agentpolicy  # noqa: PLC0415
     import agentrun  # noqa: PLC0415
     import headronlang  # noqa: PLC0415
-    import obligations  # noqa: PLC0415
     import taskimage  # noqa: PLC0415
 
     repo = _repo(top)
     contract = headronlang.load_contract(EXAMPLE)
     task = str(contract["task_id"])
     gates = [str(g) for g in agentpolicy.required_gates(contract)]
-    tree = obligations.tree(repo)
 
     # Resume refuses a contract the image was not recorded for, and never reaches the runner.
     taskimage.compile_image(EXAMPLE, repo)
@@ -81,16 +79,20 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
     state = json.loads(files["state.json"])
     state["nodes"] = {gates[0]: state["nodes"][gates[0]]}
     missing = dict(taskimage.nodes_of(state))
+    refused_state = {**state, "status": "refused", "nodes": {g: {"state": "PASS"} for g in gates}}
+    with mock.patch.object(
+        taskimage, "read", return_value=(commit, {"state.json": json.dumps(refused_state).encode()})
+    ):
+        _, refused_code = taskimage.inspect(task, repo)
 
-    # Resume reuses only what passed on this clean tree, and passes that set to agentrun.
+    # A matching tree cannot prove external inputs unchanged; resume must not reuse a pass.
     with mock.patch.object(agentrun, "execute_contract", return_value=(_record(contract, first), 1)) as runner:
         taskimage.run_image(EXAMPLE, False, resume=True, repo=repo)
-        reused_arg = runner.call_args.args[2]
-    rows = agentrun.run_gates(contract, top / "audit.jsonl", False, {}, frozenset({gates[0]}))
+        runner_args = runner.call_args.args
+    rows = agentrun.run_gates(contract, top / "audit.jsonl", False, {})
     every = [{**r, "ran": False, "reused": True, "exit_code": 0} for r in rows]
-    verdicts = (agentrun.run_status(rows, []), agentrun.run_status(every, []))
+    verdicts = (agentrun.run_status(rows, []), agentrun.run_status(every, []), agentrun.run_status([], []))
     after, _ = taskimage.inspect(task, repo)
-    passed = {"tree": tree, "order": gates, "nodes": {gates[0]: {"state": "PASS"}}}
 
     # A private path in the contract is never written; the escape comment does not opt it out.
     leaky = top / "leaky.headron"
@@ -121,21 +123,19 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
             states[gates[0]] == "PASS"
             and all(states[g] == taskimage.NOT_RUN for g in gates[1:])
             and inspect_code == 1
+            and refused_code == 1
             and all(missing[g]["state"] == taskimage.NOT_RUN for g in gates[1:])
             and taskimage.node_state({"ran": False, "exit_code": 0}) == taskimage.NOT_RUN,
             (states, inspect_code, missing),
         ),
         (
-            "task resume reuses a pass only on the same clean tree, and checkpoints stack on the ref",
-            "a pass from another commit or from uncommitted changes carried forward as if it covered this tree",
-            reused_arg == frozenset({gates[0]})
-            and [taskimage.node_state(r) for r in rows] == ["REUSED"] + [taskimage.NOT_RUN] * (len(gates) - 1)
-            and taskimage.reusable(passed, tree + "+dirty") == frozenset()
-            and taskimage.reusable({**passed, "tree": tree + "+dirty"}, tree + "+dirty") == frozenset()
-            and taskimage.reusable(passed, "other") == frozenset()
-            and verdicts == ("controls_verified", "verified")
+            "task resume does not reuse a pass, and checkpoints stack on the ref",
+            "a pass carried forward without identifying external inputs",
+            len(runner_args) == 2
+            and [taskimage.node_state(r) for r in rows] == [taskimage.NOT_RUN] * len(gates)
+            and verdicts == ("controls_verified", "controls_verified", "controls_verified")
             and after["checkpoints"] == 3,
-            (reused_arg, verdicts, after["checkpoints"]),
+            (runner_args, verdicts, after["checkpoints"]),
         ),
         (
             "a task image refuses a home path, a token, a full digest, and a ref another writer moved",

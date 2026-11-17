@@ -75,7 +75,7 @@ flowchart LR
 | [graph](../scripts/graph.py) | Knowledge graph module — pointers, links, tags,… | 4 | claims, exrun | [decide_test](../scripts/decide_test.py), [microprogram_test](../scripts/microprogram_test.py) |
 | [localtools](../scripts/localtools.py) | The tool a project installed for itself, found where… | 4 |  | [localtools_test](../scripts/localtools_test.py) |
 | [microprogram](../scripts/microprogram.py) | The one microprogram contract: a named, versioned… | 4 | claims, computation_contract, compute_compose, domain_reconcile, effects, finance, graph, mind, obligations, receipt, ronbundle | [cilocal_test](../scripts/cilocal_test.py), [computation_receipt_test](../scripts/computation_receipt_test.py) +3 |
-| [obligations](../scripts/obligations.py) | Task Obligation Ledger: a task's requirements kept… | 4 | agentpolicy, atlas, headronlang | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) +1 |
+| [obligations](../scripts/obligations.py) | Task Obligation Ledger: a task's requirements kept… | 4 | agentpolicy, atlas, headronlang | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind rather than as… | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
 | [boundedinput](../scripts/boundedinput.py) | Bounded UTF-8 stdin for hooks and local decision… | 3 |  | [readiness_test](../scripts/readiness_test.py) |
 | [cidrift](../scripts/cidrift.py) | Drift guard: every script CI runs is a declared gate,… | 3 | cipipeline | [cilocal_test](../scripts/cilocal_test.py) |
