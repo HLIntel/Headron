@@ -145,9 +145,9 @@ _installed = False
 
 
 def _exempt(path: object) -> bool:
-    # The interpreter's own bytecode cache, and the null device subprocess opens read-write for DEVNULL.
+    # The null device subprocess opens read-write for DEVNULL.
     text = os.fsdecode(path) if isinstance(path, (str, bytes, os.PathLike)) else ""
-    return "__pycache__" in text or text == os.devnull
+    return text == os.devnull
 
 
 def classify(event: str, args: tuple[Any, ...]) -> tuple[str, str, str] | None:

@@ -73,6 +73,11 @@ def write_cases(top: Path) -> None:
     if not _refused(swallowed, "write") or target.exists():
         _fail(f"a swallowed violation did not end the run (created: {target.exists()})", swallowed)
 
+    cache_shaped = top / "__pycache__-bypass"
+    bypass = _run(effects.Declared(), lambda: cache_shaped.write_text("planted", encoding="utf-8"))
+    if not _refused(bypass, "write") or cache_shaped.exists():
+        _fail("a cache-shaped filename bypassed the write declaration", bypass)
+
     allowed = _run(effects.Declared({"write"}), write)
     if allowed.status != "ok" or not target.exists():
         _fail("a declared write was refused", allowed)
