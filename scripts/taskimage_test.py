@@ -61,18 +61,24 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
     task = str(contract["task_id"])
     gates = [str(g) for g in agentpolicy.required_gates(contract)]
 
+    def run_image(*args: object, **kwargs: object) -> tuple[dict, int]:
+        with mock.patch.object(taskimage, "ROOT", repo):
+            return taskimage.run_image(*args, **kwargs)
+
+    wrong_repo = _refused(lambda: taskimage.run_image(EXAMPLE, False, False, repo))
+
     # Resume refuses a contract the image was not recorded for, and never reaches the runner.
     taskimage.compile_image(EXAMPLE, repo)
     changed = top / "changed.headron"
     changed.write_text(EXAMPLE.read_text().replace('objective "', 'objective "Changed. ', 1))
     with mock.patch.object(agentrun, "execute_contract", side_effect=AssertionError("ran")) as runner:
-        stale = _refused(lambda: taskimage.run_image(changed, False, resume=True, repo=repo))
+        stale = _refused(lambda: run_image(changed, False, resume=True, repo=repo))
         stale_ran = runner.called
 
     # A run records each node; a dry-run row and a missing node read NOT RUN, never PASS.
     first = {g: (i == 0, 0) for i, g in enumerate(gates)}
     with mock.patch.object(agentrun, "execute_contract", return_value=(_record(contract, first), 1)):
-        taskimage.run_image(EXAMPLE, False, resume=False, repo=repo)
+        run_image(EXAMPLE, False, resume=False, repo=repo)
     view, inspect_code = taskimage.inspect(task, repo)
     states = {name: node["state"] for name, node in view["nodes"].items()}
     commit, files = taskimage.read(task, repo) or ("", {})
@@ -87,7 +93,7 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
 
     # A matching tree cannot prove external inputs unchanged; resume must not reuse a pass.
     with mock.patch.object(agentrun, "execute_contract", return_value=(_record(contract, first), 1)) as runner:
-        taskimage.run_image(EXAMPLE, False, resume=True, repo=repo)
+        run_image(EXAMPLE, False, resume=True, repo=repo)
         runner_args = runner.call_args.args
     rows = agentrun.run_gates(contract, top / "audit.jsonl", False, {})
     every = [{**r, "ran": False, "reused": True, "exit_code": 0} for r in rows]
@@ -104,7 +110,31 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
             mock.patch.object(obligations, "tree", side_effect=identities),
             mock.patch.object(agentrun, "execute_contract", return_value=(passed_record, 0)),
         ):
-            tree_refusals.append(_refused(lambda: taskimage.run_image(EXAMPLE, True, False, repo)))
+            tree_refusals.append(_refused(lambda: run_image(EXAMPLE, True, False, repo)))
+
+    # A verified claim needs the exact planned gates, full outcome and matching receipt and tree.
+    head = _git(repo, "rev-parse", "HEAD")
+    tree = _git(repo, "rev-parse", "HEAD^{tree}")
+    outcome = passed_record["outcome"]
+    outcome.update(
+        {"mode": "full", "denials": [], "receipt": agentpolicy.receipt({**contract, "status": "verified"}, None, head)}
+    )
+    good_files = taskimage.image_files(contract, outcome["gates"], outcome, tree)
+    good_state = json.loads(good_files["state.json"])
+    valid = taskimage.verified_image(task, good_state, good_files, repo)
+    forged = []
+    for name in ("contract.json", "outcome.json", "receipt.json"):
+        forged.append(
+            taskimage.verified_image(task, good_state, {k: v for k, v in good_files.items() if k != name}, repo)
+        )
+    bad_state = {**good_state, "order": ["invented"], "nodes": {"invented": {"state": "PASS"}}}
+    forged.append(taskimage.verified_image(task, bad_state, good_files, repo))
+    bad_receipt = {**good_files, "receipt.json": b"{}"}
+    forged.append(taskimage.verified_image(task, good_state, bad_receipt, repo))
+    with mock.patch.object(taskimage, "read", return_value=(commit, good_files)):
+        claimed, claimed_code = taskimage.inspect(task, repo)
+    with mock.patch.object(taskimage, "read", return_value=(commit, {"state.json": json.dumps(bad_state).encode()})):
+        invented, invented_code = taskimage.inspect(task, repo)
 
     # A private path in the contract is never written; the escape comment does not opt it out.
     leaky = top / "leaky.headron"
@@ -123,6 +153,17 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
     unread, _ = taskimage.inspect(task, repo)
 
     return [
+        (
+            "task image refuses mismatched execution roots and incomplete verified claims",
+            "a verified image with invented gates or missing evidence, or gates run in a different repository",
+            "runner's repository" in wrong_repo
+            and valid
+            and not any(forged)
+            and claimed_code == invented_code == 1
+            and claimed["record_consistent"]
+            and not invented["record_consistent"],
+            (wrong_repo, valid, forged, claimed_code, invented_code),
+        ),
         (
             "task resume refuses an image recorded for another contract, before any gate runs",
             "a resume that continues a task's checkpoints under a contract that was edited since they were taken",

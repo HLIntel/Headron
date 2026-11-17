@@ -10,7 +10,7 @@ store, so the image is content-addressed, copied with `git fetch`/`git push` of 
   headron task run     <contract.headron> [--execute] # run the gates through agentrun, record each node
   headron task resume  <contract.headron> [--execute] # refused unless the contract is the one the image recorded;
                                                       # gates run again when execution is requested
-  headron task inspect <task_id> [--json]             # reads the ref only, never the working tree
+  headron task inspect <task_id> [--json]             # inspect the recorded claim; exits nonzero without independent proof
 
 The image tree holds contract.json (the compiled contract), state.json (contract hash, tree, status, the node
 order and one result per node), outcome.json (agentrun's outcome), receipt.json and, when the task has one,
@@ -42,7 +42,7 @@ import gitobject
 import headronlang
 import obligations
 import privacy_guard
-from atlascore import ROOT
+from atlascore import ROOT, resolved_once
 
 PREFIX = "refs/headron/tasks/"
 SCHEMA = "headron-task/1"
@@ -195,6 +195,8 @@ def compile_image(path: Path, repo: Path = ROOT) -> tuple[dict, int]:
 def run_image(path: Path, execute: bool, resume: bool, repo: Path = ROOT) -> tuple[dict, int]:
     import agentrun  # noqa: PLC0415 - the runner pulls in the policy stack; inspect never needs it
 
+    if repo.resolve() != resolved_once(ROOT):
+        raise Refused("task execution is only supported in the runner's repository")
     contract = headronlang.load_contract(path)
     task_id = str(contract["task_id"])
     found = read(task_id, repo)
@@ -220,6 +222,44 @@ def run_image(path: Path, execute: bool, resume: bool, repo: Path = ROOT) -> tup
     return json.loads(files["state.json"]), code
 
 
+def verified_image(task_id: str, state: dict, files: dict[str, bytes], repo: Path = ROOT) -> bool:
+    """Check consistency of a recorded claim; this cannot authenticate its executor."""
+    try:
+        contract = json.loads(files["contract.json"])
+        outcome = json.loads(files["outcome.json"])
+        receipt = json.loads(files["receipt.json"])
+        if not all(isinstance(item, dict) for item in (contract, outcome, receipt)):
+            return False
+        gates = agentpolicy.required_gates(contract)
+        rows = outcome["gates"]
+        tree = state["tree"]
+        return bool(
+            state.get("schema") == SCHEMA
+            and state.get("task_id") == task_id == contract.get("task_id")
+            and not agentpolicy.contract_errors(contract)
+            and state.get("contract") == agentpolicy.contract_hash(contract)
+            and gitobject.is_oid(tree)
+            and gates
+            and state.get("order") == gates
+            and isinstance(rows, list)
+            and all(isinstance(row, dict) for row in rows)
+            and [row.get("gate") for row in rows] == gates
+            and outcome.get("status") == "verified"
+            and outcome.get("mode") == "full"
+            and not outcome.get("denials")
+            and all(
+                row.get("ran") is True and type(row.get("exit_code")) is int and row["exit_code"] == 0 for row in rows
+            )
+            and state.get("nodes") == {gate: {"state": "PASS", "exit_code": 0, "tree": tree} for gate in gates}
+            and receipt == outcome.get("receipt")
+            and gitobject.is_oid(receipt.get("head"))
+            and _git(repo, "rev-parse", receipt["head"] + "^{tree}") == tree
+            and receipt.get("contract") == agentpolicy.contract_hash({**contract, "status": "verified"})
+        )
+    except (KeyError, TypeError, ValueError, UnicodeError, Refused):
+        return False
+
+
 def inspect(task_id: str, repo: Path = ROOT) -> tuple[dict, int]:
     found = read(task_id, repo)
     if found is None:
@@ -229,14 +269,18 @@ def inspect(task_id: str, repo: Path = ROOT) -> tuple[dict, int]:
     checkpoints = int(_git(repo, "rev-list", "--count", commit))
     view = {**state, "commit": commit, "checkpoints": checkpoints, "files": sorted(files)}
     view["nodes"] = dict(nodes_of(state))
-    passed = all(node.get("state") == "PASS" for node in view["nodes"].values())
-    return view, 0 if state.get("status") == "verified" and passed and view["nodes"] else 1
+    if state.get("status") == "verified":
+        view["record_consistent"] = verified_image(task_id, state, files, repo)
+        view["verification"] = "NOT VERIFIED: the image does not independently prove execution"
+    return view, 1
 
 
 def show(view: dict) -> None:
     print(f"task {view['task_id']}  {view['status']}  tree {view['tree'][:12]}  contract {view['contract'][:12]}")
     for name, node in view["nodes"].items():
         print(f"  {node['state']:<8} {name}")
+    if "verification" in view:
+        print(f"  {view['verification']}")
     if "checkpoints" in view:
         print(f"  {view['checkpoints']} checkpoint(s) on {PREFIX}{view['task_id']}; files {', '.join(view['files'])}")
 
@@ -253,6 +297,8 @@ def main(argv: list[str] | None = None) -> int:
 
 def cli(action: str, target: str, execute: bool, as_json: bool) -> int:
     try:
+        if Path(_git(Path.cwd(), "rev-parse", "--show-toplevel")).resolve() != resolved_once(ROOT):
+            raise Refused("task images are only supported in the runner's repository")
         if action == "inspect":
             view, code = inspect(target)
         elif action == "compile":
