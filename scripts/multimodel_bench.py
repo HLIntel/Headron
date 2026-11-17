@@ -76,6 +76,8 @@ def benchmark_single(
                 cls = "breaker_open" if isinstance(err, resilience.BreakerOpen) else resilience.classify(error=err)
                 errors = summary.setdefault("errors", {})
                 errors[cls] = errors.get(cls, 0) + 1
+                # the FIRST message per class: a class alone named no cause (19 kilo lanes read `terminal`)
+                summary.setdefault("error_samples", {}).setdefault(cls, providers.error_text(err))
                 ans, tok = "", 0
             elapsed = time.monotonic() - t0
             # A NON-ANSWER IS NOT A WRONG ANSWER (`a_non_answer_scored_as_wrong`). A transport error, an
@@ -124,7 +126,11 @@ def benchmark_cooperative(
                 "Review the draft against the rules above. Output the verified final answer only."
             )
             peer_ans, peer_tok = providers.complete(peer_provider, peer_model, review_prompt, timeout, max_tokens)
-        except (OSError, ValueError, KeyError, resilience.BreakerOpen):
+        except (OSError, ValueError, KeyError, resilience.BreakerOpen) as err:
+            cls = "breaker_open" if isinstance(err, resilience.BreakerOpen) else resilience.classify(error=err)
+            errors = results.setdefault("errors", {})
+            errors[cls] = errors.get(cls, 0) + 1
+            results.setdefault("error_samples", {}).setdefault(cls, providers.error_text(err))
             lead_ans, lead_tok = "", 0
             peer_ans, peer_tok = "", 0
         elapsed = time.monotonic() - t0
@@ -217,28 +223,6 @@ def format_matrix_markdown(benchmarks: list[dict[str, Any]], cooperative: dict[s
     return "\n".join(lines)
 
 
-def census_lanes(rows: list[dict[str, Any]]) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
-    """The lanes a screen may rank, and every census row it may not, each with its reason.
-
-    Ranked: alive, answering AS ITSELF, and following a one-line instruction. A lane served as another
-    model is that model's record (`a_chain_lane_read_as_a_model`). A lane that cannot echo a token is a
-    classifier or a broken template: it fails every task, so every task the real models pass reads as
-    DISCRIMINATING and the gate stops gating. Nothing is dropped silently."""
-    keep: list[tuple[str, str]] = []
-    excluded: list[dict[str, str]] = []
-    for r in rows:
-        lane = f"{r['provider']}:{r['model']}"
-        if r["status"] != "alive":
-            excluded.append({"lane": lane, "reason": f"not_run:{r.get('error')}"})
-        elif r.get("identity") == "differs":
-            excluded.append({"lane": lane, "reason": f"served_as:{r.get('served')}"})
-        elif not r.get("followed"):
-            excluded.append({"lane": lane, "reason": "did_not_follow_canary"})
-        else:
-            keep.append((r["provider"], r["model"]))
-    return keep, excluded
-
-
 def run_matrix(
     models: list[tuple[str, str]],
     kinds: list[str],
@@ -294,7 +278,7 @@ def main(argv: list[str] | None = None) -> int:
     providers.set_live(args.live)
     excluded: list[dict[str, str]] = []
     if args.models_from:
-        model_pairs, excluded = census_lanes(json.loads(text_of(Path(args.models_from))))
+        model_pairs, excluded = providers.census_lanes(json.loads(text_of(Path(args.models_from))))
     elif args.auto:
         active = providers.available_providers()
         print(f"Auto-discovered active providers: {', '.join(active)}")
