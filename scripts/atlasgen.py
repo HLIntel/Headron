@@ -727,6 +727,8 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "agreement-edges": (("docs/CERTIFICATION.md",), lambda: __import__("agreement").edges_block()),
     "runtime-entry": (("models/README.md",), runtime_entry_block),
     "measured-benefits": (("README.md",), measured_block),
+    # NOT README: one row per model per record, on a ratcheted landing page.
+    "model-details": (("docs/RESULTS.md",), lambda: __import__("abtest").model_details()),
     "headline": (("README.md",), headline_block),
     "badges": (("README.md",), lambda: f"**Contract {read('VERSION').strip()}** · MIT · verdicts carry receipts: `headron verify --receipt <file>`"),
     **{k: (("README.md",), lambda f=f: f()) for k, f in __import__("knowledge").README_BLOCKS.items()},
