@@ -351,15 +351,18 @@ class RonVerify:
             )
         rows = contract["obligations"]
         now = str(context.get("tree") or contract["tree"])
-        proven, first_open = ronbundle.standing(rows, now)
+        unbound = ronbundle.evidence_problems(Path(bundle), rows)
+        proven, first_open = ronbundle.standing(rows, now, unbound)
         refs = (f"task {contract['task']}", f"{proven}/{len(rows)} proven on {now}")
         if not first_open:
             output = {"task": contract["task"], "tree": now, "proven": proven}
             return MicroResult(self.name, self.version, "ok", output, evidence_refs=refs)
-        unproven = next((row["id"] for row in rows if row["state"] != "proven"), "")
+        unproven = next((row["id"] for row in rows if row["state"] != "proven" or row["id"] in unbound), "")
         status = "refused" if unproven else "unknown"
         next_step = (
-            f"prove {unproven}, close it, then pack a new bundle"
+            f"prove {unproven} with evidence the bundle holds ({unbound[unproven]}), then pack a new bundle"
+            if unproven in unbound
+            else f"prove {unproven}, close it, then pack a new bundle"
             if unproven
             else f"every obligation is proven, but not on {now}: re-prove them there, then pack a new bundle"
         )

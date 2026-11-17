@@ -170,6 +170,7 @@ def run(module: ModuleType) -> None:
         module.CASES.append((name, kills))
         print(f"  ok    {name}")
     ron_cases(module)
+    ron_evidence_cases(module)
 
 
 def _redigest(bundle: Path, edit: object = None) -> None:
@@ -208,7 +209,7 @@ def ron_cases(module: ModuleType) -> None:
         receipt_file = top / "run.json"
         receipt_file.write_text(
             receipt_module.dumps(
-                receipt_module.build(ROWS, base_commit="a" * 40, policy_digest="b" * 64, input_digest="c" * 64)
+                receipt_module.build(ROWS[:1], base_commit="a" * 40, policy_digest="b" * 64, input_digest="c" * 64)
             ),
             encoding="utf-8",
         )
@@ -247,7 +248,7 @@ def ron_cases(module: ModuleType) -> None:
 
         def tampered_receipt(bundle: Path) -> None:
             data = json.loads((bundle / "receipts/run.json").read_text(encoding="utf-8"))
-            data["verdict"] = "PASS"
+            data["verdict"] = "FAIL"  # the good receipt passes; claiming FAIL breaks its own counts
             (bundle / "receipts/run.json").write_text(json.dumps(data), encoding="utf-8")
             _redigest(bundle)
 
@@ -375,3 +376,50 @@ def ron_cases(module: ModuleType) -> None:
             raise SystemExit(f"FAIL {name}\n  got: {got!r}\n  kills: {kills}")
         module.CASES.append((name, kills))
         print(f"  ok    {name}")
+
+
+def ron_evidence_cases(module: ModuleType) -> None:
+    """A proven obligation stands in a `.ron` only on evidence the bundle holds: a ref to nothing in it, or to a
+    receipt that answers FAIL, leaves the obligation open (verify exits 3 and says why); a ref by last segment holds."""
+    import obligations  # noqa: PLC0415
+    import receipt as receipt_module  # noqa: PLC0415
+    import ronbundle  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {"HEADRON_HOME": tmp}):
+        top = Path(tmp)
+        receipts = {}
+        for name, rows in (("run.json", ROWS[:1]), ("fail.json", ROWS)):
+            receipts[name] = top / name
+            built = receipt_module.build(rows, base_commit="a" * 40, policy_digest="b" * 64, input_digest="c" * 64)
+            receipts[name].write_text(receipt_module.dumps(built), encoding="utf-8")
+        bound = {  # task: (evidence ref the close names, receipt packed), and the exit verify owes
+            "lane-failed": ("receipts/fail.json", "fail.json", 3),
+            "lane-elsewhere": ("the CI log on the runner", "run.json", 3),
+            "lane-basename": (str(receipts["run.json"]), "run.json", 0),
+            "lane-path": ("receipts/run.json", "run.json", 0),
+        }
+        exits, why = {}, {}
+        for task, (ref, packed, _) in bound.items():
+            obligations.add(task, "tests", "the suite passes", "pytest")
+            obligations.close(task, "tests", ref, at="t1")
+            bundle = top / f"{task}.ron"
+            ronbundle.pack(task, bundle, [receipts[packed]], [], at="t1")
+            rows = json.loads((bundle / "contract.json").read_text(encoding="utf-8"))["obligations"]
+            why[task] = ronbundle.evidence_problems(bundle, rows).get("tests", "")
+            with contextlib.redirect_stdout(io.StringIO()):
+                exits[task] = ronbundle.main(["verify", str(bundle)])
+    ok = (
+        exits == {task: want for task, (_, _, want) in bound.items()}
+        and "answers FAIL" in why["lane-failed"]
+        and "not in the bundle" in why["lane-elsewhere"]
+        and why["lane-basename"] == why["lane-path"] == ""
+    )
+    name = (
+        "a proven obligation stands in a .ron only when its evidence ref names a bundle file, by path or last "
+        "segment, and a receipt it names answers PASS; else verify exits 3 and names why"
+    )
+    kills = "a ledger evidence string never resolved to the bundle, or a FAIL receipt taken as the proof"
+    if not ok:
+        raise SystemExit(f"FAIL {name}\n  got: {(exits, why)!r}\n  kills: {kills}")
+    module.CASES.append((name, kills))
+    print(f"  ok    {name}")

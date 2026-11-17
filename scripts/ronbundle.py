@@ -23,14 +23,19 @@ Verifying reads no repository and imports only the standard library, receipt.py 
   python scripts/ronbundle.py verify <bundle>.ron [--tree] [--signed-by ID --trust FILE [--revoked FILE]]
 
   exit 0 intact, and every obligation proven on the tree read; 1 an integrity or signature finding;
-       3 intact, but an obligation is open or its evidence does not cover the tree read; 2 usage
+       3 intact, but an obligation is open, its evidence is not in the bundle or names a receipt that did not
+         pass, or its evidence does not cover the tree read; 2 usage
 
 proves: every file in the bundle is the one packed, none was added or removed, every receipt in it still verifies,
+  a proven obligation counts only when its evidence ref names a file in the bundle and a receipt it names passed,
   and with --signed-by that the reader's trusted, unrevoked key signed exactly this manifest
-does_not_prove: that the checks ran as the receipts say or that an evidence file checks what its obligation states;
+does_not_prove: that the checks ran as the receipts say, that a receipt was made on the contract's tree (a receipt
+  names a commit, the contract a tree id; binding them needs a receipt schema bump), or that an evidence file checks
+  what its obligation states;
   the procedures the contract names are the instruments
 closed_by: receiptsign_test.py (ron_cases), which plants an edited, an unlisted and a missing file, a symlink, a `..`
-  path, a tampered receipt, a manifest re-digested over a wrong hash, a stale tree and a wrong signer
+  path, a tampered receipt, a manifest re-digested over a wrong hash, a stale tree, a wrong signer, evidence held
+  outside the bundle and a proven obligation whose receipt answers FAIL
 """
 
 from __future__ import annotations
@@ -43,7 +48,7 @@ import re
 import shutil
 import sys
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Container, Sequence
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -83,13 +88,42 @@ def path_problem(rel: str) -> str | None:
     return f"{rel!r} is outside contract.json, receipts/<file>.json and evidence/<file>"
 
 
-def standing(rows: list[dict[str, Any]], now: str) -> tuple[int, str]:
+def standing(rows: list[dict[str, Any]], now: str, unbound: Container[str] = ()) -> tuple[int, str]:
     """(proven count, first open obligation id or ""), by obligations.standing's rule: proven only while the
-    evidence covers `now`, and nothing covers an unknown or a dirty tree."""
+    evidence covers `now`, and nothing covers an unknown or a dirty tree. An id in `unbound` (evidence_problems)
+    is open: its evidence is not in the bundle, or names a receipt that did not pass."""
     covered = now != UNKNOWN_TREE and not now.endswith("+dirty")
-    proven = [row for row in rows if row["state"] == "proven" and covered and row.get("tree") == now]
+    proven = [
+        row
+        for row in rows
+        if row["state"] == "proven" and covered and row.get("tree") == now and row["id"] not in unbound
+    ]
     first_open = next((row["id"] for row in rows if row not in proven), "")
     return len(proven), first_open
+
+
+def evidence_problems(bundle: Path, rows: list[dict[str, Any]]) -> dict[str, str]:
+    """{obligation id: why} for each proven row whose evidence does not hold inside the bundle.
+
+    The ledger's evidence is a free string; pack stores a file as receipts/<name> or evidence/<name>. A ref holds
+    when it is one of those paths, or its last segment names one, and when that file is a receipt, its verdict is
+    PASS (status ok for a computation receipt). Read after verify(): every listed file already matches its digest."""
+    files = json.loads((bundle / MANIFEST).read_bytes())["files"]
+    found: dict[str, str] = {}
+    for row in rows:
+        if row["state"] != "proven":
+            continue
+        ref = str(row.get("evidence") or "").strip()
+        name = PurePosixPath(ref.replace("\\", "/")).name
+        hits = [ref] if ref in files else [rel for rel in (f"receipts/{name}", f"evidence/{name}") if rel in files]
+        if not ref or not hits:
+            found[row["id"]] = f"evidence {ref!r} is not in the bundle"
+        elif hits[0].startswith("receipts/"):
+            held = json.loads((bundle / hits[0]).read_bytes())
+            said = held.get("verdict", {"ok": "PASS"}.get(held.get("status"), held.get("status")))
+            if said != "PASS":
+                found[row["id"]] = f"{hits[0]} answers {said}, not PASS"
+    return found
 
 
 def pack(
@@ -284,10 +318,13 @@ def main(argv: list[str] | None = None) -> int:
         import obligations  # noqa: PLC0415  only a reader standing in a checkout asks for its tree
 
         now = obligations.tree()
-    proven, first_open = standing(contract["obligations"], now)
+    unbound = evidence_problems(args.bundle, contract["obligations"])
+    proven, first_open = standing(contract["obligations"], now, unbound)
     total = len(contract["obligations"])
     where = "the current tree" if args.tree else "the packed tree"
     print(f"STANDING {'proven' if not first_open else 'open'}  {proven}/{total} proven on {where} {now}")
+    for oid, why in sorted(unbound.items()):
+        print(f"OPEN  {oid}: {why}")
     if first_open:
         print(f"next: prove {first_open}, close it, then pack a new bundle")
     return 3 if first_open else 0
