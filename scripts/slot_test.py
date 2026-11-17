@@ -116,14 +116,14 @@ def second_slot_case() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         env = {**os.environ, "HEADRON_SLOT_LOCK": str(Path(tmp) / "suite.lock"), "HEADRON_SLOTS": "2"}
         env.pop("HEADRON_SLOT_HELD", None)
-        env["HEADRON_SLOT_LOAD"] = "100000"  # the machine's real load never withholds slot 2 here
+        env["HEADRON_SLOT_IDLE"] = "0"  # the machine's real load never withholds slot 2 here
         lock = Path(tmp) / "suite.lock"
         first = _hold(env)
         try:
             if not wait_until(lambda: lock.exists() and lock.read_text().startswith("pid"), timeout=20, interval=0.2):
                 raise SystemExit("FAIL the first holder never took slot 1")
-            # PLANTED: slot 2 is free, but a load ceiling of ~0 leaves the machine no room for it
-            loaded = _run({**env, "HEADRON_SLOT_LOAD": "0.0000001"}, "--wait", "0", "--", "true")
+            # PLANTED: slot 2 is free, but an idle floor of 2 (200% of the cores) can never be met
+            loaded = _run({**env, "HEADRON_SLOT_IDLE": "2"}, "--wait", "0", "--", "true")
             if loaded.returncode != 75 or "withheld" not in loaded.stderr:
                 raise SystemExit(
                     f"FAIL a loaded machine handed out a second slot: {loaded.returncode} {loaded.stderr!r}"
@@ -156,7 +156,7 @@ def second_slot_case() -> None:
         if f"free ({sized} slots)" not in _run(unset, "--status").stdout:
             raise SystemExit(f"FAIL an unset HEADRON_SLOTS was not sized by the cores ({sized})")
     print(
-        "  ok    two slots: the second runs, the third is BUSY naming both, load withholds the second, unset sizes by cores"
+        "  ok    two slots: the second runs, the third is BUSY naming both, an unmet idle floor withholds the second, unset sizes by cores"
     )
 
 
@@ -211,9 +211,51 @@ def atlas_busy_case() -> None:
     print("  ok    a planted suite on a held machine slot is refused BUSY at once")
 
 
+def idle_gate_case() -> None:
+    """The gate reads idle CPU ticks, not the load average: load 14-22 hid 2.5 free cores and serialized every land."""
+    import slot
+
+    def reader(*samples: tuple[int, int] | None):
+        left = list(samples)
+        return lambda: left.pop(0)
+
+    no_wait = lambda _s: None  # noqa: E731
+    saved = os.environ.pop("HEADRON_SLOT_IDLE", None)
+    try:
+        # 300 of 800 ticks idle (37.5%) clears the 25% floor; 100 of 800 (12.5%) does not
+        if not slot.spare_cores(reader((0, 0), (300, 800)), no_wait):
+            raise SystemExit("FAIL 37.5% idle cores were refused a second suite")
+        if slot.spare_cores(reader((0, 0), (100, 800)), no_wait):
+            raise SystemExit("FAIL 12.5% idle cores were granted a second suite")
+        # PLANTED: no tick reader on this host — never a guess, never a grant
+        if slot.spare_cores(reader(None), no_wait) or slot.spare_cores(reader((0, 0), None), no_wait):
+            raise SystemExit("FAIL a host that cannot measure its cores was granted a second suite")
+        # PLANTED: Mach's 32-bit counters wrapped inside the window; the modulo delta is still 300 of 800
+        wrapped = slot.idle_share(reader((2**32 - 100, 2**32 - 400), (200, 400)), no_wait)
+        if wrapped != 300 / 800:
+            raise SystemExit(f"FAIL a wrapped tick counter read as {wrapped}, not 0.375 idle")
+        # PLANTED: a grant, then an immediate second ask: the first suite's load cannot show yet
+        now = [0.0]
+        admit = slot.admitter(settle_s=10, clock=lambda: now[0], room=lambda: True)
+        if not admit() or admit():
+            raise SystemExit("FAIL the admitter granted twice inside one settle window")
+        now[0] = 10.5
+        if not admit():
+            raise SystemExit("FAIL the admitter never granted again after the settle window")
+        if slot.admitter(room=lambda: False)():
+            raise SystemExit("FAIL the admitter granted a suite the cores had no room for")
+        if slot.cpu_ticks() is None and sys.platform in ("darwin", "linux"):
+            raise SystemExit(f"FAIL this {sys.platform} host has a tick reader and it returned nothing")
+    finally:
+        if saved is not None:
+            os.environ["HEADRON_SLOT_IDLE"] = saved
+    print("  ok    idle gate: ticks not load, no reader no grant, wrapped counters, one grant per settle")
+
+
 def run(module: ModuleType | None) -> None:
     slot_case(module)
     second_slot_case()
+    idle_gate_case()
     root_env_case()
     atlas_busy_case()
 

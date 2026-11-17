@@ -173,9 +173,9 @@ forbidden_calls:
     attrs: [read_text]
     any_receiver: true
     roster: [scripts, fuzz]
-    exempt_files: [agents.py, atlas_cli.py, atlascore.py, datakit.py, edges.py, enforce.py, ghaudit.py, gitobject.py, impact.py, mcpsize.py, modelpack.py, providers.py, receipt.py, sandboxgen.py, schedtargets.py]
+    exempt_files: [agents.py, atlas_cli.py, atlascore.py, datakit.py, edges.py, enforce.py, ghaudit.py, gitobject.py, impact.py, mcpsize.py, modelpack.py, providers.py, receipt.py, sandboxgen.py, schedtargets.py, slot.py]
     exempt_suffix: _test.py
-    exempt_reason: 'atlascore owns the read. The rest read a person''s data, an agent''s live state, a store or another tree, or ship standing alone, and none of those sites is a tree read the contract repeats'
+    exempt_reason: 'atlascore owns the read. The rest read a person''s data, an agent''s live state, a store or another tree, or ship standing alone, and none of those sites is a tree read the contract repeats. slot reads /proc/stat, whose text changes every tick under an unchanged stat, so a stat-keyed cache would answer stale'
     message: 'reads a file privately — atlascore.text_of holds the text against the file''s stat, so every instrument shares one read'
   root_resolved_per_call:
     why: 'MEASURED at 3.62.0: `ROOT.resolve()` per call walked every path component again, 11,046 of 58,722 stats in one contract run, to answer about one directory that does not move'
@@ -6032,7 +6032,7 @@ declared_inputs:
   HEADRON_SLOT_LOCK: {why: 'the file the machine suite slot flocks, so a test plants its own', set_by: 'a test, or the operator', absent: '~/.headron/suite.lock'}
   HEADRON_SLOT_HELD: {why: 'the pid of a live ancestor holding the machine suite slot, so a nested suite runs inside it', set_by: 'headron slot and atlas_test.host_lock, for their children', absent: 'the slot is taken, or BUSY (75) names its holder'}
   HEADRON_SLOTS: {why: 'how many heavy suites the machine runs at once; slot n flocks HEADRON_SLOT_LOCK + `.n`', set_by: the operator, absent: 'cores / (2 x HEADRON_SLOT_WORKERS), at least 1'}
-  HEADRON_SLOT_LOAD: {why: 'the fraction of the cores the 1-minute load must sit under before a slot past the first is taken', set_by: 'a test, or the operator', absent: '0.75'}
+  HEADRON_SLOT_IDLE: {why: 'the share of the cores that must sit idle over a 1 s tick sample before a slot past the first is taken; 0 grants without measuring', set_by: 'a test, or the operator', absent: '0.25'}
   HEADRON_SLOT_WAIT: {why: 'seconds a planted suite or a gate queues for the machine slot before it gives up as BUSY; the queue wait is taken before the gate timer starts, so it never spends the gate timeout', set_by: 'the operator, or a test (0 refuses at once)', absent: '3600'}
   HEADRON_SLOT_WORKERS: {why: 'the worker cap headron slot gives go, vitest, pytest-xdist and cargo', set_by: the operator, absent: '2'}
   HEADRON_ENFORCE_WORKERS: {why: 'the thread count enforce.py checks files on; each file waits on its own compiler, and 1 is the serial path whose output the parallel one must match', set_by: 'the operator, or a test', absent: 'min(8, cores)'}

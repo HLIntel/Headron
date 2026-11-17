@@ -10,7 +10,7 @@ Exit 0 only when every selected unit answered ok; 1 when one was refused; 2 when
 
 A clean whole run (the CONTRACT jobs, HEAD committed) fans out: each unit runs in its own detached worktree of
 HEAD as `.github/ci-local.sh --unit <unit>`, at most CI_LOCAL_WORKERS at once and past the first only while
-slot.spare_cores() says so. A dirty tree, width 1, or named jobs run in place, one unit at a time.
+slot.admitter() grants it (measured idle cores, one grant per settle). A dirty tree, width 1, or named jobs run in place, one unit at a time.
 
 proves: a unit is ok only when every one of its steps exited 0 within its bound, and only after its needs were ok
 does_not_prove: that a step's command checks what its name says; that is the step's own instrument
@@ -40,7 +40,7 @@ import gaterunner
 import micrograph
 from atlascore import git_run, text_of
 from microprogram import MicroResult
-from slot import spare_cores
+from slot import admitter
 
 HOOK_MARK = "# installed by .github/ci-local.sh --install-hook"
 WIDTH = 3  # units at once: the contract DAG never has more ready, and each is one process beside a bounded example pool
@@ -214,7 +214,7 @@ def run_graph(jobs: Sequence[cipipeline.Job], runner_temp: Path, *, head: str | 
         def start(node: micrograph.Node, timeout_s: float) -> micrograph.Running:
             return _Child(node.name, trees / str(next(count)), head, env)
 
-        admit: Callable[[], bool] = spare_cores
+        admit: Callable[[], bool] = admitter()
     else:
         width = 1
 

@@ -9,8 +9,15 @@ timeout (a 289 s suite took 558.6 s). The cores are the machine's, so the slot i
 MORE THAN ONE, SIZED BY THE MACHINE (3.54.0). One slot queued a land's CI an hour behind another
 repository's, on a machine with cores to spare. Each suite is capped at HEADRON_SLOT_WORKERS,
 so the machine fits cores / (2 x workers) of them (8 cores, 2 workers: 2 slots), and a slot past the
-first is taken only while the 1-minute load sits under HEADRON_SLOT_LOAD x cores (default 0.75): a loaded
-machine falls back to one suite, which is the measured failure above.
+first is taken only while at least HEADRON_SLOT_IDLE of the cores (default 0.25) sat idle over a 1 s sample
+of the kernel's CPU ticks: a busy machine falls back to one suite, which is the measured failure above.
+
+IDLE TICKS, NOT LOAD AVERAGE. The gate first read the 1-minute load, which counts threads waiting on I/O as
+well as running ones. MEASURED on the same 8-core machine: load 14-22 while `top` showed 29-36% idle, so the
+ceiling (6) withheld every slot past the first and a land's CI ran its units one at a time on
+a machine with 2.5 cores free. A host with no tick reader (neither /proc/stat nor Mach) is never granted a
+second slot. `admitter()` adds a settle: after a grant the next is judged only once the new suite's load
+can show in a sample.
 
 CONTRACT (any tool may consume it; none forks it):
 - slot 1 is an flock on HEADRON_SLOT_LOCK, else ~/.headron/suite.lock; slot n is that path + `.n`; a holder
@@ -39,7 +46,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 BUSY = 75  # EX_TEMPFAIL, the code atlas_test and verify already read as NOT RUN
-LOAD_CEILING = 0.75  # of the cores: the 1-minute load under which a slot past the first may be taken
+IDLE_FLOOR = 0.25  # of the cores: the idle share a slot past the first needs; the rest is the desktop's headroom
+SAMPLE_S = 1.0  # seconds between the two tick reads one verdict compares
+SETTLE_S = 10.0  # after a grant, seconds before the next is judged: a unit's worktree and install hide its load
 
 
 def lock_path() -> Path:
@@ -64,10 +73,85 @@ def lock_paths() -> list[Path]:
     return [first, *(first.with_name(f"{first.name}.{n}") for n in range(2, slot_count() + 1))]
 
 
-def spare_cores() -> bool:
-    """True while the 1-minute load leaves room for one more suite beside the first."""
-    ceiling = float(os.environ.get("HEADRON_SLOT_LOAD") or LOAD_CEILING)
-    return os.getloadavg()[0] < ceiling * (os.cpu_count() or 1)
+def cpu_ticks() -> tuple[int, int] | None:
+    """(idle, total) CPU ticks since boot over every core; None on a host with no reader."""
+    if sys.platform.startswith("linux"):
+        try:
+            first = Path("/proc/stat").read_text().split("\n", 1)[0].split()
+            fields = [int(x) for x in first[1:9]]  # user nice system idle iowait irq softirq steal; guest is in user
+        except (OSError, ValueError):
+            return None
+        return fields[3] + fields[4], sum(fields)
+    if sys.platform == "darwin":
+        import ctypes
+
+        try:
+            lib = ctypes.CDLL("/usr/lib/libSystem.B.dylib")
+        except OSError:
+            return None
+        lib.mach_host_self.restype = ctypes.c_uint32
+        lib.host_statistics.argtypes = (ctypes.c_uint32, ctypes.c_int, ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint32))
+        info, count = (ctypes.c_uint32 * 4)(), ctypes.c_uint32(4)  # HOST_CPU_LOAD_INFO: user, system, idle, nice
+        if lib.host_statistics(lib.mach_host_self(), 3, info, ctypes.byref(count)) != 0:
+            return None
+        return info[2], sum(info)
+    return None
+
+
+def idle_share(
+    read: Callable[[], tuple[int, int] | None] = cpu_ticks, wait: Callable[[float], object] = time.sleep
+) -> float | None:
+    """The share of all cores idle across one SAMPLE_S window; None when the host cannot say."""
+    first = read()
+    if first is None:
+        return None
+    wait(SAMPLE_S)
+    second = read()
+    if second is None:
+        return None
+    # Mach ticks are 32-bit counters that wrap; a delta modulo 2**32 is exact for any window under ~60 days.
+    idle, total = ((b - a) % 2**32 for a, b in zip(first, second, strict=True))
+    return idle / total if total else None
+
+
+def idle_floor() -> float:
+    raw = os.environ.get("HEADRON_SLOT_IDLE", "")
+    try:
+        return float(raw) if raw else IDLE_FLOOR
+    except ValueError:
+        raise SystemExit(f"slot: HEADRON_SLOT_IDLE={raw!r} is not a number; refusing to guess a floor") from None
+
+
+def spare_cores(
+    read: Callable[[], tuple[int, int] | None] = cpu_ticks, wait: Callable[[float], object] = time.sleep
+) -> bool:
+    """True when HEADRON_SLOT_IDLE of the cores sat idle over one sample; never on a host that cannot measure."""
+    floor = idle_floor()
+    if floor <= 0:
+        return True  # the operator's (or a test's) explicit "do not measure"
+    share = idle_share(read, wait)
+    return share is not None and share >= floor
+
+
+def withheld(k: int) -> str:
+    return f"slot {k} withheld: under {idle_floor():.0%} of {os.cpu_count()} cores idle"
+
+
+def admitter(
+    settle_s: float = SETTLE_S, clock: Callable[[], float] = time.monotonic, room: Callable[[], bool] = spare_cores
+) -> Callable[[], bool]:
+    """spare_cores for a caller that starts a suite on each True: no second grant within settle_s of the last."""
+    granted: list[float] = []
+
+    def admit() -> bool:
+        if idle_floor() > 0 and granted and clock() - granted[-1] < settle_s:
+            return False  # a floor of 0 measures nothing, so there is no load to wait for
+        if not room():
+            return False
+        granted.append(clock())
+        return True
+
+    return admit
 
 
 def inherited() -> bool:
@@ -107,7 +191,7 @@ def _try(label: str):
     held = []
     for k, path in enumerate(lock_paths()):
         if k and not spare_cores():
-            held.append(f"slot {k} withheld: load {os.getloadavg()[0]:.1f} on {os.cpu_count()} cores")
+            held.append(withheld(k))
             break
         result = _flock(path, label)
         if not isinstance(result, str):
@@ -225,7 +309,7 @@ def slot_status() -> dict:
     free_count = 0
     for k, path in enumerate(lock_paths()):
         if k and not spare_cores():
-            holders.append(f"slot {k} withheld: load {os.getloadavg()[0]:.1f} on {os.cpu_count()} cores")
+            holders.append(withheld(k))
             continue
         try:
             with open(path, "r") as handle:
