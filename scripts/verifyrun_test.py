@@ -8,10 +8,24 @@ import io
 import sys
 import tempfile
 import time
+from collections.abc import Callable
 from pathlib import Path
 from shutil import rmtree
 from threading import Event
 from types import ModuleType, SimpleNamespace
+
+
+def javascript_placement_cases(placed: Callable[..., dict]) -> None:
+    declared = {"package.json": '{"scripts":{"test":"node --test"}}', "src/a.ts": ""}
+    picked = placed(declared, "src/a.ts", "unit_tests", ["vitest", "run"])
+    if picked.get("argv") != ["npm", "run", "test"]:
+        raise SystemExit(f"FAIL the project's declared test command was not selected: {picked}")
+    missing = placed({"package.json": "{}", "a.ts": ""}, "a.ts", "unit_tests", ["vitest", "run"])
+    if missing.get("argv") != ["vitest", "run"]:
+        raise SystemExit(f"FAIL a missing test script changed the fallback: {missing}")
+    invalid = placed({"package.json": '{"scripts":{"test":42}}', "a.ts": ""}, "a.ts", "unit_tests", ["vitest", "run"])
+    if "invalid test script" not in invalid.get("why", ""):
+        raise SystemExit(f"FAIL an invalid test script was accepted: {invalid}")
 
 
 def undecided_case(module: ModuleType | SimpleNamespace) -> None:

@@ -120,6 +120,28 @@ def _anchored(path_value: str) -> Path:
         return path
 
 
+def javascript_test(path: Path) -> dict | None:
+    """Use a JavaScript project's declared test script when it has one, in that project's directory."""
+    home = project_home(path, "package.json")
+    if not home:
+        return None
+    try:
+        package = json.loads(text_of(home / "package.json"))
+    except (OSError, ValueError):
+        return {"why": "package.json could not be read as JSON; its test script is unknown"}
+    scripts = package.get("scripts") if isinstance(package, dict) else None
+    if not isinstance(scripts, dict) or "test" not in scripts:
+        return None
+    if not isinstance(scripts["test"], str) or not scripts["test"].strip():
+        return {"why": "package.json declares an invalid test script"}
+    return {
+        "argv": ["npm", "run", "test"],
+        "home": home,
+        "cwd": os.path.relpath(home),
+        "basis": "the project's package.json declares its test script",
+    }
+
+
 def placement(path_value: str, gate: str, argv: list[str] | None) -> dict:
     """Where one gate runs for one file: {"argv", "home"}, or {"why"} when no run of it here proves anything.
 
@@ -134,6 +156,8 @@ def placement(path_value: str, gate: str, argv: list[str] | None) -> dict:
     path = _anchored(path_value)
     if why := unadopted(path, argv[0], spec) or misread(path, argv[0], spec):
         return {"why": why}
+    if gate == "unit_tests" and argv == ["vitest", "run"] and (declared := javascript_test(path)):
+        return declared
     if marker := (spec.get("per_directory") or {}).get(verb):
         home = project_home(path, str(marker))
         if not home:
