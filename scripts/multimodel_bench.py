@@ -324,7 +324,13 @@ def screen_record(screens: list[dict[str, Any]], version: str) -> dict[str, Any]
             errs = m.get("errors") or {}
             samples = {cls: _public(t) for cls, t in (m.get("error_samples") or {}).items()}
             if arms:
-                lanes[name] = {"arms": arms, **({"errors": errs, "error_samples": samples} if errs else {})}
+                both = [v for v in (m.get("questions") or {}).values() if "not_run" not in v.values()]
+                paired = {arm: sum(v[arm] == "correct" for v in both) for arm in ("blind", "headron")}
+                lanes[name] = {
+                    "arms": arms,
+                    "paired": {"n": len(both), **paired},
+                    **({"errors": errs, "error_samples": samples} if errs else {}),
+                }
                 continue
             top = max(errs, key=lambda k: errs[k]) if errs else "empty_or_unscorable"
             excluded[name] = {
@@ -354,6 +360,9 @@ def screen_record(screens: list[dict[str, Any]], version: str) -> dict[str, Any]
         "`multimodel_bench.py --models-from <census> --live --json-out` re-measures and `--record` rebuilds this file",
         "repeats": 1,
         "tasks": tasks.pop(),
+        "paired": {k: sum(lane["paired"][k] for lane in lanes.values()) for k in ("n", "blind", "headron")},
+        "paired_reading": "the comparison: only tasks BOTH arms answered on the same lane; the per-arm rates "
+        "above count different answered sets and are not a lift",
         "scoring": "a reply the scorer cannot read, an empty reply or a transport error is NOT RUN and leaves the "
         "denominator; it is never scored wrong",
         "tokens": 'prompt tokens summed over answered calls as the vendor reported them; "unmeasured" where it '

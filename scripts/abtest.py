@@ -369,12 +369,6 @@ def field_figures() -> dict:
     return json.loads(text_of(path))
 
 
-def field_figure(field: str) -> int | str:
-    """A field metric, or an explicit absence; a missing snapshot must never look current."""
-    value = field_figures().get(field)
-    return value if isinstance(value, int) else "not recorded"
-
-
 def verification_row() -> str:
     """What the recorded runs returned, by check and by run; an absent or malformed record says so."""
     figures = field_figures()
@@ -399,6 +393,33 @@ def verification_row() -> str:
     )
 
 
+def task_rows() -> list[str]:
+    """One README row per task record, each read on its own terms: a sum across records with different
+    contracts and task sets is a figure no run measured, so none is formed here."""
+    rows: list[str] = []
+    path = ROOT / "benchmarks" / "tasks-latest.json"
+    if path.exists():
+        models = json.loads(text_of(path))["models"]
+        cells = [c for m in models.values() for c in m.values() if isinstance(c, dict) and "headron" in c]
+        asked = sum(c["headron"]["asked"] for c in cells)
+        got = {arm: sum(c[arm]["correct"] for c in cells) for arm in ("blind", "headron")}
+        versions = "/".join(sorted({str(m.get("measured_at")) for m in models.values()}))
+        rows.append(
+            f"| Task bench, {len(models)} Claude models (contract {versions}) | with Headron "
+            f"{got['headron']}/{asked}; blind {got['blind']}/{asked}; every task answered by both arms |"
+        )
+    path = ROOT / "benchmarks" / "screen-universal.json"
+    if path.exists():
+        doc = json.loads(text_of(path))
+        p = doc["paired"]
+        rows.append(
+            f"| Free-model screen, {len(doc['lanes'])} lanes answered (contract {doc['ingested_at']}, "
+            f"{doc['tasks']} tasks) | on the {p['n']} tasks both arms answered: with Headron {p['headron']}/{p['n']}; "
+            f"blind {p['blind']}/{p['n']}. {len(doc['excluded'])} lanes gave no answer and carry no score |"
+        )
+    return rows
+
+
 def measured_block() -> str:
     """Render recorded measurements with their scope, without treating samples as guarantees."""
     f = measured_figures()
@@ -407,14 +428,14 @@ def measured_block() -> str:
         "| Instrument | Recorded result |",
         "| :--- | :--- |",
         f"| Enforcement | {f.get('enf_refused', 'not recorded')}/{f.get('enf_planted', 'not recorded')} breaks refused across {f.get('enf_langs', 'not recorded')} toolchains; **{f['planted']}** declared planted cases |",
-        f"| Failure ledger | {f['failures']} shapes, {f['failures_sightings']} sightings; {f['failures_guarded']} in-tree guarded, {f['failures_host_only']} host-only |",
-        f"| Field ledger | {field_figure('verify_runs')} verifications ({field_figure('verify_pass')} clean); {field_figure('refusals')} refusals; {field_figure('lands')} landings; {field_figure('lessons_served')} lessons; {field_figure('sessions_ended')} sessions |",
         verification_row(),
         f"| Routing experiment | {f['tok_fewer']}% fewer prompt tokens than whole-tree; {f['tok_blind']}% fewer than unassisted, across identified models |",
-        f"| Language roles | {f['pairs']} pairs: {f['pairs_runnable']} runnable, 0 undeclared |",
+        *task_rows(),
         "",
-        f"Entry context: ~{f['pre_tokens']:,} tokens. The {f['lazy_docs']} documents ({f['lazy_kib']} KiB) load on demand; install: {f['install_kib']} KiB; hash lock with test tools: {f['deps_closure']} packages.",
-        "[Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.",
+        f"Entry context: ~{f['pre_tokens']:,} tokens; the rest loads on demand. Each row is its own record, "
+        "contract version and task set: rows are never summed into one figure, and no run crowns a model.",
+        "[Routing data](benchmarks/ab-latest.json). [Task records](benchmarks/tasks-latest.json), "
+        "[screen](benchmarks/screen-universal.json).",
     ]
     return "\n".join(lines)
 

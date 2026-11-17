@@ -1,13 +1,378 @@
 {
- "_why": "Headron universal screen: every $0 lane the census found across kilo asked the same Headron task questions blind and with the Headron contract. Only answered arms carry numbers; a lane with no answer sits in `excluded` with its cause.",
+ "_why": "Headron universal screen: every $0 lane the census found across gemini, groq, kilo, openrouter asked the same Headron task questions blind and with the Headron contract. Only answered arms carry numbers; a lane with no answer sits in `excluded` with its cause.",
  "ingested_at": "3.63.0",
  "obtained_by": "measured_live",
  "raw_records": "not in this repository: the per-call replies stay in the local replay cache; `multimodel_bench.py --models-from <census> --live --json-out` re-measures and `--record` rebuilds this file",
  "repeats": 1,
  "tasks": 22,
+ "paired": {
+  "n": 138,
+  "blind": 58,
+  "headron": 115
+ },
+ "paired_reading": "the comparison: only tasks BOTH arms answered on the same lane; the per-arm rates above count different answered sets and are not a lift",
  "scoring": "a reply the scorer cannot read, an empty reply or a transport error is NOT RUN and leaves the denominator; it is never scored wrong",
  "tokens": "prompt tokens summed over answered calls as the vendor reported them; \"unmeasured\" where it reported none (Junie always: its agent adds about 32k tokens per call)",
  "lanes": {
+  "gemini:models/gemini-3-flash-preview": {
+   "arms": {
+    "blind": {
+     "answered": 11,
+     "correct": 3,
+     "not_run": 11,
+     "ci95": [
+      0.097,
+      0.566
+     ],
+     "tokens": 12352
+    },
+    "headron": {
+     "answered": 11,
+     "correct": 3,
+     "not_run": 11,
+     "ci95": [
+      0.097,
+      0.566
+     ],
+     "tokens": 36916
+    }
+   },
+   "paired": {
+    "n": 11,
+    "blind": 3,
+    "headron": 3
+   },
+   "errors": {
+    "transient": 1,
+    "breaker_open": 21
+   },
+   "error_samples": {
+    "transient": "HTTP 429: [{ \"error\": { \"code\": 429, \"message\": \"You exceeded your current quota, please check your plan and billing details. For more infor",
+    "breaker_open": "breaker open: refused without calling"
+   }
+  },
+  "gemini:models/gemini-3.1-flash-lite": {
+   "arms": {
+    "blind": {
+     "answered": 22,
+     "correct": 8,
+     "not_run": 0,
+     "ci95": [
+      0.197,
+      0.57
+     ],
+     "tokens": 13378
+    },
+    "headron": {
+     "answered": 22,
+     "correct": 22,
+     "not_run": 0,
+     "ci95": [
+      0.851,
+      1.0
+     ],
+     "tokens": 38231
+    }
+   },
+   "paired": {
+    "n": 22,
+    "blind": 8,
+    "headron": 22
+   }
+  },
+  "gemini:models/gemini-3.1-flash-lite-preview": {
+   "arms": {
+    "blind": {
+     "answered": 22,
+     "correct": 8,
+     "not_run": 0,
+     "ci95": [
+      0.197,
+      0.57
+     ],
+     "tokens": 13378
+    },
+    "headron": {
+     "answered": 22,
+     "correct": 22,
+     "not_run": 0,
+     "ci95": [
+      0.851,
+      1.0
+     ],
+     "tokens": 38231
+    }
+   },
+   "paired": {
+    "n": 22,
+    "blind": 8,
+    "headron": 22
+   }
+  },
+  "gemini:models/gemini-3.5-flash-lite": {
+   "arms": {
+    "blind": {
+     "answered": 20,
+     "correct": 10,
+     "not_run": 2,
+     "ci95": [
+      0.299,
+      0.701
+     ],
+     "tokens": 13378
+    },
+    "headron": {
+     "answered": 20,
+     "correct": 18,
+     "not_run": 2,
+     "ci95": [
+      0.699,
+      0.972
+     ],
+     "tokens": 38231
+    }
+   },
+   "paired": {
+    "n": 18,
+    "blind": 8,
+    "headron": 16
+   }
+  },
+  "gemini:models/gemini-flash-lite-latest": {
+   "arms": {
+    "blind": {
+     "answered": 19,
+     "correct": 10,
+     "not_run": 3,
+     "ci95": [
+      0.317,
+      0.727
+     ],
+     "tokens": 13378
+    },
+    "headron": {
+     "answered": 21,
+     "correct": 20,
+     "not_run": 1,
+     "ci95": [
+      0.773,
+      0.992
+     ],
+     "tokens": 38231
+    }
+   },
+   "paired": {
+    "n": 18,
+    "blind": 9,
+    "headron": 17
+   }
+  },
+  "gemini:models/gemini-robotics-er-2-preview": {
+   "arms": {
+    "blind": {
+     "answered": 13,
+     "correct": 1,
+     "not_run": 9,
+     "ci95": [
+      0.014,
+      0.333
+     ],
+     "tokens": 12798
+    },
+    "headron": {
+     "answered": 12,
+     "correct": 6,
+     "not_run": 10,
+     "ci95": [
+      0.254,
+      0.746
+     ],
+     "tokens": 37183
+    }
+   },
+   "paired": {
+    "n": 12,
+    "blind": 1,
+    "headron": 6
+   },
+   "errors": {
+    "transient": 1,
+    "breaker_open": 18
+   },
+   "error_samples": {
+    "transient": "HTTP 429: [{ \"error\": { \"code\": 429, \"message\": \"You exceeded your current quota, please check your plan and billing details. For more infor",
+    "breaker_open": "breaker open: refused without calling"
+   }
+  },
+  "groq:allam-2-7b": {
+   "arms": {
+    "blind": {
+     "answered": 16,
+     "correct": 2,
+     "not_run": 6,
+     "ci95": [
+      0.035,
+      0.36
+     ],
+     "tokens": 15149
+    },
+    "headron": {
+     "answered": 13,
+     "correct": 6,
+     "not_run": 9,
+     "ci95": [
+      0.232,
+      0.709
+     ],
+     "tokens": 3320
+    }
+   },
+   "paired": {
+    "n": 8,
+    "blind": 1,
+    "headron": 2
+   },
+   "errors": {
+    "terminal": 5
+   },
+   "error_samples": {
+    "terminal": "HTTP 400: {\"error\":{\"message\":\"Please reduce the length of the messages or completion.\",\"type\":\"invalid_request_error\",\"param\":\"messages\"}}"
+   }
+  },
+  "groq:openai/gpt-oss-120b": {
+   "arms": {
+    "blind": {
+     "answered": 13,
+     "correct": 9,
+     "not_run": 9,
+     "ci95": [
+      0.424,
+      0.873
+     ],
+     "tokens": 5822
+    },
+    "headron": {
+     "answered": 22,
+     "correct": 22,
+     "not_run": 0,
+     "ci95": [
+      0.851,
+      1.0
+     ],
+     "tokens": 36171
+    }
+   },
+   "paired": {
+    "n": 13,
+    "blind": 9,
+    "headron": 13
+   },
+   "errors": {
+    "terminal": 9
+   },
+   "error_samples": {
+    "terminal": "groq returned a non-answer: carried nothing at choices.0.message.content \u2014 {'id': 'chatcmpl-ba26640f-f89c-4364-aaa0-e7645507e261', 'object':"
+   }
+  },
+  "groq:openai/gpt-oss-20b": {
+   "arms": {
+    "blind": {
+     "answered": 1,
+     "correct": 0,
+     "not_run": 21,
+     "ci95": [
+      0.0,
+      0.793
+     ],
+     "tokens": 133
+    },
+    "headron": {
+     "answered": 19,
+     "correct": 19,
+     "not_run": 3,
+     "ci95": [
+      0.832,
+      1.0
+     ],
+     "tokens": 29245
+    }
+   },
+   "paired": {
+    "n": 1,
+    "blind": 0,
+    "headron": 1
+   },
+   "errors": {
+    "terminal": 24
+   },
+   "error_samples": {
+    "terminal": "groq returned a non-answer: carried nothing at choices.0.message.content \u2014 {'id': 'chatcmpl-0580c6a9-1beb-4cdc-ad94-3503952d9c49', 'object':"
+   }
+  },
+  "groq:openai/gpt-oss-safeguard-20b": {
+   "arms": {
+    "blind": {
+     "answered": 1,
+     "correct": 1,
+     "not_run": 21,
+     "ci95": [
+      0.207,
+      1.0
+     ],
+     "tokens": 1476
+    }
+   },
+   "paired": {
+    "n": 0,
+    "blind": 0,
+    "headron": 0
+   },
+   "errors": {
+    "terminal": 5,
+    "breaker_open": 38
+   },
+   "error_samples": {
+    "terminal": "groq returned a non-answer: carried nothing at choices.0.message.content \u2014 {'id': 'chatcmpl-67a6ba68-80da-4366-bd2f-c4b30324b829', 'object':",
+    "breaker_open": "breaker open: refused without calling"
+   }
+  },
+  "groq:qwen/qwen3.8-27b": {
+   "arms": {
+    "blind": {
+     "answered": 3,
+     "correct": 3,
+     "not_run": 19,
+     "ci95": [
+      0.438,
+      1.0
+     ],
+     "tokens": 4266
+    },
+    "headron": {
+     "answered": 2,
+     "correct": 2,
+     "not_run": 20,
+     "ci95": [
+      0.342,
+      1.0
+     ],
+     "tokens": 12884
+    }
+   },
+   "paired": {
+    "n": 2,
+    "blind": 2,
+    "headron": 2
+   },
+   "errors": {
+    "transient": 1,
+    "breaker_open": 38
+   },
+   "error_samples": {
+    "transient": "HTTP 429: {\"error\":{\"message\":\"Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01knsmq5kye5ybajd9mfrksdsc` service tier",
+    "breaker_open": "breaker open: refused without calling"
+   }
+  },
   "kilo:baidu/ernie-5.5-flash-preview:free": {
    "arms": {
     "blind": {
@@ -30,6 +395,11 @@
      ],
      "tokens": 34149
     }
+   },
+   "paired": {
+    "n": 3,
+    "blind": 3,
+    "headron": 3
    },
    "errors": {
     "transient": 1,
@@ -63,6 +433,11 @@
      "tokens": 6963
     }
    },
+   "paired": {
+    "n": 0,
+    "blind": 0,
+    "headron": 0
+   },
    "errors": {
     "transient": 1,
     "breaker_open": 34
@@ -84,6 +459,11 @@
      ],
      "tokens": 12895
     }
+   },
+   "paired": {
+    "n": 0,
+    "blind": 0,
+    "headron": 0
    },
    "errors": {
     "transient": 1,
@@ -117,6 +497,11 @@
      "tokens": 6840
     }
    },
+   "paired": {
+    "n": 1,
+    "blind": 0,
+    "headron": 1
+   },
    "errors": {
     "transient": 1,
     "breaker_open": 41
@@ -138,6 +523,11 @@
      ],
      "tokens": 21796
     }
+   },
+   "paired": {
+    "n": 0,
+    "blind": 0,
+    "headron": 0
    },
    "errors": {
     "transient": 1,
@@ -171,6 +561,11 @@
      "tokens": 38439
     }
    },
+   "paired": {
+    "n": 6,
+    "blind": 5,
+    "headron": 6
+   },
    "errors": {
     "transient": 1,
     "breaker_open": 16
@@ -179,9 +574,300 @@
     "transient": "HTTP 429: {\"error\":\"Rate limit exceeded\",\"error_type\":\"rate_limit_exceeded\",\"message\":\"Free model usage limit reached. Please try again late",
     "breaker_open": "breaker open: refused without calling"
    }
+  },
+  "openrouter:inclusionai/ling-3.2-flash:free": {
+   "arms": {
+    "blind": {
+     "answered": 1,
+     "correct": 1,
+     "not_run": 21,
+     "ci95": [
+      0.207,
+      1.0
+     ],
+     "tokens": 1499
+    },
+    "headron": {
+     "answered": 15,
+     "correct": 15,
+     "not_run": 7,
+     "ci95": [
+      0.796,
+      1.0
+     ],
+     "tokens": 28438
+    }
+   },
+   "paired": {
+    "n": 1,
+    "blind": 1,
+    "headron": 1
+   },
+   "errors": {
+    "terminal": 28
+   },
+   "error_samples": {
+    "terminal": "openrouter returned a non-answer: carried nothing at choices.0.message.content \u2014 {'id': 'gen-1794931163-CAY4todeXehO8jBasYh6', 'object': 'ch"
+   }
   }
  },
  "excluded": {
+  "gemini:models/antigravity-preview-05-2026": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/antigravity-preview-09-2026": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/antigravity-preview-latest": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/aqa": {
+   "reason": "not_run:terminal:404",
+   "stage": "census"
+  },
+  "gemini:models/deep-research-max-preview-04-2026": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/deep-research-preview-04-2026": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/deep-research-pro-preview-12-2025": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-computer-use-preview-10-2025": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-flash": {
+   "reason": "not_run:terminal:404",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-flash-image": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-flash-lite": {
+   "reason": "not_run:terminal:404",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-flash-native-audio-latest": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-flash-native-audio-preview-09-2025": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-flash-native-audio-preview-12-2025": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-flash-preview-tts": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-pro": {
+   "reason": "not_run:terminal:404",
+   "stage": "census"
+  },
+  "gemini:models/gemini-2.5-pro-preview-tts": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3-pro-image": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3-pro-image-preview": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.1-flash-image": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.1-flash-image-preview": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.1-flash-lite-image": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.1-flash-live-preview": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.1-flash-tts-preview": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.1-pro-preview": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.1-pro-preview-customtools": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.5-flash": {
+   "reason": "not_run:transient:503",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.5-live-translate-preview": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.5-transcribe": {
+   "reason": "not_run:terminal:ValueError",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.5-transcribe-live": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.6-flash": {
+   "reason": "not_run:transient:503",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.7-flash": {
+   "reason": "not_run:transient:503",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.8-flash": {
+   "reason": "not_run:transient:503",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.8-flash-lite-tts": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.8-flash-tts": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.8-live": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-3.8-live-extended-thinking": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemini-4-argon": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-4-carbon": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-4-hydrogen": {
+   "reason": "not_run:transient:503",
+   "stage": "census"
+  },
+  "gemini:models/gemini-decision-1": {
+   "reason": "not_run:terminal:404",
+   "stage": "census"
+  },
+  "gemini:models/gemini-embedding-001": {
+   "reason": "not_run:terminal:404",
+   "stage": "census"
+  },
+  "gemini:models/gemini-embedding-2": {
+   "reason": "not_run:terminal:404",
+   "stage": "census"
+  },
+  "gemini:models/gemini-embedding-2-preview": {
+   "reason": "not_run:terminal:404",
+   "stage": "census"
+  },
+  "gemini:models/gemini-flash-latest": {
+   "reason": "not_run:transient:503",
+   "stage": "census"
+  },
+  "gemini:models/gemini-nano-banana-2.1": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-omni-1.1-flash": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-omni-1.2-flash": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-omni-flash-preview": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-pro-latest": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/gemini-robotics-er-2-streaming-preview": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/gemma-4-26b-a4b-it": {
+   "reason": "did_not_follow_canary",
+   "stage": "census"
+  },
+  "gemini:models/gemma-4-31b-it": {
+   "reason": "not_run:transient:503",
+   "stage": "census"
+  },
+  "gemini:models/lyria-3-clip-preview": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/lyria-3-pro-preview": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/lyria-3.5": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "gemini:models/lyria-realtime-exp": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "gemini:models/nano-banana-pro-preview": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "groq:canopylabs/orpheus-arabic-saudi": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "groq:canopylabs/orpheus-v1-english": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "groq:meta-llama/llama-prompt-guard-2-22m": {
+   "reason": "did_not_follow_canary",
+   "stage": "census"
+  },
+  "groq:meta-llama/llama-prompt-guard-2-86m": {
+   "reason": "did_not_follow_canary",
+   "stage": "census"
+  },
+  "groq:whisper-large-v3": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "groq:whisper-large-v3-turbo": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
   "kilo:kilo-auto/custom/efficient": {
    "reason": "not_run:terminal:404",
    "stage": "census"
@@ -237,20 +923,84 @@
     "breaker_open": 43
    },
    "sample": "breaker open: refused without calling"
+  },
+  "openrouter:baidu/ernie-5.5-flash-preview:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:cohere/north-mini-code:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:dots-studio/dots-3-note-preview:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:google/gemma-4-26b-a4b-it:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:google/gemma-4-31b-it:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:google/lyria-3-clip-preview": {
+   "reason": "not_run:terminal:400",
+   "stage": "census"
+  },
+  "openrouter:google/lyria-3-pro-preview": {
+   "reason": "not_run:terminal:ValueError",
+   "stage": "census"
+  },
+  "openrouter:liquid/lfm-3-1.7b:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:nvidia/nemotron-3.5-lightning:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:nvidia/nemotron-3.5-super-vl:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:openrouter/free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:particle-ai/particle-1:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:recursive/flint-v1.0:free": {
+   "reason": "not_run:transient:429",
+   "stage": "census"
+  },
+  "openrouter:thinkingmachines/inkling-2-small:free": {
+   "reason": "not_run:terminal:403",
+   "stage": "census"
   }
  },
  "discrimination": {
   "blind": {
-   "flat_pass": 2,
-   "flat_fail": 0,
-   "discriminating": 1,
-   "unmeasured": 19
+   "flat_pass": 3,
+   "flat_fail": 9,
+   "discriminating": 10,
+   "unmeasured": 0
   },
   "headron": {
-   "flat_pass": 19,
+   "flat_pass": 6,
    "flat_fail": 0,
-   "discriminating": 1,
-   "unmeasured": 2
+   "discriminating": 16,
+   "unmeasured": 0
   },
   "rule": "over every lane here: a task every answering lane passed (flat_pass) or failed (flat_fail) separates no lane and is left out of the ranking; a task under two lanes answered is unmeasured"
  },
@@ -258,7 +1008,88 @@
   "basis": "per arm, discriminating tasks only, ordered by the lower bound of the 95% Wilson interval; overlapping intervals are a TIE, not an order",
   "blind": [
    {
+    "lane": "groq:openai/gpt-oss-120b",
+    "correct": 6,
+    "answered": 7,
+    "ci95": [
+     0.487,
+     0.974
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-flash-lite-latest",
+    "correct": 7,
+    "answered": 9,
+    "ci95": [
+     0.453,
+     0.937
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-3.5-flash-lite",
+    "correct": 7,
+    "answered": 9,
+    "ci95": [
+     0.453,
+     0.937
+    ]
+   },
+   {
+    "lane": "groq:qwen/qwen3.8-27b",
+    "correct": 3,
+    "answered": 3,
+    "ci95": [
+     0.438,
+     1.0
+    ]
+   },
+   {
     "lane": "kilo:baidu/ernie-5.5-flash-preview:free",
+    "correct": 3,
+    "answered": 3,
+    "ci95": [
+     0.438,
+     1.0
+    ]
+   },
+   {
+    "lane": "kilo:particle-ai/particle-1:free",
+    "correct": 4,
+    "answered": 5,
+    "ci95": [
+     0.376,
+     0.964
+    ]
+   },
+   {
+    "lane": "kilo:cohere/north-mini-code:free",
+    "correct": 2,
+    "answered": 2,
+    "ci95": [
+     0.342,
+     1.0
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-3.1-flash-lite-preview",
+    "correct": 5,
+    "answered": 10,
+    "ci95": [
+     0.237,
+     0.763
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-3.1-flash-lite",
+    "correct": 5,
+    "answered": 10,
+    "ci95": [
+     0.237,
+     0.763
+    ]
+   },
+   {
+    "lane": "groq:openai/gpt-oss-safeguard-20b",
     "correct": 1,
     "answered": 1,
     "ci95": [
@@ -267,12 +1098,48 @@
     ]
    },
    {
-    "lane": "kilo:particle-ai/particle-1:free",
+    "lane": "openrouter:inclusionai/ling-3.2-flash:free",
     "correct": 1,
     "answered": 1,
     "ci95": [
      0.207,
      1.0
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-3-flash-preview",
+    "correct": 3,
+    "answered": 6,
+    "ci95": [
+     0.188,
+     0.812
+    ]
+   },
+   {
+    "lane": "groq:allam-2-7b",
+    "correct": 2,
+    "answered": 10,
+    "ci95": [
+     0.057,
+     0.51
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-robotics-er-2-preview",
+    "correct": 1,
+    "answered": 6,
+    "ci95": [
+     0.03,
+     0.564
+    ]
+   },
+   {
+    "lane": "groq:openai/gpt-oss-20b",
+    "correct": 0,
+    "answered": 1,
+    "ci95": [
+     0.0,
+     0.793
     ]
    },
    {
@@ -287,16 +1154,133 @@
   ],
   "headron": [
    {
-    "lane": "kilo:baidu/ernie-5.5-flash-preview:free",
-    "correct": 1,
-    "answered": 1,
+    "lane": "gemini:models/gemini-3.1-flash-lite-preview",
+    "correct": 16,
+    "answered": 16,
     "ci95": [
-     0.207,
+     0.806,
+     1.0
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-3.1-flash-lite",
+    "correct": 16,
+    "answered": 16,
+    "ci95": [
+     0.806,
+     1.0
+    ]
+   },
+   {
+    "lane": "groq:openai/gpt-oss-120b",
+    "correct": 16,
+    "answered": 16,
+    "ci95": [
+     0.806,
      1.0
     ]
    },
    {
     "lane": "kilo:particle-ai/particle-1:free",
+    "correct": 15,
+    "answered": 15,
+    "ci95": [
+     0.796,
+     1.0
+    ]
+   },
+   {
+    "lane": "groq:openai/gpt-oss-20b",
+    "correct": 13,
+    "answered": 13,
+    "ci95": [
+     0.772,
+     1.0
+    ]
+   },
+   {
+    "lane": "kilo:baidu/ernie-5.5-flash-preview:free",
+    "correct": 11,
+    "answered": 11,
+    "ci95": [
+     0.741,
+     1.0
+    ]
+   },
+   {
+    "lane": "openrouter:inclusionai/ling-3.2-flash:free",
+    "correct": 11,
+    "answered": 11,
+    "ci95": [
+     0.741,
+     1.0
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-flash-lite-latest",
+    "correct": 15,
+    "answered": 16,
+    "ci95": [
+     0.717,
+     0.989
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-3.5-flash-lite",
+    "correct": 13,
+    "answered": 15,
+    "ci95": [
+     0.621,
+     0.963
+    ]
+   },
+   {
+    "lane": "kilo:nvidia/nemotron-3.5-super-vl:free",
+    "correct": 7,
+    "answered": 8,
+    "ci95": [
+     0.529,
+     0.978
+    ]
+   },
+   {
+    "lane": "kilo:cohere/north-mini-code:free",
+    "correct": 3,
+    "answered": 3,
+    "ci95": [
+     0.438,
+     1.0
+    ]
+   },
+   {
+    "lane": "groq:qwen/qwen3.8-27b",
+    "correct": 2,
+    "answered": 2,
+    "ci95": [
+     0.342,
+     1.0
+    ]
+   },
+   {
+    "lane": "kilo:dots-studio/dots-3-note-preview:free",
+    "correct": 2,
+    "answered": 2,
+    "ci95": [
+     0.342,
+     1.0
+    ]
+   },
+   {
+    "lane": "gemini:models/gemini-robotics-er-2-preview",
+    "correct": 5,
+    "answered": 11,
+    "ci95": [
+     0.213,
+     0.72
+    ]
+   },
+   {
+    "lane": "kilo:nvidia/nemotron-3-ultra-550b-a55b:free",
     "correct": 1,
     "answered": 1,
     "ci95": [
@@ -305,12 +1289,21 @@
     ]
    },
    {
-    "lane": "kilo:nvidia/nemotron-3.5-super-vl:free",
-    "correct": 0,
-    "answered": 1,
+    "lane": "gemini:models/gemini-3-flash-preview",
+    "correct": 2,
+    "answered": 10,
     "ci95": [
-     0.0,
-     0.793
+     0.057,
+     0.51
+    ]
+   },
+   {
+    "lane": "groq:allam-2-7b",
+    "correct": 1,
+    "answered": 8,
+    "ci95": [
+     0.022,
+     0.471
     ]
    }
   ]
