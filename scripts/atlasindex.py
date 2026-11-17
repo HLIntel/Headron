@@ -143,8 +143,14 @@ def build() -> dict:
             ctx_start = max(1, start - CONTEXT_LINES)
             ctx_end = min(len(lines), end + CONTEXT_LINES)
             ctx_body = "\n".join(lines[ctx_start - 1 : ctx_end])
-            # Tokens include both the chunk body and its context for better retrieval
-            all_tokens = TOKEN.findall(body) + TOKEN.findall(ctx_body)
+            # DUAL STRUCTURAL + SEMANTIC EMBEDDINGS: fuse lexical tokens with AST shape fingerprint
+            struct_tokens: list[str] = []
+            if path.suffix == ".py" and (tree_chunk := parsed_python(body, "<chunk>")) is not None:
+                import microcode  # noqa: PLC0415
+
+                struct_tokens = microcode.eval_structural_fingerprint(tree_chunk)
+            # Tokens include chunk body, contextual envelope, and AST structural embeddings
+            all_tokens = TOKEN.findall(body) + TOKEN.findall(ctx_body) + struct_tokens
             records.append(
                 {
                     "path": rel_path,

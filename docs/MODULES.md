@@ -3,7 +3,7 @@
 [HEADRON](HEADRON.md) · [Proofs](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-145 modules and 457 imports between them, read from the source; 79 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 101 modules use it. These 69 rows are the modules at least 2 others use; the other 76, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+146 modules and 459 imports between them, read from the source; 80 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 102 modules use it. These 69 rows are the modules at least 2 others use; the other 77, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -46,7 +46,7 @@ flowchart LR
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
-| [atlascore](../scripts/atlascore.py) | Atlas primitives: the declared rosters, the… | 101 | agentpolicy, atlas, treeformat, verify | [agent_test](../scripts/agent_test.py), [agentbench_test](../scripts/agentbench_test.py) +16 |
+| [atlascore](../scripts/atlascore.py) | Atlas primitives: the declared rosters, the… | 102 | agentpolicy, atlas, treeformat, verify | [agent_test](../scripts/agent_test.py), [agentbench_test](../scripts/agentbench_test.py) +17 |
 | [agentpolicy](../scripts/agentpolicy.py) | The agent execution policy: six verdicts,… | 31 | agenteffects, agentvocab, dirscope, headronlang, packmanifest, processpolicy, shellsplit | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +9 |
 | [knowledge](../scripts/knowledge.py) | Where a fact may live, how it is retrieved, and… | 15 | agentaudit, agentpolicy, agents, agreement, atlas, boundedinput, contextcost, hostshape, port, runtime, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +4 |
 | [atlas](../scripts/atlas.py) | Atlas router + repository contract | 11 | agentpolicy, agreement, atlasgen, atlasindex, atlasinv, branchstate, cidrift, commands, consumergates, contextcost, dateclaims, decide, decide_cli, declcheck, dirscope, doctor, gateplace, headronlang, identity, knowledge, linkcheck, onboard, packmanifest, parsegate, roster, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_guards_test](../scripts/atlas_guards_test.py) +7 |
@@ -93,7 +93,7 @@ flowchart LR
 | [testgroups](../scripts/testgroups.py) | Run independent planted groups without losing… | 3 | impact | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +9 |
 | [adaptive](../scripts/adaptive.py) | Deterministic second-stage process selection… | 2 | mind, mind_diagnostics | [adaptive_scheduling_test](../scripts/adaptive_scheduling_test.py) |
 | [agentrun](../scripts/agentrun.py) | The reference runner: the one caller in this… | 2 | agentaudit, agenteffects, agentpolicy, crosscache, headronlang, isolation, knowledge, obligations, runtime | [agent_test](../scripts/agent_test.py), [taskimage_test](../scripts/taskimage_test.py) |
-| [atlasindex](../scripts/atlasindex.py) | A retrieval index that obeys the policy this… | 2 | atomicfile, graph, port, sweep | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
+| [atlasindex](../scripts/atlasindex.py) | A retrieval index that obeys the policy this… | 2 | atomicfile, graph, microcode, port, sweep | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
 | [callshape](../scripts/callshape.py) | forbidden_calls_are_refused: "no module outside… | 2 | agentpolicy | [atlas_rules_test](../scripts/atlas_rules_test.py), [atomicfile_test](../scripts/atomicfile_test.py) +1 |
 | [cilocal](../scripts/cilocal.py) | `headron ci`: run the jobs… | 2 | agents, cipipeline, gaterunner, micrograph, microprogram, slot | [atlas_landing_test](../scripts/atlas_landing_test.py), [cilocal_test](../scripts/cilocal_test.py) +1 |
 | [computation_contract](../scripts/computation_contract.py) | Machine-readable and enforced outer contracts… | 2 | calculation, compute_compose | [computation_contract_test](../scripts/computation_contract_test.py) |

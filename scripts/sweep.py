@@ -136,7 +136,14 @@ def sweep_record(tree: Path | None = None) -> dict[str, Any]:
         "pointers": pointers,
         "instant_search": {
             "symbol_lookup": "headron find <letter|symbol|pointer>",
-            "examples": ["headron find m", "headron find mind", "headron find cc", "headron find [[mind]]"],
+            "examples": [
+                "headron find m",
+                "headron find mind",
+                "headron find cc",
+                "headron find [[mind]]",
+                "headron find ast_asyncfunctiondef",
+            ],
+            "embeddings": "joint dual (lexical Zipf TF-IDF + structural AST shape fingerprints)",
         },
         "next": ["headron port .", "headron find <query>", "headron gate <file>", "headron verify"],
     }
