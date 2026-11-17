@@ -45,7 +45,10 @@ def result_contract_cases(module: ModuleType) -> None:
 
 def run_never_raises_cases(module: ModuleType) -> None:
     """run() is the one door: an unknown name is refused and a raising program is status error, never an exception."""
+    import effects_test
     import microprogram
+
+    effects_test.run_cases()  # an undeclared write, spawn or connect is refused and ends the run as error
 
     missing = microprogram.run("no.such.program")
     if missing.status != "refused" or "no.such.program" not in missing.evidence_refs[0]:

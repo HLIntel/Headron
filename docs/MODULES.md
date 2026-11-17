@@ -3,7 +3,7 @@
 Part of [HEADRON](HEADRON.md). Proofs per instrument: [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-139 modules and 432 imports between them, read from the source; 70 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 97 modules use it. These 66 rows are the modules at least 2 others use; the other 73, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+140 modules and 434 imports between them, read from the source; 71 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 97 modules use it. These 67 rows are the modules at least 2 others use; the other 73, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -65,10 +65,10 @@ flowchart LR
 | [agreement](../scripts/agreement.py) | The agreement graph: which file implements which… | 4 | atlasinv, commands | [atlas_landing_test](../scripts/atlas_landing_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) +1 |
 | [atlasgen](../scripts/atlasgen.py) | Every document section and file GENERATED from… | 4 | abtest, chatskill, commands, contextcost, dirscope, entryglance, exrun, i18n, knowledge, packmanifest, textguard | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
 | [atlasinv](../scripts/atlasinv.py) | The hard invariants: one function per promise, and… | 4 | agentpolicy, atlasgen, cacheinv, callshape, cidrift, contextcost, declcheck, failureledger, knowledge, langbar, leaks, nativetools, orphans, packmanifest, plantcheck, roster, scoreboard, testgroups, yamlshape | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
-| [calculation](../scripts/calculation.py) | Shared result and refusal contract for deterministic… | 4 | computation_contract, microprogram, receipt | [computation_receipt_test](../scripts/computation_receipt_test.py) |
+| [calculation](../scripts/calculation.py) | Shared result and refusal contract for deterministic… | 4 | computation_contract, effects, microprogram, receipt | [computation_receipt_test](../scripts/computation_receipt_test.py) |
 | [graph](../scripts/graph.py) | Knowledge graph module — pointers, links, tags,… | 4 | claims, exrun | [decide_test](../scripts/decide_test.py), [microprogram_test](../scripts/microprogram_test.py) |
 | [localtools](../scripts/localtools.py) | The tool a project installed for itself, found where… | 4 |  | [localtools_test](../scripts/localtools_test.py) |
-| [microprogram](../scripts/microprogram.py) | The one microprogram contract: a named, versioned… | 4 | claims, computation_contract, compute_compose, domain_reconcile, finance, graph, mind, obligations, receipt, ronbundle | [cilocal_test](../scripts/cilocal_test.py), [computation_receipt_test](../scripts/computation_receipt_test.py) +1 |
+| [microprogram](../scripts/microprogram.py) | The one microprogram contract: a named, versioned… | 4 | claims, computation_contract, compute_compose, domain_reconcile, effects, finance, graph, mind, obligations, receipt, ronbundle | [cilocal_test](../scripts/cilocal_test.py), [computation_receipt_test](../scripts/computation_receipt_test.py) +2 |
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind rather than as… | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
 | [boundedinput](../scripts/boundedinput.py) | Bounded UTF-8 stdin for hooks and local decision… | 3 |  | [readiness_test](../scripts/readiness_test.py) |
 | [cidrift](../scripts/cidrift.py) | Drift guard: every script CI runs is a declared gate,… | 3 | cipipeline | [cilocal_test](../scripts/cilocal_test.py) |
@@ -92,6 +92,7 @@ flowchart LR
 | [declcheck](../scripts/declcheck.py) | declarations_are_read: a block in atlas.yaml that no… | 2 | abtest, agentpolicy, commands, delegate, knowledge, workflowbench | [agent_test](../scripts/agent_test.py), [vanish_test](../scripts/vanish_test.py) +1 |
 | [doctor](../scripts/doctor.py) | doctor — can THIS machine run each instrument, and… | 2 | agentpolicy, agreement, atlas_cli, githubapp | [atlas_test](../scripts/atlas_test.py), [bounds_test](../scripts/bounds_test.py) |
 | [domain_reconcile](../scripts/domain_reconcile.py) | Compare caller-supplied records by declared key,… | 2 | calculation |  |
+| [effects](../scripts/effects.py) | What a microprogram may do besides compute: its… | 2 |  | [effects_test](../scripts/effects_test.py) |
 | [entryglance](../scripts/entryglance.py) | Shared first-glance facts for entry pages and… | 2 | onboard |  |
 | [exrun](../scripts/exrun.py) | exrun — run every example this machine can, and say… | 2 | atomicfile, contextcost, resilience | [exrun_test](../scripts/exrun_test.py) |
 | [finance](../scripts/finance.py) | On-demand, read-only financial equations with… | 2 | calculation, finance_capital, finance_catalog, finance_knowledge |  |
