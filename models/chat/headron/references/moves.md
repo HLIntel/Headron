@@ -9,6 +9,13 @@ GENERATED from atlas.yaml/agent_success_patterns.
 - verify: a divergent remote refuses the push and retains its previous tip
 - answers: a_landing_command_force_pushes
 
+## cooperative_peer_audit_before_land
+
+- move: verify changes across both a primary and peer review model against declared ground truth contracts before landing
+- when: executing multi-model benchmarks, gate plans or complex contract synthesis
+- verify: multimodel_bench_test.TestMultiModelBench verifies peer audit and consensus scoring
+- answers: a_bad_result_captioned_and_passed
+
 ## name_only_verbs_the_parser_has
 
 - move: when a verb or flag is cut, grep entry surfaces for it in spans, fences and prose, and rewrite each step to a verb the parser has

@@ -22,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -162,6 +163,40 @@ def endpoint(name: str) -> tuple[str, dict[str, str]]:
         if key is not None:
             headers["Authorization"] = f"Bearer {key}"
     return url, headers
+
+
+def probe_provider(name: str, timeout: float = 2.0) -> bool:
+    """Non-throwing health check: whether a provider is configured and responding."""
+    spec = PROVIDERS.get(name)
+    if spec is None:
+        return False
+    if "cli" in spec:
+        import shutil  # noqa: PLC0415
+
+        return shutil.which(spec["cli"][0]) is not None
+    try:
+        url, headers = endpoint(name)
+        req = urllib.request.Request(url, headers=headers, method="GET")  # noqa: S310
+        with urllib.request.urlopen(req, timeout=timeout):  # noqa: S310
+            return True
+    except urllib.error.HTTPError as err:
+        return err.code in (400, 404, 405)
+    except (OSError, ValueError):
+        return False
+    return False
+
+
+def available_providers(timeout: float = 2.0) -> list[str]:
+    """List of all registered providers that are currently configured and reachable."""
+    return [name for name in PROVIDERS if probe_provider(name, timeout=timeout)]
+
+
+def resolve_fallback(chain: list[str], timeout: float = 2.0) -> str | None:
+    """Find the first reachable provider from a priority chain."""
+    for name in chain:
+        if probe_provider(name, timeout=timeout):
+            return name
+    return None
 
 
 _PACERS: dict[str, resilience.Pacer] = {}
