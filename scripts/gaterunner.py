@@ -45,6 +45,8 @@ def _drain(pipe: IO[bytes], tail: bytearray, count: list[int], keep: int, ended:
 
 
 def _exit_on_sigterm(signum: int, _frame: object) -> None:
+    # A second SIGTERM (a wrapper forwarding it, a group kill) must not interrupt the stop it started.
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
     raise SystemExit(128 + signum)
 
 

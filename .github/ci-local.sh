@@ -52,4 +52,15 @@ fi
 export VIRTUAL_ENV="$work/venv" PATH="$work/venv/bin:$PATH"
 # THE RUN: scripts/cilocal.py runs the declared jobs through scripts/micrograph.py. No job list here: it defaults
 # to $CI_LOCAL_JOBS (what ~/.claude/bin/ci-local -j picked), else the CONTRACT jobs, edge-coverage included.
-"$runner" scripts/cilocal.py --runner-temp "$work/runner" "$@"
+# Not exec (the EXIT trap removes $work), so a TERM or INT to this shell is forwarded: killing only the shell
+# would orphan cilocal and every unit under it, then delete the tree they run in.
+"$runner" scripts/cilocal.py --runner-temp "$work/runner" "$@" &
+child=$!
+trap 'kill -TERM "$child" 2>/dev/null' TERM INT
+wait "$child"
+rc=$?
+while kill -0 "$child" 2>/dev/null; do
+    wait "$child"
+    rc=$?
+done
+exit "$rc"
