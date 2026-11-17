@@ -23,6 +23,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 import urllib.error
@@ -489,23 +490,25 @@ def _live_on(
 _CLI_OVERHEAD: dict[str, int] = {}
 
 
+def _run_cli(argv: list[str], cwd: str, timeout: int, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
+    """subprocess.run whose timeout is a TimeoutError. MEASURED in the universal census screen: TimeoutExpired is
+    no OSError, so one Junie call over its limit escaped every caller's NOT RUN path and ended the screen."""
+    try:
+        return subprocess.run(  # noqa: S603
+            argv, input=stdin, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise TimeoutError(f"{argv[0]} gave no answer within {timeout}s") from exc
+
+
 def _cli_once(provider: str, model: str, prompt: str, timeout: int) -> tuple[str, int]:
-    import subprocess
     import tempfile
 
     _PACERS.setdefault(provider, resilience.Pacer(PROVIDERS[provider]["rpm"])).wait()
     # AN EMPTY DIRECTORY, so no project CLAUDE.md or settings reaches the prompt: the arm under test
     # is the ONLY context the model sees, as it is for every HTTP provider.
     with tempfile.TemporaryDirectory() as cwd:
-        done = subprocess.run(
-            [*PROVIDERS[provider]["cli"], "--model", model],
-            input=prompt,
-            cwd=cwd,  # noqa: S603
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
+        done = _run_cli([*PROVIDERS[provider]["cli"], "--model", model], cwd, timeout, stdin=prompt)
     try:
         out = json.loads(done.stdout)
     except json.JSONDecodeError as exc:
@@ -530,7 +533,6 @@ def _junie_cli(provider: str, model: str, prompt: str, timeout: int) -> tuple[st
     """(answer, None) through the Junie CLI, run in an empty directory so no project reaches it.
 
     Tokens are None: the agent's own multi-call overhead is not the prompt's cost (see PROVIDERS)."""
-    import subprocess
     import tempfile
 
     _PACERS.setdefault(provider, resilience.Pacer(PROVIDERS[provider]["rpm"])).wait()
@@ -538,7 +540,7 @@ def _junie_cli(provider: str, model: str, prompt: str, timeout: int) -> tuple[st
     if model != "default":
         argv[1:1] = ["--model", model]
     with tempfile.TemporaryDirectory() as cwd:
-        done = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False)  # noqa: S603
+        done = _run_cli(argv, cwd, timeout)
     try:
         out = json.loads(done.stdout)
     except json.JSONDecodeError as exc:

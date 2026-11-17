@@ -4,11 +4,25 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import io
 import pathlib
 import tempfile
 from collections.abc import Callable
 from types import ModuleType
+
+
+def _planter(
+    base: dict, target: Callable[[dict], dict], errors: Callable[[dict], list[str]]
+) -> Callable[[Callable[[dict, dict], object]], list[str]]:
+    """One plant: copy the measured record, apply the change at its target, return what the validator refuses."""
+
+    def planted(change: Callable[[dict, dict], object]) -> list[str]:
+        doc = copy.deepcopy(base)
+        change(doc, target(doc))
+        return errors(doc)
+
+    return planted
 
 
 def agentbench_case(module: ModuleType) -> None:
@@ -149,7 +163,6 @@ def plant_case(module: ModuleType) -> None:
 def record_case(module: ModuleType) -> None:
     """The first external freebench run scored errors as 0, named five router chains that served one model as five
     lanes, and crowned a winner inside its own noise: every kept external record is held to agentbench."""
-    import copy
     import json
 
     import agentbench
@@ -169,10 +182,7 @@ def record_case(module: ModuleType) -> None:
         if g.get("resolved_model") and g["errors"]
     )
 
-    def planted(change: Callable[[dict, dict], object]) -> list[str]:
-        doc = copy.deepcopy(base)
-        change(doc, doc["rounds"][rnd]["lanes"][lane])
-        return agentbench.record_errors(doc)
+    planted = _planter(base, lambda d: d["rounds"][rnd]["lanes"][lane], agentbench.record_errors)
 
     plants = {
         "no error_policy": (lambda d, g: d.pop("error_policy"), "no error_policy"),
@@ -193,6 +203,55 @@ def record_case(module: ModuleType) -> None:
     print("  ok    an external cross-model record is refused without error policy, served model, or with a winner")
 
 
+def screen_case(module: ModuleType) -> None:
+    """The universal census screen printed 0.0% for lanes that answered nothing, 0 tokens for an agent that reports
+    no usage, and kept raw vendor bodies: every kept screen record is held to agentbench.screen_record_errors."""
+    import json
+
+    import agentbench
+    from atlascore import ROOT
+
+    kept = sorted(ROOT.glob(agentbench.SCREEN_RECORDS))
+    if not kept:
+        raise SystemExit(f"FAIL no screen record matches {agentbench.SCREEN_RECORDS}: the case would prove nothing")
+    for path in kept:
+        if bad := agentbench.screen_record_errors(json.loads(path.read_text(encoding="utf-8"))):
+            raise SystemExit(f"FAIL {path.name}: {bad}")
+    base = json.loads(kept[0].read_text(encoding="utf-8"))
+    lane = next(iter(base["lanes"]))
+    arm = next(iter(base["lanes"][lane]["arms"]))
+    gone = next(iter(base["excluded"]))
+
+    planted = _planter(base, lambda d: d["lanes"][lane]["arms"][arm], agentbench.screen_record_errors)
+
+    plants = {
+        "an arm that answered nothing scored 0%": (lambda d, a: a.update(answered=0, correct=0), "never 0%"),
+        "a rate with no interval": (lambda d, a: a.update(ci95=None), "no 95% interval"),
+        "a usage-less answer read as 0 tokens": (lambda d, a: a.update(tokens=0), "never 0"),
+        "a winner": (lambda d, a: d.update(winner=lane), "names a winner"),
+        "a kept request hash": (lambda d, a: d.update(note="req " + "ab" * 20), "request hash"),
+        "a kept date": (lambda d, a: d.update(note="at " + "-".join(("1999", "01", "02"))), "a date"),
+        "an excluded lane with a number": (lambda d, a: d["excluded"][gone].update(score=0.0), "carries no number"),
+        "a lane both scored and excluded": (lambda d, a: d["excluded"].update({lane: {"reason": "x"}}), "both scored"),
+        "an unmeasured run claimed as measured": (lambda d, a: d.pop("obtained_by"), "measured_live"),
+    }
+    for name, (change, needle) in plants.items():
+        if not any(needle in e for e in planted(change)):
+            raise SystemExit(f"FAIL a screen record with {name} was not refused: {planted(change)}")
+    module.CASES.append(
+        (
+            "a measured screen record scores only answered arms, each with its interval, and counts tokens or says unmeasured",
+            "a lane that answered nothing printed as 0.0% and a usage-less agent as 0 tokens, read as a ranking",
+        )
+    )
+    print(
+        "  ok    a screen record is refused with a 0% non-answer, no interval, 0-token usage, a winner or a kept hash"
+    )
+
+
+_CASES = (agentbench_case, runner_case, plant_case, record_case, screen_case)
+
+
 def run(module: ModuleType) -> None:
-    for case in (agentbench_case, runner_case, plant_case, record_case):
+    for case in _CASES:
         case(module)

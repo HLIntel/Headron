@@ -109,6 +109,54 @@ class TestMultiModelBench(unittest.TestCase):
         self.assertIn("| not run | not run | — |", md)
         self.assertNotIn("0.0%", md)
 
+    @patch("providers.complete")
+    def test_a_screen_record_scores_only_answers(self, mock_complete: Any) -> None:
+        import agentbench
+
+        def fake(provider: str, model: str, prompt: str, timeout: int, max_tokens: int) -> tuple[str, int | None]:
+            if model == "dead":
+                raise OSError("reset by req 0123456789abcdef0123 at " + "-".join(("1999", "01", "02")) + "T00:00:00Z")
+            return ("yes", 40) if model == "live" else ("yes", None)
+
+        mock_complete.side_effect = fake
+        qs = [{"kind": "hygiene", "task": "h0", "truth": ["yes"], "blind": "ask", "headron": "Rule A:\nask"}]
+        lanes = [multimodel_bench.benchmark_single("p", m, qs, timeout=5) for m in ("live", "quiet", "dead")]
+        screen = {
+            "question_count": 1,
+            "models": lanes,
+            "excluded": [{"lane": "p:gone", "reason": "not_run:terminal:404"}],
+        }
+        doc = multimodel_bench.screen_record([screen], "0.0.0")
+        self.assertEqual(agentbench.screen_record_errors(doc), [])
+        self.assertEqual(sorted(doc["lanes"]), ["p:live", "p:quiet"])
+        self.assertEqual(doc["lanes"]["p:live"]["arms"]["blind"]["tokens"], 40)
+        self.assertEqual(doc["lanes"]["p:quiet"]["arms"]["headron"]["tokens"], "unmeasured")
+        dead = doc["excluded"]["p:dead"]
+        self.assertEqual((dead["stage"], dead["error_class"]), ("screen", "terminal"))
+        self.assertNotIn("0123456789abcdef", dead["sample"])
+        self.assertNotIn("1999", dead["sample"])
+        self.assertEqual(doc["excluded"]["p:gone"]["stage"], "census")
+        # a screen made before tokens_unmeasured existed summed None as 0: an answered arm at 0 reads unmeasured
+        legacy = {**lanes[0], "model": "legacy", "overall": dict(lanes[0]["overall"], blind_tokens=0)}
+        legacy["overall"].pop("blind_tokens_unmeasured")
+        old_doc = multimodel_bench.screen_record([{"question_count": 1, "models": [legacy]}], "0.0.0")
+        self.assertEqual(old_doc["lanes"]["p:legacy"]["arms"]["blind"]["tokens"], "unmeasured")
+
+    def test_a_cli_timeout_is_not_run_not_a_crash(self) -> None:
+        import subprocess
+
+        qs = [{"kind": "hygiene", "task": "h0", "truth": ["yes"], "blind": "ask", "headron": "Rule A:\nask"}]
+        with (
+            patch("subprocess.run", side_effect=subprocess.TimeoutExpired("junie", 1)),
+            patch("providers.LIVE", True, create=True),
+            patch(
+                "providers.complete", side_effect=lambda p, m, q, t, k: __import__("providers")._junie_cli(p, m, q, t)
+            ),
+        ):
+            res = multimodel_bench.benchmark_single("junie", "default", qs, timeout=1)
+        self.assertEqual(res["questions"]["h0"], {"blind": "not_run", "headron": "not_run"})
+        self.assertEqual(sum(res["errors"].values()), 2)
+
     def test_discrimination_drops_flat_tasks(self) -> None:
         def lane(model: str, verdicts: dict[str, str]) -> dict[str, Any]:
             return {"provider": "p", "model": model, "questions": {t: {"blind": v} for t, v in verdicts.items()}}

@@ -3,7 +3,7 @@
 Part of [HEADRON](HEADRON.md). Proofs per instrument: [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-144 modules and 454 imports between them, read from the source; 78 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 100 modules use it. These 69 rows are the modules at least 2 others use; the other 75, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+144 modules and 455 imports between them, read from the source; 78 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 100 modules use it. These 69 rows are the modules at least 2 others use; the other 75, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR

@@ -3,10 +3,11 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-75 modules that at most one other module imports: 29 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+75 modules that at most one other module imports: 28 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
+| [agentbench](../scripts/agentbench.py) | Does an agent FINISH more real tasks with Headron? The arm every other bench here marks NOT RUN | 1 | agentpolicy, atlas, knowledge | [agentbench_test](../scripts/agentbench_test.py), [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
 | [agentvocab](../scripts/agentvocab.py) | The words a task contract may use for WHO does it, WITH WHAT, and IN WHICH LANGUAGES | 1 | headronlang | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [artifacts](../scripts/artifacts.py) | Artifact adapters: structured records and deterministic checks for office and archive files | 1 |  | [artifacts_test](../scripts/artifacts_test.py) |
 | [atlas_cli](../scripts/atlas_cli.py) | Resolve WHICH atlas, then run the contract's CLI against it | 1 | atlas, headron_mcp | [bounds_test](../scripts/bounds_test.py), [cli_test](../scripts/cli_test.py) +1 |
@@ -53,7 +54,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [verifyinputs](../scripts/verifyinputs.py) | Content identities for verification evidence | 1 |  |  |
 | [workflowbench](../scripts/workflowbench.py) | Does Headron change what agents DO — alone, and when one hands work to another? Measured, per model | 1 | abtest, agentpolicy, dirscope | [atlas_test](../scripts/atlas_test.py) |
 | [yamlshape](../scripts/yamlshape.py) | yaml_prose_is_quoted: prose inside a YAML flow collection is quoted, so a comma cannot silently… | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [edge_cases_test](../scripts/edge_cases_test.py) |
-| [agentbench](../scripts/agentbench.py) | Does an agent FINISH more real tasks with Headron? The arm every other bench here marks NOT RUN | 0 | agentpolicy, atlas, knowledge | [agentbench_test](../scripts/agentbench_test.py) |
 | [astshape](../scripts/astshape.py) | astshape — structural duplicates and code blobs, by AST rather than by text | 0 |  |  |
 | [atlasci](../scripts/atlasci.py) | What a consuming repository's pull request requires, resolved against a pinned atlas | 0 | agentpolicy |  |
 | [bench](../scripts/bench.py) | Does using the atlas actually help? Measured where it can be, and REFUSED where it cannot | 0 | agentpolicy | [atlas_test](../scripts/atlas_test.py) |
@@ -71,7 +71,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [links](../scripts/links.py) | `headron links`: where this release is, and what each companion reads from it | 0 | commands |  |
 | [mcpsize](../scripts/mcpsize.py) | Measure an MCP `tools/list` dump against the declared per-server token band | 0 | contextcost |  |
 | [mdshape](../scripts/mdshape.py) | mdshape — every Markdown file has a class, and each class has a rule: bounded, preserved, or… | 0 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [cli_test](../scripts/cli_test.py) |
-| [multimodel_bench](../scripts/multimodel_bench.py) | Multi-model cross-evaluation benchmark: Headron lift, tokens, and multi-model collaboration | 0 | abtest, providers, resilience, taskbench | [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
+| [multimodel_bench](../scripts/multimodel_bench.py) | Multi-model cross-evaluation benchmark: Headron lift, tokens, and multi-model collaboration | 0 | abtest, agentbench, providers, resilience, taskbench | [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
 | [packprobe](../scripts/packprobe.py) | packprobe — how many of each language pack's DECLARED commands resolve on this machine | 0 | packmanifest |  |
 | [pointers](../scripts/pointers.py) | The pointer table: every name in atlas.yaml that points at something else, in one place, read by… | 0 | knowledge, packmanifest | [pointers_test](../scripts/pointers_test.py) |
 | [propose](../scripts/propose.py) | Propose: a loop that reads what Headron believes, drafts the revision, and never lands it | 0 | atomicfile, claims | [propose_test](../scripts/propose_test.py) |

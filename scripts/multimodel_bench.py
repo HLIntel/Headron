@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from pathlib import Path
 from typing import Any, cast
 
+import agentbench
 import providers
 import resilience
 import taskbench
@@ -273,6 +275,104 @@ def parse_model_spec(spec: str) -> tuple[str, str]:
     return "router", spec.strip()
 
 
+def _public(text: str) -> str:
+    """A vendor body made fit for a public record: no request hash, date, account id, email or URL."""
+    for pattern, mark in (
+        (r"[0-9a-fA-F]{16,}", "<hash>"),
+        (r"\d{4}-\d{2}-\d{2}[T ]?[\d:.Z+-]*", "<date>"),
+        (r"user_[A-Za-z0-9]+", "<redacted>"),
+        (r"[\w.+-]+@[\w-]+\.[\w.]+", "<email>"),
+        (r"https?://\S+", "<url>"),
+    ):
+        text = re.sub(pattern, mark, text)
+    return " ".join(text.split())[:140]
+
+
+def screen_record(screens: list[dict[str, Any]], version: str) -> dict[str, Any]:
+    """Merge `--json-out` screens into one public record (agentbench.SCREEN_RECORDS).
+
+    ONLY AN ANSWERED ARM CARRIES A NUMBER. MEASURED in the universal census screen: the matrix printed 0.0% for
+    lanes that answered nothing and 0 tokens for an agent that reports no usage. Here an arm with no answer is
+    left out, a lane with none sits in `excluded` with its cause, and tokens are counted or "unmeasured"."""
+    lanes: dict[str, Any] = {}
+    excluded: dict[str, Any] = {}
+    everyone: list[dict[str, Any]] = []
+    tasks = {d["question_count"] for d in screens}
+    if len(tasks) != 1:
+        raise ValueError(f"screens asked different task sets {sorted(tasks)}: their rates do not compare")
+    for d in screens:
+        everyone += d["models"]
+        for e in d.get("excluded") or []:
+            excluded[e["lane"]] = {"reason": _public(e["reason"]), "stage": "census"}
+        for m in d["models"]:
+            name, ov = f"{m['provider']}:{m['model']}", m["overall"]
+            arms: dict[str, Any] = {}
+            for arm in ("blind", "headron"):
+                n = ov["total"] - ov[f"{arm}_not_run"]
+                if n <= 0:
+                    continue
+                c, tok = ov[f"{arm}_correct"], ov[f"{arm}_tokens"]
+                # a screen made before tokens_unmeasured existed summed None as 0: an answered arm at 0 is unmeasured
+                unmeasured = ov.get(f"{arm}_tokens_unmeasured") or m["provider"] == "junie" or tok <= 0
+                arms[arm] = {
+                    "answered": n,
+                    "correct": c,
+                    "not_run": ov[f"{arm}_not_run"],
+                    "ci95": list(wilson(c, n)),
+                    "tokens": "unmeasured" if unmeasured else tok,
+                }
+            errs = m.get("errors") or {}
+            samples = {cls: _public(t) for cls, t in (m.get("error_samples") or {}).items()}
+            if arms:
+                lanes[name] = {"arms": arms, **({"errors": errs, "error_samples": samples} if errs else {})}
+                continue
+            top = max(errs, key=lambda k: errs[k]) if errs else "empty_or_unscorable"
+            excluded[name] = {
+                "reason": f"no answer on any of {2 * ov['total']} calls",
+                "stage": "screen",
+                "error_class": top,
+                "errors": errs,
+                "sample": samples.get(top, "every reply was empty or unreadable by the scorer"),
+            }
+    disc: dict[str, Any] = {}
+    ranking: dict[str, Any] = {}
+    for arm in ("blind", "headron"):
+        disc[arm] = {k: len(v) for k, v in discrimination(everyone, arm).items()}
+        ranking[arm] = [
+            {"lane": r["lane"], "correct": r["correct"], "answered": r["answered"], "ci95": list(r["ci95"])}
+            for r in screen_ranking(everyone, arm)
+            if r["answered"]
+        ]
+    vendors = sorted({m["provider"] for m in everyone})
+    return {
+        "_why": f"Headron universal screen: every $0 lane the census found across {', '.join(vendors)} asked the same "
+        "Headron task questions blind and with the Headron contract. Only answered arms carry numbers; a lane "
+        "with no answer sits in `excluded` with its cause.",
+        "ingested_at": version,
+        "obtained_by": "measured_live",
+        "raw_records": "not in this repository: the per-call replies stay in the local replay cache; "
+        "`multimodel_bench.py --models-from <census> --live --json-out` re-measures and `--record` rebuilds this file",
+        "repeats": 1,
+        "tasks": tasks.pop(),
+        "scoring": "a reply the scorer cannot read, an empty reply or a transport error is NOT RUN and leaves the "
+        "denominator; it is never scored wrong",
+        "tokens": 'prompt tokens summed over answered calls as the vendor reported them; "unmeasured" where it '
+        "reported none (Junie always: its agent adds about 32k tokens per call)",
+        "lanes": dict(sorted(lanes.items())),
+        "excluded": dict(sorted(excluded.items())),
+        "discrimination": {
+            **disc,
+            "rule": "over every lane here: a task every answering lane passed (flat_pass) or failed (flat_fail) "
+            "separates no lane and is left out of the ranking; a task under two lanes answered is unmeasured",
+        },
+        "ranking": {
+            "basis": "per arm, discriminating tasks only, ordered by the lower bound of the 95% Wilson interval; "
+            "overlapping intervals are a TIE, not an order",
+            **ranking,
+        },
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=cast(str, __doc__).split("\n", 1)[0])
     parser.add_argument("--models", default="router:small,router:code", help="comma-separated provider:model pairs")
@@ -286,7 +386,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--live", action="store_true", help="invoke live model endpoints")
     parser.add_argument("--timeout", type=int, default=60, help="request timeout seconds")
     parser.add_argument("--json-out", default="", help="path to write output JSON")
+    parser.add_argument("--record", default="", help="merge the --screens JSONs into this public record, run nothing")
+    parser.add_argument("--screens", default="", help="comma-separated `--json-out` screen files for --record")
     args = parser.parse_args(argv)
+
+    if args.record:
+        doc = screen_record(
+            [json.loads(text_of(Path(f))) for f in args.screens.split(",") if f.strip()],
+            text_of(Path(__file__).resolve().parent.parent / "VERSION").strip(),
+        )
+        if bad := agentbench.screen_record_errors(doc):
+            print(f"multimodel_bench: REFUSED — the record would not hold: {'; '.join(bad)}; nothing written")
+            return 1
+        Path(args.record).write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+        print(f"recorded {len(doc['lanes'])} answered lanes, {len(doc['excluded'])} excluded, to {args.record}")
+        return 0
 
     providers.set_live(args.live)
     excluded: list[dict[str, str]] = []
