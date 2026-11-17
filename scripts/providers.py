@@ -22,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -67,7 +68,15 @@ PROVIDERS: dict[str, dict] = {
         "rpm": 120,
     },
     "ollama": {"url": "http://127.0.0.1:11434/v1/chat/completions", "keys": [], "rpm": 20},
-    "openrouter": {"url": "https://openrouter.ai/api/v1/chat/completions", "keys": ["OPENROUTER_API_KEY"], "rpm": 6},
+    # A KEY RING. Every key present is a credential `_live` may rotate to when the one before it
+    # answers 429 or 402: free-model quotas are counted per account, so a second account's key
+    # is a second quota. Keys holding the same value are one credential, never two. More key NAMES
+    # join the ring through HEADRON_RING_OPENROUTER (comma-separated), so this tree names none of them.
+    "openrouter": {
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "keys": ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY_FREE", "OPENROUTER_API_KEY_PRIMARY"],
+        "rpm": 6,
+    },
     "nvidia": {
         "url": "https://integrate.api.nvidia.com/v1/chat/completions",
         "keys": ["NVIDIA_API_KEY_4", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3"],
@@ -103,11 +112,6 @@ PROVIDERS: dict[str, dict] = {
         "optional_key": True,
         "rpm": 20,
     },
-    "kaggle": {
-        "url": "https://api.kaggle.com/v1/chat/completions",
-        "keys": ["KAGGLE_API_TOKEN", "KAGGLE_KEY"],
-        "rpm": 30,
-    },
     "google-ai-studio": {
         "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
         "keys": ["GOOGLE_AI_STUDIO_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"],
@@ -135,11 +139,70 @@ PROVIDERS: dict[str, dict] = {
         "keys": [],
         "rpm": 30,
     },
+    # JUNIE THROUGH ITS OWN CLI, on whatever JetBrains login it holds — no key here. It is an AGENT,
+    # not a completion endpoint: MEASURED, a one-word question read ~32k input tokens over 5-6 internal
+    # calls, and that count moves with the agent's own step count. So its tokens are reported as None
+    # (unmeasured), never as the agent's total and never as an estimate. `--agent-mode classic` because
+    # `chat` exited 1 with no output on the same question. Model `default` leaves Junie's own routing.
+    "junie": {
+        "cli": [
+            "junie",
+            "--skip-update-check",
+            "--output-format",
+            "json",
+            "--agent-mode",
+            "classic",
+            "--share-anonymous-statistics=false",
+        ],
+        "keys": [],
+        "rpm": 6,
+    },
 }
 
 
-def endpoint(name: str) -> tuple[str, dict[str, str]]:
-    """(url, headers) for a provider, or ValueError naming what is missing — never a key's value."""
+def credentials(name: str) -> list[str]:
+    """The NAMES of the keys present for a provider, one per distinct value, in declared order."""
+    seen: set[str] = set()
+    names: list[str] = []
+    # read live and by literal name, so declcheck sees the input and a test can plant it
+    rings = {"openrouter": os.environ.get("HEADRON_RING_OPENROUTER", "")}
+    extra = [k.strip() for k in rings.get(name, "").split(",") if k.strip()]
+    for k in [*PROVIDERS.get(name, {}).get("keys", []), *extra]:
+        v = os.environ.get(k)
+        if v and v not in seen:
+            seen.add(v)
+            names.append(k)
+    return names
+
+
+def error_text(err: BaseException, limit: int = 200) -> str:
+    """One line saying what a vendor refused with: status plus the start of its body. Every declared
+    key value is redacted, so a body that echoes a credential never reaches a result file.
+
+    WHY: the census screen recorded 19 kilo lanes as `terminal` and nothing else; the class named no
+    cause, and the live probe after it got a 429 — the record could not say which refusal it had been."""
+    text = str(err)
+    if isinstance(err, urllib.error.HTTPError):
+        try:
+            body = err.read().decode("utf-8", "replace") if err.fp is not None else ""
+        except (OSError, ValueError):
+            body = ""
+        text = f"HTTP {err.code}: {body or err.reason}"
+    for name in PROVIDERS:  # credentials(), so a key that joined through a ring is redacted too
+        for k in credentials(name):
+            v = os.environ.get(k)
+            if v and len(v) >= 8:
+                text = text.replace(v, f"<{k}>")
+    # ACCOUNT IDS TOO: MEASURED, an OpenRouter 404 body carries the caller's `user_id`, and results land in a
+    # public repository.
+    text = re.sub(r'"(user_id|org_id|account_id)"\s*:\s*"[^"]*"', r'"\1":"<redacted>"', text)
+    return " ".join(text.split())[:limit]
+
+
+def endpoint(name: str, ring: int = 0) -> tuple[str, dict[str, str]]:
+    """(url, headers) for a provider, or ValueError naming what is missing — never a key's value.
+
+    `ring` picks which present credential (see `credentials`); 0 is the first, as before rings."""
     spec = PROVIDERS.get(name)
     if spec is None:
         raise ValueError(f"unknown provider {name!r}; declared: {', '.join(sorted(PROVIDERS))}")
@@ -162,7 +225,8 @@ def endpoint(name: str) -> tuple[str, dict[str, str]]:
     if "headers" in spec:
         headers.update(spec["headers"])
     if spec["keys"]:
-        key = next((os.environ[k] for k in spec["keys"] if os.environ.get(k)), None)
+        present = credentials(name)
+        key = os.environ[present[ring]] if ring < len(present) else None
         if key is None and not spec.get("optional_key"):
             raise ValueError(f"provider {name} needs one of {spec['keys']} in the environment")
         if key is not None:
@@ -231,6 +295,28 @@ def identity(requested: str, served: object) -> str:
     return "match" if tail(got) == tail(want) or tail(got).startswith(tail(want)) else "differs"
 
 
+def census_lanes(rows: list[dict]) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
+    """The lanes a screen may rank, and every census row it may not, each with its reason.
+
+    Ranked: alive, answering AS ITSELF, and following a one-line instruction. A lane served as another
+    model is that model's record (`a_chain_lane_read_as_a_model`). A lane that cannot echo a token is a
+    classifier or a broken template: it fails every task, so every task the real models pass reads as
+    DISCRIMINATING and the gate stops gating. Nothing is dropped silently."""
+    keep: list[tuple[str, str]] = []
+    excluded: list[dict[str, str]] = []
+    for r in rows:
+        lane = f"{r['provider']}:{r['model']}"
+        if r["status"] != "alive":
+            excluded.append({"lane": lane, "reason": f"not_run:{r.get('error')}"})
+        elif r.get("identity") == "differs":
+            excluded.append({"lane": lane, "reason": f"served_as:{r.get('served')}"})
+        elif not r.get("followed"):
+            excluded.append({"lane": lane, "reason": "did_not_follow_canary"})
+        else:
+            keep.append((r["provider"], r["model"]))
+    return keep, excluded
+
+
 CANARY = "Reply with exactly this token and nothing else: HEADRON-{n}"
 
 
@@ -286,6 +372,11 @@ def census(names: list[str], free_only: bool = True, limit: int | None = None) -
 
 _PACERS: dict[str, resilience.Pacer] = {}
 _BREAKERS: dict[str, resilience.Breaker] = {}
+# A 402 IS THE CREDENTIAL'S, every other failure is the LANE'S. MEASURED in the universal census screen:
+# one breaker per provider let a guard model's two 400s refuse every other model on that key, so five
+# groq lanes and four gemini lanes reported 44 breaker_open and zero requests sent. A model that rejects
+# a request says nothing about its siblings; a spent budget says everything about them.
+_SPENT: set[str] = set()
 
 
 def _replay_key(provider: str, model: str, prompt: str, max_tokens: int) -> str:
@@ -330,11 +421,33 @@ def _live(provider: str, model: str, prompt: str, timeout: int, max_tokens: int 
     78 of 88 completion tokens reasoning on a one-word question, so at a 120 cap a longer prompt
     returns EMPTY content, which a substring scorer reads as a wrong answer. The caller counts an
     empty answer as UNANSWERED, never as wrong, and raises `max_tokens` for that model."""
+    if provider == "junie":
+        return _junie_cli(provider, model, prompt, timeout)
     if "cli" in PROVIDERS.get(provider, {}):
         return _claude_cli(provider, model, prompt, timeout)
-    url, headers = endpoint(provider)
+    # THE RING: one credential after another, moving on only when THIS credential refused for
+    # quota (429 after its retries, 402, or its own breaker open). Any other failure is the
+    # model's and is raised at once — a second key would get the same 400.
+    ring = max(len(credentials(provider)), 1)
+    for i in range(ring):
+        try:
+            return _live_on(provider, model, prompt, timeout, max_tokens, i)
+        except (resilience.BreakerOpen, urllib.error.HTTPError) as err:
+            quota = isinstance(err, resilience.BreakerOpen) or err.code in (402, 429)
+            if not quota or i == ring - 1:
+                raise
+    raise RuntimeError("unreachable: the ring returns or raises on its last credential")
+
+
+def _live_on(
+    provider: str, model: str, prompt: str, timeout: int, max_tokens: int, ring: int
+) -> tuple[str, int | None]:
+    cred = f"{provider}#{ring}"
+    url, headers = endpoint(provider, ring)
     pacer = _PACERS.setdefault(provider, resilience.Pacer(PROVIDERS[provider]["rpm"]))
-    breaker = _BREAKERS.setdefault(provider, resilience.Breaker(threshold=3, cooldown=60.0))
+    if cred in _SPENT:
+        raise resilience.BreakerOpen(f"{cred}: budget spent (402) on this credential, refused without calling")
+    breaker = _BREAKERS.setdefault(f"{cred}:{model}", resilience.Breaker(threshold=3, cooldown=60.0))
     body = json.dumps(
         {"model": model, "temperature": 0, "max_tokens": max_tokens, "messages": [{"role": "user", "content": prompt}]}
     ).encode()
@@ -345,7 +458,11 @@ def _live(provider: str, model: str, prompt: str, timeout: int, max_tokens: int 
         with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
             return json.load(response)
 
-    payload = resilience.call(once, attempts=3, base=2.0, cap=30.0, deadline=timeout * 3.0, breaker=breaker)
+    try:
+        payload = resilience.call(once, attempts=3, base=2.0, cap=30.0, deadline=timeout * 3.0, breaker=breaker)
+    finally:
+        if breaker.state == "latched":
+            _SPENT.add(cred)
     # A 200 CARRYING AN ERROR BODY, or carrying nothing at all. One predicate for every answer path
     # in this file (resilience.missing): the copy that lived here refused an absent `choices` and the
     # CLI copy did not refuse an empty result, which is the same rule with a clause missing.
@@ -393,6 +510,27 @@ def _cli_once(provider: str, model: str, prompt: str, timeout: int) -> tuple[str
         + int(u.get("cache_creation_input_tokens", 0))
     )
     return str(out.get("result") or ""), read
+
+
+def _junie_cli(provider: str, model: str, prompt: str, timeout: int) -> tuple[str, int | None]:
+    """(answer, None) through the Junie CLI, run in an empty directory so no project reaches it.
+
+    Tokens are None: the agent's own multi-call overhead is not the prompt's cost (see PROVIDERS)."""
+    import subprocess
+    import tempfile
+
+    _PACERS.setdefault(provider, resilience.Pacer(PROVIDERS[provider]["rpm"])).wait()
+    argv = [*PROVIDERS[provider]["cli"], "--task", prompt]
+    if model != "default":
+        argv[1:1] = ["--model", model]
+    with tempfile.TemporaryDirectory() as cwd:
+        done = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False)  # noqa: S603
+    try:
+        out = json.loads(done.stdout)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{provider} printed no JSON (exit {done.returncode}): {done.stderr.strip()[-160:]}") from exc
+    resilience.answer_or_refuse(provider, out, ("result",))
+    return str(out.get("result") or ""), None
 
 
 def _claude_cli(provider: str, model: str, prompt: str, timeout: int) -> tuple[str, int | None]:

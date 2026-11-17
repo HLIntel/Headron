@@ -664,6 +664,100 @@ def provider_cases() -> None:
     finally:
         os.environ.pop("GROQ_API_KEY", None)
         os.environ.update(saved)
+    rows = [
+        {"provider": "k", "model": "good", "status": "alive", "identity": "match", "followed": True},
+        {"provider": "k", "model": "auto", "status": "alive", "identity": "differs", "served": "x", "followed": True},
+        {"provider": "g", "model": "guard", "status": "alive", "identity": "match", "followed": False},
+        {"provider": "c", "model": "spent", "status": "not_run", "error": "exhausted:402"},
+    ]
+    keep, excluded = providers.census_lanes(rows)
+    reasons = [e["reason"] for e in excluded]
+    check("a census lane that is dead, served as another model, or ignores the canary is excluded WITH its reason",
+          "a classifier or router lane ranked as a model, which turns every task the real models pass into a discriminating one",
+          keep == [("k", "good")] and reasons == ["served_as:x", "did_not_follow_canary", "not_run:exhausted:402"],
+          f"keep={keep} reasons={reasons}")
+    import urllib.error
+
+    def vendor_says(code: int):
+        def opener(*_a: object, **_k: object) -> object:
+            raise urllib.error.HTTPError("u", code, "planted", {}, None)  # type: ignore[arg-type]
+        return opener
+
+    def outcome(model: str) -> str:
+        try:
+            providers._live("groq", model, "q", timeout=1)
+        except resilience_open:
+            return "refused"
+        except Exception:  # noqa: BLE001 — the case reads only WHICH refusal arrived
+            return "sent"
+        return "sent"
+
+    resilience_open = rz.BreakerOpen
+    real_open, saved_b, saved_s = providers.urllib.request.urlopen, dict(providers._BREAKERS), set(providers._SPENT)
+    os.environ["GROQ_API_KEY"] = "sk-planted-secret-value"
+    providers._PACERS["groq"] = rz.Pacer(1e9)
+    try:
+        providers._BREAKERS.clear()
+        providers._SPENT.clear()
+        providers.urllib.request.urlopen = vendor_says(400)
+        for _ in range(4):
+            outcome("guard-model")
+        sibling = outcome("real-model")
+        providers.urllib.request.urlopen = vendor_says(402)
+        outcome("spent-model")
+        after_402 = outcome("other-model")
+    finally:
+        providers.urllib.request.urlopen = real_open
+        providers._BREAKERS.clear()
+        providers._BREAKERS.update(saved_b)
+        providers._SPENT.clear()
+        providers._SPENT.update(saved_s)
+        providers._PACERS.pop("groq", None)
+        os.environ.pop("GROQ_API_KEY", None)
+        os.environ.update(saved)
+    os.environ["OPENROUTER_API_KEY"] = "sk-ring-first-planted-value"
+    os.environ["OPENROUTER_API_KEY_FREE"] = "sk-ring-second-planted-value"
+    os.environ["OPENROUTER_API_KEY_PRIMARY"] = "sk-ring-first-planted-value"  # same value: one credential
+    seen: list[str] = []
+
+    def first_key_throttled(request: object, **_k: object) -> object:
+        auth = request.get_header("Authorization") or ""  # type: ignore[attr-defined]
+        seen.append("first" if "first" in auth else "second")
+        if "first" in auth:
+            raise urllib.error.HTTPError("u", 402, "sk-ring-first-planted-value spent", {}, None)  # type: ignore[arg-type]
+        raise urllib.error.HTTPError("u", 400, "model says no", {}, None)  # type: ignore[arg-type]
+
+    providers._PACERS["openrouter"] = rz.Pacer(1e9)
+    leaked = ""
+    try:
+        providers._BREAKERS.clear()
+        providers._SPENT.clear()
+        providers.urllib.request.urlopen = first_key_throttled
+        try:
+            providers._live("openrouter", "m", "q", timeout=1)
+        except Exception as err:  # noqa: BLE001 — the case reads which credential was tried and the record
+            leaked = providers.error_text(
+                urllib.error.HTTPError("u", 402, "echo sk-ring-first-planted-value", {}, None)  # type: ignore[arg-type]
+            ) + str(type(err).__name__)
+        ring = providers.credentials("openrouter")
+    finally:
+        providers.urllib.request.urlopen = real_open
+        providers._BREAKERS.clear()
+        providers._BREAKERS.update(saved_b)
+        providers._SPENT.clear()
+        providers._SPENT.update(saved_s)
+        providers._PACERS.pop("openrouter", None)
+        for k in ("OPENROUTER_API_KEY", "OPENROUTER_API_KEY_FREE", "OPENROUTER_API_KEY_PRIMARY"):
+            os.environ.pop(k, None)
+        os.environ.update(saved)
+    check("a credential refused for quota hands the call to the next key, a model's 400 does not, and no key reaches a record",
+          "one spent key failing every lane while a second account's key sat unused, or an error record echoing a key",
+          seen == ["first", "second"] and ring == ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY_FREE"]
+          and "planted-value" not in leaked and "<OPENROUTER_API_KEY>" in leaked,
+          f"seen={seen} ring={ring} leaked_redacted={'planted-value' not in leaked}")
+    check("one model's rejections never refuse its siblings, and a 402 refuses every model on that credential",
+          "a guard model's 400s opening one provider-wide breaker, so every other lane on the key reads breaker_open with no request sent",
+          sibling == "sent" and after_402 == "refused", f"sibling={sibling} after_402={after_402}")
     check("a missing key is refused by name, and no key value is ever printed",
           "a harness that leaks a credential into a log or runs unauthenticated",
           "GROQ_API_KEY" in refused and "sk-planted" not in refused and headers["Authorization"].startswith("Bearer "),
@@ -890,7 +984,7 @@ def main() -> int:
     replay_cases()
     import agent_properties_test
     agent_properties_test.run(sys.modules[__name__])
-    expected = 149  # Includes target-dependent and misclassified role regressions, and the parallel-writer race.
+    expected = 152  # Includes target-dependent and misclassified role regressions, the parallel-writer race, census lane exclusion, per-lane breakers, and the key ring.
     if len(CASES) != expected:
         raise SystemExit(f"CASE COUNT MOVED: {len(CASES)} ran, {expected} expected — a harness that "
                          "silently skips cases prints a full pass over controls that never fired")
