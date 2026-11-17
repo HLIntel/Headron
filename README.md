@@ -102,7 +102,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Free-model screen, 18 lanes answered (contract 3.63.0, 22 tasks) | on the 138 tasks both arms answered: with Headron 115/138; blind 58/138. 88 lanes gave no answer and carry no score |
 
 Entry context: ~1,634 tokens; the rest loads on demand. Each row is its own record, contract version and task set: rows are never summed into one figure, and no run crowns a model.
-[Routing data](benchmarks/ab-latest.json). [Task records](benchmarks/tasks-latest.json), [screen](benchmarks/screen-universal.json).
+[Routing data](benchmarks/ab-latest.json). [Task records](benchmarks/tasks-latest.json), [screen](benchmarks/screen-universal.json). [Per model, per record](docs/RESULTS.md).
 
 <!-- END generated: measured-benefits -->
 

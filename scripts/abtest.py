@@ -420,6 +420,52 @@ def task_rows() -> list[str]:
     return rows
 
 
+def _record(name: str) -> dict:
+    path = ROOT / "benchmarks" / name
+    return json.loads(text_of(path)) if path.exists() else {}
+
+
+def model_details() -> str:
+    """Per-model rows from each record, alphabetical (never ranked), plus a count of graded answers:
+    a count of events adds across records; a rate does not, so none is formed here."""
+    out: list[str] = []
+    graded = 0
+    routing = {k: v for k, v in _record("ab-latest.json").get("models", {}).items() if ":" in k}
+    if routing:
+        out += ["Routing questions (unassisted vs scoped prompt):", "",
+                "| Model | Contract | Unassisted | Scoped | Tokens/question |", "| :--- | :--- | :--- | :--- | :--- |"]
+        for name in sorted(routing):
+            m = routing[name]
+            graded += sum(a["asked"] for a in m.values() if isinstance(a, dict) and "asked" in a)
+            u, s = m["unassisted"], m["scoped"]
+            out.append(f"| `{name}` | {m['measured_at']} | {u['correct']}/{u['asked']} | {s['correct']}/{s['asked']} "
+                       f"| {u['tokens_per_question']:,.0f} → {s['tokens_per_question']:,.0f} |")
+        out.append("")
+    tasks = _record("tasks-latest.json").get("models", {})
+    if tasks:
+        out += ["Task bench (blind vs with Headron, by kind):", "",
+                "| Model | Contract | Kind | Blind | With Headron |", "| :--- | :--- | :--- | :--- | :--- |"]
+        for name in sorted(tasks):
+            for kind, cell in sorted((k, c) for k, c in tasks[name].items() if isinstance(c, dict)):
+                graded += cell["blind"]["asked"] + cell["headron"]["asked"]
+                out.append(f"| `{name}` | {tasks[name]['measured_at']} | {kind} | {cell['blind']['correct']}/"
+                           f"{cell['blind']['asked']} | {cell['headron']['correct']}/{cell['headron']['asked']} |")
+        out.append("")
+    screen = _record("screen-universal.json")
+    if screen:
+        out += ["Free-model screen (paired tasks only; tokens are the lane's whole run):", "",
+                "| Lane | Paired | Blind | With Headron | Tokens blind / Headron |", "| :--- | :--- | :--- | :--- | :--- |"]
+        for name in sorted(screen["lanes"]):
+            lane = screen["lanes"][name]
+            graded += sum(a["answered"] for a in lane["arms"].values())
+            p, arms = lane["paired"], lane["arms"]
+            toks = " / ".join(f"{arms[a]['tokens']:,}" if a in arms else "no arm" for a in ("blind", "headron"))
+            out.append(f"| `{name}` | {p['n']} | {p['blind']} | {p['headron']} | {toks} |")
+        out.append("")
+    out.append(f"{graded:,} graded answers across these records (a count, not a score).")
+    return "\n".join(out)
+
+
 def measured_block() -> str:
     """Render recorded measurements with their scope, without treating samples as guarantees."""
     f = measured_figures()
@@ -435,7 +481,7 @@ def measured_block() -> str:
         f"Entry context: ~{f['pre_tokens']:,} tokens; the rest loads on demand. Each row is its own record, "
         "contract version and task set: rows are never summed into one figure, and no run crowns a model.",
         "[Routing data](benchmarks/ab-latest.json). [Task records](benchmarks/tasks-latest.json), "
-        "[screen](benchmarks/screen-universal.json).",
+        "[screen](benchmarks/screen-universal.json). [Per model, per record](docs/RESULTS.md).",
     ]
     return "\n".join(lines)
 
