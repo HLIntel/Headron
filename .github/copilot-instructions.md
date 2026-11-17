@@ -8,11 +8,11 @@ there is no fourth copy of the same body.
 ## The three things worth repeating here
 
 1. **Route before you read.** `python scripts/atlas.py route <path> --json` gives the language
-   pack, its operating card, its tool manifest, the label, the branch lane and the gates. Reading
+   pack, its operating card, its tool manifest, the label, the topic branch and the gates. Reading
    this repository breadth-first is the failure it exists to prevent.
 2. **Never type a count, a date or a tool name into prose.** Counts are generated, claims are
    stamped with a contract version, and a tool's name lives in `languages/<route>/tools.yaml`
-   where an instrument can check it. Each of those is enforced, and each has a planted defect in
+   where an instrument can check it. Each of those is enforced, and each has a seeded defect in
    `scripts/atlas_test.py` proving the check still bites.
 3. **Verify on the exit code.** `python scripts/atlas.py check` is the verdict; a suggestion that
    looks right and fails the contract is a failing change. Suggested code for a pull request must

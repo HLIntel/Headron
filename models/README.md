@@ -38,7 +38,7 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | opencode | `AGENTS.md` | 905 |
 | Hermes | `.agent/bootstrap.json` | 693 |
 | any model given a link | `llms.txt` | 941 |
-| any chat assistant | `CHAT.md` | 2,726 |
+| any chat assistant | `CHAT.md` | 2,724 |
 | Headron Desktop | `llms.txt` | 941 |
 | Junie | `AGENTS.md` | 905 |
 | Google Antigravity | `AGENTS.md` | 905 |
