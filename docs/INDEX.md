@@ -18,6 +18,7 @@ Start with the task below; the index is a map, not a reading list.
 | reported measurements | [recorded results](../README.md#recorded-results), [polyglot benchmark](BENCHMARK-POLYGLOT.md) |
 | the `.headron` task surface | [HEADRON-LANGUAGE.md](HEADRON-LANGUAGE.md) |
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
+| package architecture and boundaries | [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md) |
 | version contract | [VERSIONING.md](VERSIONING.md) |
 | licence | [LICENSE](../LICENSE) |
 
