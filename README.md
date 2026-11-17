@@ -32,6 +32,8 @@ Agents: [llms.txt](llms.txt). Chats: [CHAT.md](CHAT.md). [Evidence](#recorded-re
 the checks. The hook and `headron verify` report `PASS`, `FAIL`, `SKIP` or `NOT RUN`: a skipped
 check is never a pass, whoever wrote the change. `headron ci` runs CI locally.
 
+[Task-to-evidence map](docs/INDEX.md#task-to-evidence).
+
 <!-- BEGIN generated: proof-flow (python scripts/atlas.py index --write) -->
 
 <p align="center">
@@ -95,7 +97,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **864** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **867** declared planted cases |
 | Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Task bench, 3 Claude models (contract 2.29.0) | with Headron 137/138; blind 78/138; every task answered by both arms |
@@ -122,9 +124,9 @@ Entry context: ~1,644 tokens; the rest loads on demand. Each row is its own reco
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠2 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟224 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟226 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟250 ⠿3 ⠁1 │ → headron check
+○ . │ ⠟252 ⠿3 ⠁1 │ → headron check
 ```
 
 <!-- END generated: port-example -->

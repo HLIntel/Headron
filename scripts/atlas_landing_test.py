@@ -10,7 +10,7 @@ import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 
 import safeedit
 
@@ -32,6 +32,7 @@ def run(module: ModuleType):
     merge_method_cases()
     fast_gate_cases()
     full_replay_cases()
+    landing_commit_race_cases()
     landing_reason_cases()
     shard_split_cases()
     repo_reach_cases()
@@ -41,7 +42,9 @@ def run(module: ModuleType):
     consumer_placement_cases()
     consumer_check_cases()
     compile_output_cases()
-    gate_adoption_cases()
+    from atlas_gate_adoption_test import gate_adoption_cases
+
+    gate_adoption_cases(CASES)
     lesson_cases()
     skill_tax_cases()
     rescue_tag_cases()
@@ -120,7 +123,13 @@ def fast_gate_cases() -> None:
         (Path(tree) / ".github" / "ci-local.sh").write_text("#!/bin/sh\n", encoding="utf-8")
         fakes = {
             "subprocess": types.SimpleNamespace(run=fake, TimeoutExpired=subprocess.TimeoutExpired),
-            "_git": lambda *a: "1" if a[:2] == ("rev-list", "--count") and "--merges" not in a else "",
+            "_git": lambda *a: (
+                "1"
+                if a[:2] == ("rev-list", "--count") and "--merges" not in a
+                else "abc"
+                if a[0] == "rev-parse"
+                else ""
+            ),
             "_tree": lambda: Path(tree),
             "_is_atlas": lambda: False,
             "clean_checkout_errors": lambda *a: None,
@@ -229,6 +238,86 @@ def full_replay_cases() -> None:
         )
     )
     print("  ok    the atlas's full replay runs before the push and a red one publishes nothing")
+
+
+def landing_commit_race_cases(mutant: bool = False) -> None:
+    """A moving checkout cannot replace the commit proved by the clean gate."""
+    import types
+
+    import branchstate
+
+    calls: list[list[str]] = []
+    current = ["verified"]
+    drift = [True]
+
+    def command(argv: Sequence[str], **_):
+        calls.append(list(argv))
+        return subprocess.CompletedProcess(argv, 1 if argv[:2] == ["git", "show-ref"] else 0, "", "")
+
+    def git(*args: str) -> str:
+        if args[:2] == ("rev-list", "--count"):
+            return "1"
+        return current[0] if args[:2] == ("rev-parse", "HEAD") else ""
+
+    def clean(_gates: list[list[str]] | None, head: str) -> None:
+        if head != "verified":
+            raise SystemExit("FAIL clean gate did not receive the anchored commit")
+        if drift[0]:
+            current[0] = "unverified"
+        return None
+
+    fakes = {
+        "subprocess": types.SimpleNamespace(run=command, TimeoutExpired=subprocess.TimeoutExpired),
+        "_git": git,
+        "_is_atlas": lambda: True,
+        "clean_checkout_errors": clean,
+        "_pull_request": lambda _branch: (None, True),
+        "replay_local_ci": lambda _tree, sha: sha == "verified",
+        "post_local_ci": lambda *_args: True,
+    }
+    real = {name: getattr(branchstate, name) for name in fakes}
+    for name, value in fakes.items():
+        setattr(branchstate, name, value)
+    try:
+        result = branchstate._land_once("lane")
+        if result != 65 or any(c[:2] == ["git", "push"] for c in calls):
+            raise SystemExit(f"FAIL commit drift published a landing: {result} {calls}")
+        current[0], drift[0] = "verified", False
+        calls.clear()
+        branchstate._land_once("lane")
+        pushes = [c for c in calls if c[:2] == ["git", "push"]]
+        merges = [c for c in calls if c[:3] == ["gh", "pr", "merge"]]
+        if pushes != [["git", "push", "-u", "origin", "verified:refs/heads/lane"]]:
+            raise SystemExit(f"FAIL push is not bound to the proved commit: {pushes}")
+        if len(merges) != 1 or merges[0][-2:] != ["--match-head-commit", "verified"]:
+            raise SystemExit(f"FAIL merge is not bound to the proved commit: {merges}")
+    finally:
+        for name, value in real.items():
+            setattr(branchstate, name, value)
+    if not mutant:
+        import inspect
+        import textwrap
+
+        original = branchstate._land_once
+        source = textwrap.dedent(inspect.getsource(original))
+        planted = source.replace('f"{head}:refs/heads/{branch}"', "branch", 1)
+        if planted == source:
+            raise SystemExit("FAIL landing push mutant was not planted")
+        try:
+            exec(compile(planted, "<landing-push-mutant>", "exec"), cast(dict[str, Any], vars(branchstate)))
+            try:
+                landing_commit_race_cases(mutant=True)
+            except SystemExit as error:
+                if not str(error).startswith("FAIL push is not bound to the proved commit:"):
+                    raise
+            else:
+                raise SystemExit("FAIL landing push mutant survived")
+        finally:
+            branchstate._land_once = original
+    CASES.append(
+        ("landing binds verification, push and merge to one commit", "a changed HEAD published an unverified commit")
+    )
+    print("  ok    landing binds verification, push and merge to one commit")
 
 
 def landing_reason_cases() -> None:
@@ -670,117 +759,6 @@ def _placed(files: dict[str, str], target: str, gate: str, argv: list[str], *, r
             (Path(tmp) / rel).parent.mkdir(parents=True, exist_ok=True)
             (Path(tmp) / rel).write_text(body)
         return gateplace.placement(str(Path(tmp) / target), gate, argv)
-
-
-def gate_adoption_cases() -> None:
-    """A formatter runs only where the repository adopted it; a tool never reads a dialect it cannot parse.
-    MEASURED AT 3.62.0 on 8 public repositories: 31 of 58 FAIL rows were an unadopted formatter, and `jq` on
-    a commented devcontainer.json and hadolint on `RUN <<EOF` failed files that were correct."""
-    fmt = {
-        "no config: prettier proves nothing": ({"a.ts": "x\n"}, "a.ts", ["prettier", "--check"], "prettier"),
-        "config in a subfolder adopts it there": (
-            {"web/.prettierrc": "{}", "web/a.ts": ""},
-            "web/a.ts",
-            ["prettier", "--check"],
-            None,
-        ),
-        "package.json naming it adopts it": (
-            {"package.json": '{"devDependencies": {"prettier": "3"}}', "a.ts": ""},
-            "a.ts",
-            ["prettier", "--check"],
-            None,
-        ),
-        "a dependency that only contains the name is not it": (
-            {"package.json": '{"x": "eslint-config-prettier"}', "a.ts": ""},
-            "a.ts",
-            ["prettier", "--check"],
-            "prettier",
-        ),
-        ".editorconfig alone is no adoption": (
-            {".editorconfig": "[*.sh]\nindent_size = 2\n", "a.sh": ""},
-            "a.sh",
-            ["shfmt", "-d"],
-            "shfmt",
-        ),
-        "an .editorconfig key only shfmt reads adopts shfmt": (
-            {".editorconfig": "[*.sh]\nswitch_case_indent = true\n", "a.sh": ""},
-            "a.sh",
-            ["shfmt", "-d"],
-            None,
-        ),
-        "a shfmt key adopts no other formatter": (
-            {".editorconfig": "[*.sh]\nswitch_case_indent = true\n", "a.ts": ""},
-            "a.ts",
-            ["prettier", "--check"],
-            "prettier",
-        ),
-        "a workflow naming it adopts it": (
-            {".github/workflows/ci.yml": "run: shfmt -d .\n", "a.sh": ""},
-            "a.sh",
-            ["shfmt", "-d"],
-            None,
-        ),
-        "[tool.ruff] adopts ruff format": (
-            {"pyproject.toml": "[tool.ruff]\nline-length = 99\n", "a.py": ""},
-            "a.py",
-            ["ruff", "format", "--check"],
-            None,
-        ),
-        "a toolchain's own formatter always runs": ({"a.rs": ""}, "a.rs", ["rustfmt", "--check"], None),
-    }
-    for name, (files, target, argv, why) in fmt.items():
-        placed = _placed(files, target, "formatter", argv)
-        if (why is None) != ("why" not in placed) or why and why not in placed["why"]:
-            raise SystemExit(f"FAIL formatter adoption, {name}: {placed}")
-    if "no repository" not in _placed({"a.ts": ""}, "a.ts", "formatter", ["prettier", "--check"], repo=False).get(
-        "why", ""
-    ):
-        raise SystemExit("FAIL a file in no repository was handed to a repository's chosen formatter")
-    import gateplace  # noqa: PLC0415
-
-    here = Path.cwd()
-    with tempfile.TemporaryDirectory() as outside:  # `headron check` from an install: no repository at the cwd
-        os.chdir(outside)
-        try:
-            off_tree = gateplace.placement("scripts/doctor.py", "formatter", ["ruff", "format", "--check"])
-        finally:
-            os.chdir(here)
-    if "why" in off_tree:
-        raise SystemExit(f"FAIL a tree-relative path read from outside the tree lost its repository: {off_tree}")
-    dialects = {
-        "a commented JSON file is JSONC": ("x.json", '{\n  // note\n  "a": 1,\n}\n', ["jq", "empty"], "JSONC"),
-        "strict JSON still runs jq": ("x.json", '{"a": 1}\n', ["jq", "empty"], None),
-        "JSON broken in every reader still runs jq": ("x.json", '{"a": \n', ["jq", "empty"], None),
-        "a RUN heredoc is not for hadolint": (
-            "Dockerfile",
-            "FROM alpine\nRUN <<EOF\necho hi\nEOF\n",
-            ["hadolint", "--failure-threshold", "error"],
-            "heredoc",
-        ),
-        "a here-string is no heredoc": (
-            "Dockerfile",
-            "FROM alpine\nRUN cat <<<'hi'\n",
-            ["hadolint", "--failure-threshold", "error"],
-            None,
-        ),
-    }
-    for name, (target, body, argv, why) in dialects.items():
-        placed = _placed({target: body}, target, "compiler_or_typechecker", argv)
-        if (why is None) != ("why" not in placed) or why and why not in placed["why"]:
-            raise SystemExit(f"FAIL dialect, {name}: {placed}")
-    CASES.append(
-        (
-            f"a formatter runs only where the repository adopts it ({len(fmt) + 1} trees)",
-            "prettier, shfmt, taplo or ruff reporting FAIL on a repository that never chose that style",
-        )
-    )
-    CASES.append(
-        (
-            f"jq skips only JSONC and hadolint only a heredoc; a file broken everywhere still runs ({len(dialects)} files)",
-            "a gate reporting FAIL on a dialect its tool cannot read, or a broken file hidden as unreadable",
-        )
-    )
-    print("  ok    a formatter runs only where adopted, and a tool never reads a dialect it cannot parse")
 
 
 def consumer_check_cases() -> None:

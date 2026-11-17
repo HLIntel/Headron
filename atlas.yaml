@@ -364,9 +364,11 @@ instrument_roster:
     processpolicy.py: 'workflow records and conditions called through agentpolicy'
     consumergates.py: 'consumer gates shared by branchstate and verify'
     gateplace.py: 'where one gate runs for one file, shared by gate, verify and the commit hook'
+    linkcheck.py: 'local Markdown link checks shared by the atlas and edit hook'
     onboard.py: '`headron init`, dispatched from atlas.py; its proof is onboard_test.py'
     onboard_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     atlas_landing_test.py: 'landing and lifecycle cases loaded by atlas_guards_test'
+    atlas_gate_adoption_test.py: 'gate adoption cases loaded by atlas_landing_test'
     slot.py: 'the machine suite slot `headron slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
     links.py: 'the `headron links` record the site build and Headron Desktop read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
@@ -3566,7 +3568,7 @@ agent_failure_modes:
     tell: 'the FAIL rows cluster on a few tools, the repository has no config for them and no build, hook or CI file names them, or the same file passes every reader of its own dialect'
     sightings: 1
     prevented_by: 'a gate answers where it runs or why no run there proves anything: a style formatter runs only where the repository adopts it, a tool skips a dialect it cannot read, a per-project verb runs in its project; the skipped row is NOT RUN with that why, never a PASS'
-    enforced_by: [gateplace.unadopted, gateplace.misread, atlas_landing_test.gate_adoption_cases]
+    enforced_by: [gateplace.unadopted, gateplace.misread, atlas_gate_adoption_test.gate_adoption_cases]
   a_documented_step_names_a_dead_command:
     shape: 'a first-contact text tells the reader to run a verb or flag the CLI no longer has, so the first step is a usage error'
     looks_like: 'a ready next step in README, CHAT.md, llms.txt or a skill'
@@ -4069,7 +4071,7 @@ agent_success_patterns:
     verification: 'compare.py over the two JSON runs names each row that moved, and every row that left FAIL is NOT RUN with a why, never a PASS'
     evidence: 'on 8 public repositories 82 FAIL rows fell to 58 once per-project verbs ran in their project, then 58 to 23 once unadopted formatters and unreadable dialects were skipped, each move traced row by row (3.62.0)'
     pairs: [a_gate_that_proves_nothing_reported_as_fail]
-    proven_by: [gateplace.placement, atlas_landing_test.gate_adoption_cases]
+    proven_by: [gateplace.placement, atlas_gate_adoption_test.gate_adoption_cases]
     kinds: [reusable, ai_beneficial]
     reused: 1
   pin_a_test_to_the_tree_not_the_host:

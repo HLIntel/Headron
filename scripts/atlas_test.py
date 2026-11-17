@@ -950,7 +950,13 @@ def main() -> int:
     __import__("impact").start()  # record what each planted group loads: the fast loop's test-impact map
     # A TIMEOUT SENDS SIGTERM: turn it into an exit, so every `finally` restore runs (3.13.0).
     import signal
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+
+    from testgroups import SuiteTerminated
+
+    def terminate(*_args: object) -> None:
+        raise SuiteTerminated(143)
+
+    signal.signal(signal.SIGTERM, terminate)
     for line in safeedit.restore_leftovers(ROOT):
         print(f"  restored a plant a killed run left behind: {line}")
     from testgroups import counted, finish_suite, run_guard_halves, scrub_git_env, shard_name, shard_pin

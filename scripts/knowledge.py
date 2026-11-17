@@ -1,19 +1,8 @@
 #!/usr/bin/env python3
 """Where a fact may live, how it is retrieved, and the asymmetries underneath both.
 
-WHY (2.13.0). This repository was rigorous about code and silent about KNOWLEDGE. It said nothing about which facts
-belong in a model's weights, which must be retrieved, and which are only ever true for one session — so the default
-applied: everything becomes a document, everything gets embedded, and a question with an exact answer is served by
-similarity. The cost of that is never a visibly wrong answer. It is a PLAUSIBLE one: a row that exists is paraphrased, a
-row that does not is invented, and the two are identical in the output.
-
-THREE DECLARATIONS, EACH CHECKED BOTH WAYS. `data_classes` says how each class is retrieved and the way it fails.
-`knowledge_layers` says what each layer must NEVER hold, because the defect is always a volatile fact in the layer that
-cannot be updated. `retrieval_policy` says how something is indexed, once, so it is not re-decided per ingestion — and
-every `never_*` list is the half that does the work, since each one names the default that would otherwise win.
-
-`asymmetries` is the layer under all of it: two words that belong together and are unequal. Almost
-every rule in this tree is one of them, and naming the pair makes the rule portable.
+Retrieval policy distinguishes knowledge that can live in weights from facts that must be retrieved or versioned.
+The declarations are checked in both directions so retrieval and failure modes remain explicit.
 
 WHAT THIS DOES NOT PROVE: that an index was BUILT this way. This checks the declaration is complete and self-consistent;
 a retrieval system that ignores it is caught by the retrieval_change gate, and by a citation a reader can open.
@@ -979,16 +968,23 @@ def port_hook(text: str) -> int:
     path = hook_input(text).get("file_path")
     if not isinstance(path, str) or not path:
         return 0
+    source = Path(path).expanduser().absolute()
     try:  # the edited file's own repository is the tree, wherever the runtime started this process
-        os.chdir(Path(path).expanduser().resolve().parent)
-        rec = port.record(path, None, "agent", None)
+        os.chdir(source.resolve().parent)
+        rec = port.record(str(source), None, "agent", None)
     except (OSError, ValueError, KeyError):
         return 0
+    import atlas as atlas_module  # noqa: PLC0415
+    from atlascore import worktree  # noqa: PLC0415
+
+    findings = atlas_module.edited_link_errors(source, worktree())
     if rec["route"] is not None:  # a file no pack routes has no gate to name: silence, not a "none" line
         import agents  # noqa: PLC0415
 
         said = agents.say_lessons(text, rec["route"], rec.get("lessons"))
-        _hook_answer("PostToolUse", additionalContext="\n".join([rec["line"] + port.lock_drift_note(), *said]))
+        findings = [rec["line"] + port.lock_drift_note(), *said, *findings]
+    if findings:
+        _hook_answer("PostToolUse", additionalContext="\n".join(findings))
     return 0
 
 

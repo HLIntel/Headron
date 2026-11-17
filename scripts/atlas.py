@@ -41,19 +41,16 @@ from atlascore import (
     CHANGE_CLASSES,
     CODE_SUFFIXES,
     EXEMPT,
-    HTML_LINK_RE,
     LINK_RE,
     MAX_BLOB_BYTES,
     ORPHAN_ROOTS,
     PRECEDENCE_IMPLEMENTED,
     REQUIRED_WIKI,
     ROOT,
-    anchor_error,
     atlas,
     is_pack_document,
     known_labels,
     label_for,
-    link_target,
     operating_card,
     operating_card_ref,
     proof_record,
@@ -95,6 +92,7 @@ from doctor import main as doctor_main
 from gateplace import placement
 from headronlang import compile_command, plan_program
 from knowledge import decide, knowledge_errors, pick, why
+from linkcheck import link_errors
 from packmanifest import manifest_errors
 from parsegate import LOAD_FAILURES, load_errors, parse_errors
 
@@ -367,39 +365,15 @@ def route_label_errors() -> list[str]:
             if label_for(t) not in labels]
 
 
-def link_errors() -> tuple[list[str], dict[str, list[str]], int]:
-    """Every local Markdown and HTML link resolves; also returns who links to what, and how many were read."""
-    errors: list[str] = []
-    inbound: dict[str, list[str]] = {}
-    links_checked = 0
-    for source in tracked():
-        if source.suffix.lower() != ".md" or source.is_symlink():
-            continue
-        try:
-            content = text_of(source)
-        except UnicodeDecodeError:
-            errors.append(f"non-UTF-8 markdown: {rel(source)}")
-            continue
-        for match in list(LINK_RE.finditer(content)) + list(HTML_LINK_RE.finditer(content)):
-            raw = (match.group(1) if match.re is HTML_LINK_RE
-                   else (match.group(1) or match.group(2))) or ""
-            if missing_anchor := anchor_error(source, raw):
-                errors.append(missing_anchor)
-            try:
-                target = link_target(source, raw)
-            except ValueError as exc:
-                errors.append(str(exc))
-                continue
-            if target is None:
-                continue
-            links_checked += 1
-            key = rel(target)
-            inbound.setdefault(key, []).append(rel(source))
-            if target.is_dir():  # a link to a directory reaches its README
-                inbound.setdefault(key + "/README.md", []).append(rel(source))
-            if not target.exists():
-                errors.append(f"broken local link: {rel(source)} -> {raw}")
-    return errors, inbound, links_checked
+def edited_link_errors(source: Path, root: Path) -> list[str]:
+    """Check only an existing edited Markdown file inside the caller's tree."""
+    if source.suffix.lower() != ".md" or source.is_symlink() or not source.is_file():
+        return []
+    try:
+        source.resolve().relative_to(root.resolve())
+    except ValueError:
+        return []
+    return link_errors([source], root)[0]
 
 
 def composed() -> tuple:

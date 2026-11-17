@@ -25,6 +25,8 @@ def run(module: ModuleType) -> None:
     ROOT, CASES, mutated, atlas = module.ROOT, module.CASES, module.mutated, module.atlas
     shell_verdict_cases(module)
     plugin_cases()
+    edited_links_cases()
+    termination_cases()
 
 
 def _cleared_by_does_the_work(row: dict) -> None:
@@ -298,13 +300,7 @@ def plugin_cases() -> None:
     mutants = (
         ("scripts/knowledge.py", 'permissionDecision="deny"', 'permissionDecision="ask"', "not denied", False),
         ("scripts/knowledge.py", 'if rec["route"] is not None:', "if True:", "unrouted", False),
-        (
-            "scripts/knowledge.py",
-            "        os.chdir(Path(path).expanduser().resolve().parent)\n",
-            "",
-            "routed file",
-            False,
-        ),
+        ("scripts/knowledge.py", "        os.chdir(source.resolve().parent)\n", "", "routed file", False),
         (".claude-plugin/plugin.json", "shell --hook", "shell", "PreToolUse Bash exited 3", False),
         ("scripts/port.py", 'if rel == "atlas.yaml":', "if False:", "atlas.yaml was not", False),
         (".claude-plugin/plugin.json", "port --guard", "port", "PreToolUse Edit exited", False),
@@ -350,3 +346,142 @@ def plugin_cases() -> None:
         )
     )
     print(f"  ok    claude plugin: hooks answer as declared; {len(mutants)} planted drifts caught")
+
+
+def edited_links_cases() -> None:
+    """Exercise the post-edit hook against untracked files in a separate consumer repository."""
+    import tempfile  # noqa: PLC0415
+    from contextlib import redirect_stdout  # noqa: PLC0415
+    from io import StringIO  # noqa: PLC0415
+    from unittest.mock import patch  # noqa: PLC0415
+
+    import knowledge  # noqa: PLC0415
+    import linkcheck  # noqa: PLC0415
+
+    old_cwd = Path.cwd()
+    with tempfile.TemporaryDirectory() as directory:
+        tree = Path(directory)
+        subprocess.run(["git", "init", "-q", str(tree)], check=True, timeout=30, capture_output=True)
+        source = tree / "draft.md"
+        with patch.object(linkcheck, "tracked", return_value=[tree / "missing.md"]):
+            if not linkcheck.link_errors(root=tree)[0]:
+                raise SystemExit("FAIL missing tracked Markdown was silently skipped")
+        target = tree / "target.md"
+        target.write_text("# Present\n", encoding="utf-8")
+        (tree / "with space.md").write_text("# Present\n", encoding="utf-8")
+        payload = json.dumps({"tool_input": {"file_path": str(source)}})
+
+        def output() -> str:
+            result = StringIO()
+            try:
+                with redirect_stdout(result):
+                    knowledge.port_hook(payload)
+            finally:
+                os.chdir(old_cwd)
+            return result.getvalue()
+
+        source.write_text("[missing](absent.md) [anchor](target.md#absent)\n", encoding="utf-8")
+
+        def assert_defects() -> None:
+            actual = output()
+            if "broken local link" not in actual or "broken anchor" not in actual:
+                raise AssertionError(f"edited Markdown defects were not reported: {actual!r}")
+
+        assert_defects()
+        with patch.object(atlas, "link_errors", return_value=([], {}, 0)):
+            try:
+                assert_defects()
+            except AssertionError:
+                pass
+            else:
+                raise SystemExit("FAIL disabling link validation did not kill the planted case")
+        source.write_text(r"Escaped \` then [broken](missing.md) then \`", encoding="utf-8")
+        if "broken local link" not in output():
+            raise SystemExit("FAIL escaped backticks hid a broken link")
+        for content in (
+            r"`x\` [bad](absent.md) `",
+            "` stray\n\n[bad](absent.md)\n\n` stray",
+            "` stray\n# Heading [bad](absent.md)\n` stray\n",
+            "` stray\nHeading [bad](absent.md)\n===\n` stray\n",
+            "` stray\n- [bad](absent.md)\n` stray\n",
+            "` stray\n> [bad](absent.md)\n` stray\n",
+        ):
+            source.write_text(content, encoding="utf-8")
+            if "broken local link" not in output():
+                raise SystemExit(f"FAIL code delimiters hid a broken link: {content!r}")
+        source.write_text("- `literal\n  [example](missing.md)`\n", encoding="utf-8")
+        if "broken local link" in output():
+            raise SystemExit("FAIL multiline inline code in a list was interpreted as a link")
+        source.write_text("- ```md\n  [example](missing.md)\n  ```\n[bad](absent.md)\n", encoding="utf-8")
+        answer = output()
+        if "absent.md" not in answer or "missing.md" in answer:
+            raise SystemExit(f"FAIL list fence or following link was misread: {answer!r}")
+        nested = tree / "nested"
+        nested.mkdir()
+        relative = nested / "draft.md"
+        relative.write_text("[missing](absent.md)\n", encoding="utf-8")
+        try:
+            os.chdir(tree)
+            result = StringIO()
+            with redirect_stdout(result):
+                knowledge.port_hook(json.dumps({"tool_input": {"file_path": "nested/draft.md"}}))
+        finally:
+            os.chdir(old_cwd)
+        if "broken local link" not in result.getvalue():
+            raise SystemExit(f"FAIL nested relative edit was not checked: {result.getvalue()!r}")
+        source.write_text(
+            "[ok](target.md#present) [mail](mailto:user@example.com) [encoded](with%20space.md#present) `[example](missing.md)` `multiline\n[example](missing.md)`\n```md\n[example](missing.md)\n```\n",
+            encoding="utf-8",
+        )
+        actual = output()
+        if "broken local link" in actual or "broken anchor" in actual:
+            raise SystemExit(f"FAIL valid consumer link was reported broken: {actual!r}")
+    CASES.append(
+        ("edited Markdown reports broken local links and anchors in a consumer tree", "disabled link validation")
+    )
+
+
+def termination_cases() -> None:
+    """Termination escapes the group while ordinary fixture exits remain reported."""
+    import inspect  # noqa: PLC0415
+    from types import SimpleNamespace  # noqa: PLC0415
+    from unittest.mock import patch  # noqa: PLC0415
+
+    import testgroups  # noqa: PLC0415
+
+    def probe(run_group: Any) -> None:
+        module = SimpleNamespace()
+
+        def terminate(_module: Any) -> None:
+            raise testgroups.SuiteTerminated(143)
+
+        try:
+            run_group(module, "termination", terminate)
+        except testgroups.SuiteTerminated as exc:
+            if exc.code != 143:
+                raise AssertionError(f"wrong termination status: {exc.code}") from exc
+        else:
+            raise AssertionError("termination was swallowed")
+        run_group(module, "fixture", lambda _: (_ for _ in ()).throw(SystemExit("fixture failure")))
+        if not any("fixture failure" in row for row in module.SUITE_ERRORS):
+            raise AssertionError("fixture failure was not recorded")
+
+    with (
+        patch.object(testgroups.impact, "enter"),
+        patch.object(testgroups.impact, "leave"),
+        patch.object(testgroups, "repo_settings", return_value=""),
+    ):
+        probe(testgroups.run_group)
+        source = inspect.getsource(testgroups.run_group)
+        mutant = source.replace("    except SuiteTerminated:\n        raise\n", "", 1)
+        if mutant == source:
+            raise SystemExit("FAIL termination mutation did not apply")
+        namespace = dict(vars(testgroups))
+        exec(mutant, namespace)  # noqa: S102
+        try:
+            probe(namespace["run_group"])
+        except AssertionError:
+            pass
+        else:
+            raise SystemExit("FAIL termination mutation survived")
+    CASES.append(("termination escapes a group while fixture exits are recorded", "swallowed suite termination"))

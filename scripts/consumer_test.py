@@ -210,7 +210,7 @@ def consumer_verify_case(module: ModuleType) -> None:
         patch.object(branchstate, "_passed", return_value=True),
         patch.object(branchstate.subprocess, "run"),
     ):
-        if "NOT RUN" not in (branchstate.clean_checkout_errors() or ""):
+        if "NOT RUN" not in (branchstate.clean_checkout_errors(head="abc") or ""):
             raise SystemExit("FAIL a cached consumer landing passed unresolved gates")
     with (
         patch.object(branchstate, "_git", side_effect=["abc", "missing.xyz"]),
@@ -219,7 +219,7 @@ def consumer_verify_case(module: ModuleType) -> None:
         patch.object(branchstate, "_passed", return_value=True),
         patch.object(branchstate.subprocess, "run"),
     ):
-        if "NOT RUN" not in (branchstate.clean_checkout_errors() or ""):
+        if "NOT RUN" not in (branchstate.clean_checkout_errors(head="abc") or ""):
             raise SystemExit("FAIL a consumer landing passed with no runnable gate")
     module.CASES.append(
         (
