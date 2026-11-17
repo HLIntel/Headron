@@ -6,7 +6,15 @@
 
 ## Use it
 
-Start with the task below; the index is a map, not a reading list.
+## Task to evidence
+
+Follow a [task](HEADRON-LANGUAGE.md) through the [contract](../atlas.yaml),
+[verification](VERIFY.md), [instrument boundaries](INSTRUMENTS.md), and
+[evidence bundle](HEADRON-LANGUAGE.md#what-a-finished-program-carries-the-ron-bundle).
+Implementation: [task](../scripts/taskimage.py), [verification](../scripts/verify.py),
+[invariants](../scripts/atlasinv.py), [receipt](../scripts/receipt.py).
+
+## Find a guide
 
 | Need | Start |
 |---|---|
@@ -20,7 +28,6 @@ Start with the task below; the index is a map, not a reading list.
 | security policy and platform controls | [SECURITY.md](../SECURITY.md) · [github-controls.json](../config/github-controls.json) |
 | package architecture and boundaries | [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md) |
 | version contract | [VERSIONING.md](VERSIONING.md) |
-| licence | [LICENSE](../LICENSE) |
 
 ## Agents and integrations
 
@@ -50,7 +57,6 @@ Start with the task below; the index is a map, not a reading list.
 
 | Need | Start |
 |---|---|
-| Headron wiki | [docs/wiki/README.md](wiki/README.md) |
 | systems | [systems](systems/README.md) |
 | concepts paired with mechanisms | [ENGINEERING-CONCEPTS.md](ENGINEERING-CONCEPTS.md) |
 | consistency | [CONSISTENCY.md](CONSISTENCY.md) |
@@ -59,8 +65,7 @@ Start with the task below; the index is a map, not a reading list.
 | Git/worktrees | [GIT-WORKTREES.md](GIT-WORKTREES.md) |
 | symlinks/paths | [SYMLINKS-PATHS.md](SYMLINKS-PATHS.md) |
 | entry and landing | [ENTRY-PLAN.md](ENTRY-PLAN.md) |
-| context efficiency | [PATTERNS.md](PATTERNS.md#small-context) · [ENCODING.md](ENCODING.md) |
-| GitHub backend | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) · [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) |
+| GitHub backend | [GITHUB-BACKEND.md](GITHUB-BACKEND.md) · [GITHUB-FINALIZATION.md](GITHUB-FINALIZATION.md) · [App implementation](../scripts/githubapp.py) · [offline tests](../scripts/githubapp_test.py); hosting is separate |
 | OpenSSF Scorecard | [SCORECARD-IMPROVEMENT.md](SCORECARD-IMPROVEMENT.md) |
 | product strategy | [PRODUCT-STRATEGY.md](PRODUCT-STRATEGY.md) |
 | retired pages | [DECISIONS.md](DECISIONS.md) · [PACKAGE-CATALOG.md](PACKAGE-CATALOG.md) · [SECURITY-HYGIENE.md](SECURITY-HYGIENE.md) |
@@ -68,5 +73,3 @@ Start with the task below; the index is a map, not a reading list.
 ## Assurance patterns
 
 One page, nine sections: [PATTERNS.md](PATTERNS.md) — [small parts](PATTERNS.md#small-parts) · [no drift](PATTERNS.md#no-drift) · [controlled change](PATTERNS.md#controlled-change) · [no orphans](PATTERNS.md#no-orphans) · [safe boundaries](PATTERNS.md#safe-boundaries) · [local reasoning](PATTERNS.md#local-reasoning) · [small context](PATTERNS.md#small-context) · [build in order](PATTERNS.md#build-in-order) · [everything bounded](PATTERNS.md#everything-bounded)
-
-**Reachability:** `atlas.py check` fails on a broken link, and on any durable document no other document reaches.

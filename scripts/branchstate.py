@@ -512,7 +512,7 @@ def _verified(clean: Path, gates: list[list[str]]) -> bool:
     return all(_normalize_gate(g) in have for g in gates)
 
 
-def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
+def clean_checkout_errors(gates: list[list[str]] | None = None, head: str | None = None) -> str | None:
     """Run the gates in a throwaway checkout of HEAD; None when all pass, else which one failed.
 
     WHY (3.4.0). A lane landed after its clean-checkout run printed clean=1: the gate lives in the landing.
@@ -523,18 +523,21 @@ def clean_checkout_errors(gates: list[list[str]] | None = None) -> str | None:
 
     # A PASS IS A FACT ABOUT A TREE (3.50.0). A land refused after its suite passed re-ran the whole suite
     # on the identical tree, behind every other lane's on the machine lock. Only a PASS is remembered.
-    tree = _git("rev-parse", "HEAD^{tree}")
+    head = head or _git("rev-parse", "HEAD")
+    if not head:
+        return "cannot resolve the commit to verify"
+    tree = _git("rev-parse", f"{head}^{{tree}}")
     with tempfile.TemporaryDirectory() as parent:
         clean = Path(parent) / "clean"
         subprocess.run(
-            ["git", "worktree", "add", "-q", "--detach", str(clean), "HEAD"], cwd=_tree(), check=True, timeout=600
+            ["git", "worktree", "add", "-q", "--detach", str(clean), head], cwd=_tree(), check=True, timeout=600
         )
         try:
             if gates is None and _is_atlas():
                 gates = [[sys.executable if a == "{python}" else a for a in g] for g in CLEAN_GATES]
             if gates is None:
                 base = str((atlas().get("branch_policy") or {}).get("default_base") or "main")
-                changed = [f for f in _git("diff", "--name-only", f"origin/{base}...HEAD").split("\n") if f]
+                changed = [f for f in _git("diff", "--name-only", f"origin/{base}...{head}").split("\n") if f]
                 placed, notes = consumer_gates(clean, changed, consumer_pin() or "source_change", f"origin/{base}")
                 for note in notes:
                     print(f"  not run  {note}")
@@ -607,8 +610,6 @@ def _land_once(branch: str) -> int:
             subprocess.run(["git", step[1], "--abort"], cwd=_tree(), capture_output=True, check=False, timeout=600)
             print(f"land: the {step[1]} onto origin/{base} failed — aborted and REFUSING; reconcile by hand, then land")
             return refuse(step[1])  # "merge" on a published lane, "rebase" on an unpublished one
-    # NOTHING TO LAND IS FINISHED, NOT FAILED (second sighting). A lane at ahead=0 ran the clean-checkout
-    # suite, then failed on `gh pr create` ("no commits between"), retried, and escalated as two writers.
     if _git("rev-list", "--count", f"origin/{base}..{branch}") == "0":
         print(f"land: nothing to land — {branch} is ahead=0 of origin/{base}; FINISHED, remove the worktree and branch")
         return 0
@@ -617,32 +618,38 @@ def _land_once(branch: str) -> int:
         subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "staleness.py"), "review"], cwd=ROOT, check=False, timeout=600
         )
-    refused = clean_checkout_errors()
+    head = _git("rev-parse", "HEAD")
+    if not head:
+        return refuse("gate", "cannot resolve landing commit")
+    refused = clean_checkout_errors(None, head)
     if refused:
         busy = refused.startswith("NOT RUN")
         print(f"land: a CLEAN checkout of HEAD {'was NOT judged' if busy else 'fails'} — REFUSING to push. {refused}")
         return 75 if busy else refuse("gate", refused)  # it fails again on a retry: the commit
-    # THE FULL REPLAY COMES BEFORE THE PUSH (atlas): run after it, a red shard left a published lane, which
-    # may only merge and never rebase. It holds the fast job, so the atlas runs no second gate.
-    head = _git("rev-parse", "HEAD") if _is_atlas() else ""
-    if head and not replay_local_ci(_tree(), head):
+    is_atlas = _is_atlas()
+    if is_atlas and not replay_local_ci(_tree(), head):
         print(f"land: the full replay of {head[:12]} failed — REFUSING to push; nothing was published")
         return refuse("replay")
-    # THE HOOK'S GATE IS A STEP OF ITS OWN (3.61.0, second sighting). `git push` exits 1 whatever the
-    # hook said, so a refused type error was retried as "two writers". Here its failure is the commit (65).
     gate = [str(_tree() / ".github" / "ci-local.sh"), "fast"]
-    steps = [gate] if not head and Path(gate[0]).is_file() else []
-    steps.append(["git", "push", "-u", "origin", branch])
+    steps = [gate] if not is_atlas and Path(gate[0]).is_file() else []
+    steps.append(["git", "push", "-u", "origin", f"{head}:refs/heads/{branch}"])
     pr, forge_ok = _pull_request(branch)
     if not forge_ok:
         print("land: the forge did not answer, so no merge can be armed — REFUSING to half-land")
         return 2
     if not pr:
         steps.append(["gh", "pr", "create", "--base", base, "--head", branch, "--fill"])
-    steps.append(["gh", "pr", "merge", branch, "--auto", merge_method(f"origin/{base}", branch)])
+    steps.append(
+        ["gh", "pr", "merge", branch, "--auto", merge_method(f"origin/{base}", head), "--match-head-commit", head]
+    )
     landing_env = {**os.environ, "ATLAS_LANDING": "1"}  # the one caller .githooks/pre-push admits
     for step in steps:
-        if step[:3] == ["gh", "pr", "merge"] and _is_atlas() and not post_local_ci(branch, _tree(), _git, head):
+        if (step[:2] == ["git", "push"] or step[:3] == ["gh", "pr", "merge"]) and (
+            _git("rev-parse", "HEAD") != head or _git("status", "--porcelain")
+        ):
+            print("land: HEAD or working tree changed after verification — REFUSING")
+            return refuse("gate", "landing commit or working tree changed after verification")
+        if step[:3] == ["gh", "pr", "merge"] and is_atlas and not post_local_ci(branch, _tree(), _git, head):
             return refuse("post_ci")
         done = subprocess.run(
             step, cwd=_tree(), capture_output=True, text=True, check=False, env=landing_env, timeout=600

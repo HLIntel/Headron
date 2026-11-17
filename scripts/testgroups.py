@@ -38,6 +38,10 @@ def _group_failed(module: Harness, name: str, detail: str) -> None:
     print(f"FAIL group {name}: {detail}; continuing independent groups")
 
 
+class SuiteTerminated(SystemExit):
+    """A signal ends the suite after fixture cleanup, without becoming a fixture failure."""
+
+
 def run_group(module: Harness, name: str, run: Callable[[Harness], object]):
     # RECORDED: while the test-impact recorder is armed, every repository file this group loads is
     # its dependency; a passing group is stored on those files' bytes, so the fast loop runs only the
@@ -47,6 +51,8 @@ def run_group(module: Harness, name: str, run: Callable[[Harness], object]):
     try:
         run(module)
         ok = True
+    except SuiteTerminated:
+        raise
     except (Exception, SystemExit) as exc:
         # Do not record a passing CASE for a group that did not finish. The
         # outer harness fails before its successful-case count is evaluated.
@@ -142,7 +148,7 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # alone, never intended or derived; only the sums are derived, so a new case moves exactly one literal.
 SHARDS = ("all", "core", "guards", "guards-0", "guards-1")
 CORE_CASES = 162
-GUARD_PARTS = (240, 310)
+GUARD_PARTS = (240, 313)
 GUARDS_CASES = sum(GUARD_PARTS)
 
 

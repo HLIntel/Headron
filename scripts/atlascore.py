@@ -820,22 +820,24 @@ def resolved_once(root: Path) -> Path:
 @functools.lru_cache(
     maxsize=8192
 )  # resolve() is a syscall per part; check() asks for the same paths thousands of times
-def rel(path: Path) -> str:
-    return path.resolve().relative_to(resolved_once(ROOT)).as_posix()
+def rel(path: Path, root: Path = ROOT) -> str:
+    return path.resolve().relative_to(resolved_once(root)).as_posix()
 
 
-def link_target(source: Path, raw: str) -> Path | None:
+def link_target(source: Path, raw: str, root: Path = ROOT) -> Path | None:
     raw = raw.strip().strip("<>")
-    if not raw or raw.startswith("#") or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://", raw):
+    if not raw or raw.startswith("#") or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", raw):
         return None
     raw = raw.split("#", 1)[0].split("?", 1)[0]
     if not raw:
         return None
-    target = (source.parent / raw).resolve()
+    from urllib.parse import unquote  # noqa: PLC0415
+
+    target = (source.parent / unquote(raw)).resolve()
     try:
-        target.relative_to(resolved_once(ROOT))
+        target.relative_to(resolved_once(root))
     except ValueError:
-        raise ValueError(f"link escapes repository: {rel(source)} -> {raw}")
+        raise ValueError(f"link escapes repository: {rel(source, root)} -> {raw}")
     return target
 
 
@@ -857,21 +859,21 @@ def md_anchors(text: str) -> set[str]:
     return slugs | set(re.findall(r"""<a\s[^>]*?(?:id|name)=["']([^"']+)["']""", text))
 
 
-def anchor_error(source: Path, raw: str) -> str | None:
+def anchor_error(source: Path, raw: str, root: Path = ROOT) -> str | None:
     """A `#fragment` link into a Markdown page names a heading that page renders (3.50.0): the path
     check passed a renamed heading, and the reader lands at the top of the page with no error."""
     raw = raw.strip().strip("<>")
     if "#" not in raw or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", raw):
         return None
     path, fragment = raw.split("#", 1)
-    target = (source.parent / path.split("?", 1)[0]).resolve() if path else source
-    if target.suffix.lower() != ".md" or not target.is_file() or not fragment:
-        return None
     from urllib.parse import unquote  # noqa: PLC0415
 
+    target = (source.parent / unquote(path.split("?", 1)[0])).resolve() if path else source
+    if target.suffix.lower() != ".md" or not target.is_file() or not fragment:
+        return None
     if unquote(fragment).lower() in md_anchors(text_of(target, errors="replace")):
         return None
-    return f"broken anchor: {rel(source)} -> {raw} (no such heading in {rel(target)})"
+    return f"broken anchor: {rel(source, root)} -> {raw} (no such heading in {rel(target, root)})"
 
 
 def editorconfig_errors() -> list[str]:

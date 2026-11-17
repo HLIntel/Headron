@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-75 modules that at most one other module imports: 28 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+76 modules that at most one other module imports: 28 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -35,6 +35,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [isolation](../scripts/isolation.py) | Capability-enforced worker isolation for task and gate execution | 1 |  | [isolation_test](../scripts/isolation_test.py) |
 | [langbar](../scripts/langbar.py) | What the language bar will say, computed from the tree rather than predicted | 1 | contextcost |  |
 | [leaks](../scripts/leaks.py) | The public-repository rule, ENFORCED: no private path, address, internal host or runtime store is… | 1 | importgraph | [agents_test](../scripts/agents_test.py), [cli_test](../scripts/cli_test.py) +2 |
+| [linkcheck](../scripts/linkcheck.py) | Offline local Markdown link and anchor checks | 1 |  | [shell_test](../scripts/shell_test.py) |
 | [mind_verifier](../scripts/mind_verifier.py) | Optional entitlement verification for customer-controlled Mind execution, and the Action's key… | 1 |  | [mind_action_test](../scripts/mind_action_test.py) |
 | [model](../scripts/model.py) | `headron model` — which rung answers each typed judgment, read from the attached student bundle | 1 | modelpack | [model_test](../scripts/model_test.py) |
 | [modelpack](../scripts/modelpack.py) | modelpack — the student rung's loader: read a verified micro-pack bundle and answer from it | 1 |  | [model_test](../scripts/model_test.py) |

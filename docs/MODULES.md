@@ -1,9 +1,9 @@
 # Modules
 
-Part of [HEADRON](HEADRON.md). Proofs per instrument: [INSTRUMENTS](INSTRUMENTS.md).
+[HEADRON](HEADRON.md) · [Proofs](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-144 modules and 455 imports between them, read from the source; 78 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 100 modules use it. These 69 rows are the modules at least 2 others use; the other 75, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+145 modules and 457 imports between them, read from the source; 79 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 101 modules use it. These 69 rows are the modules at least 2 others use; the other 76, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -46,10 +46,10 @@ flowchart LR
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
-| [atlascore](../scripts/atlascore.py) | Atlas primitives: the declared rosters, the… | 100 | agentpolicy, atlas, treeformat, verify | [agent_test](../scripts/agent_test.py), [agentbench_test](../scripts/agentbench_test.py) +16 |
+| [atlascore](../scripts/atlascore.py) | Atlas primitives: the declared rosters, the… | 101 | agentpolicy, atlas, treeformat, verify | [agent_test](../scripts/agent_test.py), [agentbench_test](../scripts/agentbench_test.py) +16 |
 | [agentpolicy](../scripts/agentpolicy.py) | The agent execution policy: six verdicts,… | 31 | agenteffects, agentvocab, dirscope, headronlang, packmanifest, processpolicy, shellsplit | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +9 |
-| [knowledge](../scripts/knowledge.py) | Where a fact may live, how it is retrieved, and… | 15 | agentaudit, agentpolicy, agents, agreement, atlas, boundedinput, contextcost, hostshape, port, runtime, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +3 |
-| [atlas](../scripts/atlas.py) | Atlas router + repository contract | 11 | agentpolicy, agreement, atlasgen, atlasindex, atlasinv, branchstate, cidrift, commands, consumergates, contextcost, dateclaims, decide, decide_cli, declcheck, dirscope, doctor, gateplace, headronlang, identity, knowledge, onboard, packmanifest, parsegate, roster, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_guards_test](../scripts/atlas_guards_test.py) +7 |
+| [knowledge](../scripts/knowledge.py) | Where a fact may live, how it is retrieved, and… | 15 | agentaudit, agentpolicy, agents, agreement, atlas, boundedinput, contextcost, hostshape, port, runtime, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +4 |
+| [atlas](../scripts/atlas.py) | Atlas router + repository contract | 11 | agentpolicy, agreement, atlasgen, atlasindex, atlasinv, branchstate, cidrift, commands, consumergates, contextcost, dateclaims, decide, decide_cli, declcheck, dirscope, doctor, gateplace, headronlang, identity, knowledge, linkcheck, onboard, packmanifest, parsegate, roster, safeedit, verify | [agents_test](../scripts/agents_test.py), [atlas_guards_test](../scripts/atlas_guards_test.py) +7 |
 | [atomicfile](../scripts/atomicfile.py) | Replace one file whole: a reader sees the old… | 11 |  | [atomicfile_test](../scripts/atomicfile_test.py) |
 | [verify](../scripts/verify.py) | Run the declared checks and return a verdict on… | 10 | agentpolicy, agents, atlas, branchstate, edges, impact, localtools, receipt, resilience, runtime, safeedit, upstream, verifyinputs | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +10 |
 | [safeedit](../scripts/safeedit.py) | Edits that cannot fail silently: an anchor that… | 9 |  | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +3 |
@@ -90,7 +90,7 @@ flowchart LR
 | [reflex](../scripts/reflex.py) | Command classification primitives — single-pass… | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |
 | [roster](../scripts/roster.py) | instrument_roster: which scripts are… | 3 | cidrift, cipipeline, dirscope, importgraph | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [sweep](../scripts/sweep.py) | Fast semantic sweep: repo-wide understanding,… | 3 | graph, port | [sweep_test](../scripts/sweep_test.py) |
-| [testgroups](../scripts/testgroups.py) | Run independent planted groups without losing… | 3 | impact | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +8 |
+| [testgroups](../scripts/testgroups.py) | Run independent planted groups without losing… | 3 | impact | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +9 |
 | [adaptive](../scripts/adaptive.py) | Deterministic second-stage process selection… | 2 | mind, mind_diagnostics | [adaptive_scheduling_test](../scripts/adaptive_scheduling_test.py) |
 | [agentrun](../scripts/agentrun.py) | The reference runner: the one caller in this… | 2 | agentaudit, agenteffects, agentpolicy, crosscache, headronlang, isolation, knowledge, obligations, runtime | [agent_test](../scripts/agent_test.py), [taskimage_test](../scripts/taskimage_test.py) |
 | [atlasindex](../scripts/atlasindex.py) | A retrieval index that obeys the policy this… | 2 | atomicfile, graph, port, sweep | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
@@ -106,7 +106,7 @@ flowchart LR
 | [entryglance](../scripts/entryglance.py) | Shared first-glance facts for entry pages and… | 2 | onboard |  |
 | [exrun](../scripts/exrun.py) | exrun — run every example this machine can, and… | 2 | atomicfile, contextcost, resilience | [exrun_test](../scripts/exrun_test.py) |
 | [finance](../scripts/finance.py) | On-demand, read-only financial equations with… | 2 | calculation, finance_capital, finance_catalog, finance_knowledge |  |
-| [gateplace](../scripts/gateplace.py) | Where one gate runs for one file, and whether… | 2 |  | [atlas_landing_test](../scripts/atlas_landing_test.py) |
+| [gateplace](../scripts/gateplace.py) | Where one gate runs for one file, and whether… | 2 |  | [atlas_gate_adoption_test](../scripts/atlas_gate_adoption_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) |
 | [githubapp](../scripts/githubapp.py) | The Headron GitHub App, one module: every… | 2 | agentpolicy, atomicfile, branchstate, githubjob, githubreceipt, knowledge, runtime | [githubapp_test](../scripts/githubapp_test.py), [runtime_test](../scripts/runtime_test.py) |
 | [headron_mcp](../scripts/headron_mcp.py) | Headron as an MCP server: the same commands… | 2 | agents, atlas, commands, mind_verifier | [agents_test](../scripts/agents_test.py), [atlas_guards_test](../scripts/atlas_guards_test.py) +3 |
 | [impact](../scripts/impact.py) | The runtime test-impact map: which repository… | 2 | atomicfile, importgraph, safeedit, testgroups, verify | [atlas_rules_test](../scripts/atlas_rules_test.py), [impact_test](../scripts/impact_test.py) |

@@ -371,7 +371,7 @@ def land_empty_cases(module: ModuleType, *, plant: bool = True) -> None:
         git("push", "-q", "origin", "HEAD:main")
         git("checkout", "-q", "-b", "claude/empty")
         gated, real = [], branchstate.clean_checkout_errors
-        branchstate.clean_checkout_errors = lambda: gated.append(1) or "planted refusal"
+        branchstate.clean_checkout_errors = lambda *_args, **_kwargs: gated.append(1) or "planted refusal"
         try:
             os.chdir(lane)
             empty = branchstate._land_once("claude/empty")
@@ -388,7 +388,7 @@ def land_empty_cases(module: ModuleType, *, plant: bool = True) -> None:
         git("checkout", "-q", "claude/empty")
         git("-c", "user.name=t", "-c", "user.email=t@t", "merge", "-q", "--no-ff", "side", "-m", "merge side")
         gate = branchstate.clean_checkout_errors
-        branchstate.clean_checkout_errors = lambda: "planted refusal"
+        branchstate.clean_checkout_errors = lambda *_args, **_kwargs: "planted refusal"
         try:
             os.chdir(lane)
             assert branchstate._land_once("claude/empty") == 65
@@ -405,7 +405,7 @@ def land_empty_cases(module: ModuleType, *, plant: bool = True) -> None:
         remote_tip = git("rev-parse", "HEAD", at=other).stdout
         git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "local")
         real_gate, real_pr = branchstate.clean_checkout_errors, branchstate._pull_request
-        branchstate.clean_checkout_errors = lambda: None
+        branchstate.clean_checkout_errors = lambda *_args, **_kwargs: None
         branchstate._pull_request = lambda _branch: ({"number": 1}, True)
         try:
             os.chdir(lane)
@@ -450,7 +450,7 @@ def _land_force_push_plant(module: ModuleType) -> None:
 
     anchors = {
         "if ancestor.returncode != 0:": "if False:",
-        'steps.append(["git", "push", "-u", "origin", branch])': 'steps.append(["git", "push", "--force-with-lease", "-u", "origin", branch])',
+        'steps.append(["git", "push", "-u", "origin", f"{head}:refs/heads/{branch}"])': 'steps.append(["git", "push", "--force-with-lease", "-u", "origin", f"{head}:refs/heads/{branch}"])',
     }
 
     def plant(text: str) -> str:
