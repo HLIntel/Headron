@@ -1,4 +1,4 @@
-# Headron Software by HLIntel LLC (contract v3.63.0)
+# Headron Software by HLIntel LLC (contract v3.64.0)
 
 > Command line tool and rule contract for AI coding agents: each changed file maps to the checks it owes, and a commit whose file fails is refused.
 

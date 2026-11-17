@@ -48,7 +48,7 @@ sent as a Bearer token.
 # install
 uv tool install headron-software && headron doctor
 # editable, to change Headron itself
-git clone --depth 1 --branch v3.63.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
+git clone --depth 1 --branch v3.64.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 <!-- END generated: install -->
 

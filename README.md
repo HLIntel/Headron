@@ -11,7 +11,7 @@
 
 <!-- BEGIN generated: badges (python scripts/atlas.py index --write) -->
 
-**Contract 3.63.0** · MIT · verdicts carry receipts: `headron verify --receipt <file>`
+**Contract 3.64.0** · MIT · verdicts carry receipts: `headron verify --receipt <file>`
 
 <!-- END generated: badges -->
 
@@ -72,7 +72,7 @@ Steps 1 and 3 run `python scripts/…` in a clone.
 # install
 uv tool install headron-software && headron doctor
 # editable, to change Headron itself
-git clone --depth 1 --branch v3.63.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
+git clone --depth 1 --branch v3.64.0 https://github.com/HLIntel/Headron ~/headron && uv tool install --editable ~/headron && headron doctor
 ```
 
 <!-- END generated: install -->
@@ -155,4 +155,4 @@ $ headron port . --line
 Version tracks the **contract**, not content ([versioning](docs/VERSIONING.md)).
 Built by **HLIntel LLC**, public on purpose ([about](ABOUT.md)). Contributions pass `headron verify`. [MIT License](LICENSE).
 
-Updated: contract v3.63.0
+Updated: contract v3.64.0
