@@ -21,8 +21,8 @@ proves: an image whose contract hash differs from the contract given refuses res
   result, or a gate that did not run, reads NOT RUN and never PASS; resume does not reuse gate results;
   a blob, message or identity privacy_guard would refuse is never written; a ref moved by another writer
   refuses the update instead of overwriting it
-does_not_prove: that a recorded gate checks what the task needs (the contract's gates are the instrument), or
-  that a fetched image was produced by the run it describes (sign the receipt for that, receiptsign.py)
+does_not_prove: that a recorded gate checks what the task needs, or that a fetched image was produced by the
+  run it describes; a signature identifies a signer, not a truthful execution
 closed_by: taskimage_test.py, which plants a stale contract, a missing node, a dry run, a stale pass, a home
   path in a contract and a concurrent ref update
 """
