@@ -82,7 +82,7 @@ cd path/to/your-repo && headron init   # finds checks, wires agents, installs ho
 headron verify && headron proof <file> --verify   # after a change: verdicts, then a file's proof
 ```
 
-`headron verify --changed [--change <class>]` checks only modified files; plain `headron verify` is the final verdict.
+`headron verify --changed` checks only modified files (`--change <class>` narrows it); plain `headron verify` is the final verdict.
 
 ## Recorded results
 
