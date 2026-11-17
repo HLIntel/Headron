@@ -38,9 +38,9 @@ def _fail(what: str) -> None:
     raise SystemExit(f"FAIL microcache: {what}")
 
 
-def _runs(program: _Counting, *contexts: Mapping[str, Any]) -> list[microprogram.MicroResult]:
+def _runs(program: _Counting, *contexts: Mapping[Any, Any]) -> list[microprogram.MicroResult]:
     with mock.patch.dict(microprogram.REGISTRY, {NAME: program}):
-        return [microprogram.run(NAME, c) for c in contexts]
+        return [microprogram.run(NAME, c) for c in contexts]  # pyright: ignore[reportArgumentType]
 
 
 def run_cases() -> None:
