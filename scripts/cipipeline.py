@@ -222,7 +222,9 @@ JOBS: tuple[Job, ...] = (
         pipeline="atlas",
         budget_s=840,
         needs=("fast",),
-        shards=("core", "guards-0", "guards-1"),
+        # SLOWEST SHARD FIRST: ready units start in declared order, and at width 3 the third shard waits for
+        # exercises' seat. Measured at contract 3.63.0: guards-1 112s, core 111s, guards-0 63s (cilocal_test pins it).
+        shards=("guards-1", "core", "guards-0"),
         steps=(
             PYTHON,
             install(timeout_s=840),

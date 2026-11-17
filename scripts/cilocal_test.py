@@ -227,6 +227,31 @@ def declaration_cases(module: ModuleType) -> None:
         and any("c has no steps" in p for p in found)
         and any("holds a $" in p for p in found),
     )
+    # MEASURED at contract 3.63.0: each unit's seconds in one clean land (PR 563, width 3). The graph starts ready
+    # units in declared order, so the slowest shard declared after a faster one waits for exercises to free a seat.
+    seconds = {
+        "fast": 48,
+        "mutation:core": 111,
+        "mutation:guards-0": 63,
+        "mutation:guards-1": 112,
+        "edge-coverage": 2,
+        "exercises": 71,
+    }
+    nodes = cipipeline.nodes(cipipeline.selected([]))
+    results, handles, _ = _graph(nodes, seconds, width=cilocal.WIDTH, budget_s=sum(node.timeout_s for node in nodes))
+    floor = (
+        seconds["fast"]
+        + max(s for name, s in seconds.items() if name.startswith("mutation:"))
+        + seconds["edge-coverage"]
+    )
+    _case(
+        module,
+        "at the measured unit seconds the real declaration's wall is fast + the slowest shard + edge-coverage",
+        "guards-1 (112s) declared after guards-0 (63s), so it waited for exercises' seat and the graph took 23s more",
+        set(handles) == set(seconds)
+        and all(r.status == "ok" for r in results.values())
+        and max(handle.at for handle in handles.values()) <= floor + 3,
+    )
 
 
 def drift_cases(module: ModuleType) -> None:
