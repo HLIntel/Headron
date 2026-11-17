@@ -910,7 +910,7 @@ def _gate_env(tag: str = "") -> dict:
         marker = hashlib.sha256(tag.encode("utf-8")).hexdigest()[:12]
         home = tempfile.mkdtemp(prefix=f"headron-gate-{safe_tag[:48]}-{marker}-")
         atexit.register(shutil.rmtree, home, ignore_errors=True)
-    return {**os.environ, "HEADRON_HOME": home}
+    return {**os.environ, "HEADRON_HOME": home, "PYTHONDONTWRITEBYTECODE": "1"}
 
 
 def report(
