@@ -78,6 +78,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [seats](../scripts/seats.py) | Attach declared agent, model, chat, and plugin seats on this machine | 0 | atomicfile |  |
 | [staleness](../scripts/staleness.py) | What was edited longest ago, and which worktrees are hung — computed from git, never typed | 0 |  | [atlas_test](../scripts/atlas_test.py), [vanish_test](../scripts/vanish_test.py) |
 | [taskbench](../scripts/taskbench.py) | Does Headron make a model better at work OTHER than routing? Blind against with-Headron, per task… | 0 | abtest, agentpolicy, providers |  |
-| [workflow_runner](../scripts/workflow_runner.py) | Compelling end-to-end verified workflow runner for Headron agents | 0 | agentpolicy, agentrun, atlas, receipt, runtime, verify | [workflow_runner_test](../scripts/workflow_runner_test.py) |
+| [workflow_runner](../scripts/workflow_runner.py) | One task through Connect -> Context -> Gates -> Receipt, with every declared gate's verdict as… | 0 | agentpolicy, agentrun, atlas, obligations, receipt, runtime, verify | [workflow_runner_test](../scripts/workflow_runner_test.py) |
 | [worktree](../scripts/worktree.py) | Worktree-based agent isolation — each session gets its own git worktree | 0 |  |  |
 <!-- END generated: module-leaves -->
