@@ -836,10 +836,14 @@ def ron_cases(module: ModuleType) -> None:
         obligations.add("lane-done", "tests", "the suite passes", "pytest")
         obligations.close("lane-done", "tests", "evidence/pytest.log", at="t1")
         obligations.add("lane-open", "docs", "the docs say so", "headron check")
+        obligations.add("lane-away", "tests", "the suite passes", "pytest")
+        obligations.close("lane-away", "tests", "a log on the CI runner", at="t1")
         done, open_bundle, edited = top / "done.ron", top / "open.ron", top / "edited.ron"
+        away = top / "away.ron"
         packs = [
             ronbundle.pack("lane-done", done, [], [log], at="t1"),
             ronbundle.pack("lane-open", open_bundle, [], [], at="t1"),
+            ronbundle.pack("lane-away", away, [], [log], at="t1"),
         ]
         shutil.copytree(done, edited)
         (edited / "evidence" / "pytest.log").write_text("0 passed\n", encoding="utf-8")
@@ -849,6 +853,7 @@ def ron_cases(module: ModuleType) -> None:
             "stale": ask(done, "t2"),
             "dirty": ask(done, "t1+dirty"),
             "open": ask(open_bundle),
+            "evidence away": ask(away),
             "edited": ask(edited),
             "missing": ask(top / "nowhere.ron"),
             "none": ask(""),
@@ -859,18 +864,21 @@ def ron_cases(module: ModuleType) -> None:
         "stale": "unknown",
         "dirty": "unknown",
         "open": "refused",
+        "evidence away": "refused",
         "edited": "refused",
         "missing": "refused",
         "none": "refused",
     }
     got = {key: result.status for key, result in said.items()}
-    if any(packs) or got != want or "docs" not in (said["open"].next or ""):
+    away_next = said["evidence away"].next or ""
+    if any(packs) or got != want or "docs" not in (said["open"].next or "") or "not in the bundle" not in away_next:
         raise SystemExit(f"FAIL micro ron.verify: packs {packs}, answered {got}, want {want}")
     module.CASES.append(
         (
             "ron.verify is ok only for an intact bundle proven on this tree; a finding or open obligation is refused, "
-            "another tree is unknown",
-            "a bundle read as done with an edited file, an open obligation, or evidence for another tree",
+            "another tree is unknown, and evidence the bundle does not hold is refused",
+            "a bundle read as done with an edited file, an open obligation, evidence for another tree, or a proof "
+            "that names evidence outside the bundle",
         )
     )
     print("  ok    micro ron.verify binds done to an intact bundle proven on this tree")
