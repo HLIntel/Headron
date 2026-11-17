@@ -61,9 +61,9 @@ def _cases(top: Path) -> list[tuple[str, str, bool, object]]:
     task = str(contract["task_id"])
     gates = [str(g) for g in agentpolicy.required_gates(contract)]
 
-    def run_image(*args: object, **kwargs: object) -> tuple[dict, int]:
+    def run_image(path: Path, execute: bool, resume: bool = False, repo: Path = repo) -> tuple[dict, int]:
         with mock.patch.object(taskimage, "ROOT", repo):
-            return taskimage.run_image(*args, **kwargs)
+            return taskimage.run_image(path, execute, resume=resume, repo=repo)
 
     wrong_repo = _refused(lambda: taskimage.run_image(EXAMPLE, False, False, repo))
 
