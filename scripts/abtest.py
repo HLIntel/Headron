@@ -415,7 +415,7 @@ def task_rows() -> list[str]:
         rows.append(
             f"| Free-model screen, {len(doc['lanes'])} lanes answered (contract {doc['ingested_at']}, "
             f"{doc['tasks']} tasks) | on the {p['n']} tasks both arms answered: with Headron {p['headron']}/{p['n']}; "
-            f"blind {p['blind']}/{p['n']}. {len(doc['excluded'])} lanes gave no answer and carry no score |"
+            f"blind {p['blind']}/{p['n']} |"
         )
     return rows
 

@@ -332,6 +332,35 @@ def census_lanes(rows: list[dict]) -> tuple[list[tuple[str, str]], list[dict[str
     return keep, excluded
 
 
+def normalize_model(name: str, model: str) -> str:
+    """Normalize model identifier for provider-specific API expectations."""
+    if name in ("gemini", "google-ai-studio") and model.startswith("models/"):
+        return model.removeprefix("models/")
+    return model
+
+
+_NON_CHAT_SUBSTRINGS = (
+    "embedding",
+    "embed-",
+    "whisper",
+    "transcribe",
+    "-tts",
+    "audio",
+    "orpheus",
+    "lyria",
+    "prompt-guard",
+    "rerank",
+    "moderation",
+    "clip",
+)
+
+
+def is_chat_model(model_id: str) -> bool:
+    """Whether a model ID represents a conversational chat completion model."""
+    lowered = model_id.lower()
+    return not any(sub in lowered for sub in _NON_CHAT_SUBSTRINGS)
+
+
 CANARY = "Reply with exactly this token and nothing else: HEADRON-{n}"
 
 
@@ -343,20 +372,33 @@ def canary(name: str, model: str, timeout: int = 60, max_tokens: int = 400) -> d
     n = int(hashlib.sha256(f"{name}/{model}".encode()).hexdigest()[:6], 16) % 10000
     token = f"HEADRON-{n}"
     row: dict = {"provider": name, "model": model, "status": "not_run", "error": None, "served": None}
-    try:
-        url, headers = endpoint(name)
-        _PACERS.setdefault(name, resilience.Pacer(PROVIDERS[name]["rpm"])).wait()
-        body = {"model": model, "temperature": 0, "max_tokens": max_tokens}
-        body["messages"] = [{"role": "user", "content": CANARY.format(n=n)}]
-        request = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)  # noqa: S310
-        t0 = time.monotonic()
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
-            payload = json.load(response)
-        row["seconds"] = round(time.monotonic() - t0, 2)
-        resilience.answer_or_refuse(name, payload, ("choices.0.message.content",))
-    except (OSError, ValueError, KeyError, resilience.BreakerOpen) as err:
-        status = getattr(err, "code", None)
-        row["error"] = f"{resilience.classify(error=err)}:{status or type(err).__name__}"
+    if not is_chat_model(model):
+        row["error"] = "specialized:single_modality"
+        return row
+    target_model = normalize_model(name, model)
+    rings = max(len(credentials(name)), 1)
+    payload: dict = {}
+    for ring in range(rings):
+        try:
+            url, headers = endpoint(name, ring)
+            _PACERS.setdefault(name, resilience.Pacer(PROVIDERS[name]["rpm"])).wait()
+            body = {"model": target_model, "temperature": 0, "max_tokens": max_tokens}
+            body["messages"] = [{"role": "user", "content": CANARY.format(n=n)}]
+            request = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)  # noqa: S310
+            t0 = time.monotonic()
+            with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+                payload = json.load(response)
+            row["seconds"] = round(time.monotonic() - t0, 2)
+            resilience.answer_or_refuse(name, payload, ("choices.0.message.content",))
+            break
+        except (OSError, ValueError, KeyError, resilience.BreakerOpen) as err:
+            status = getattr(err, "code", None)
+            quota = isinstance(err, resilience.BreakerOpen) or status in (402, 429)
+            if quota and ring < rings - 1:
+                continue
+            row["error"] = f"{resilience.classify(error=err)}:{status or type(err).__name__}"
+            return row
+    if not payload:
         return row
     answer = str(payload["choices"][0]["message"]["content"] or "")
     usage = payload.get("usage") or {}
@@ -463,8 +505,14 @@ def _live_on(
     if cred in _SPENT:
         raise resilience.BreakerOpen(f"{cred}: budget spent (402) on this credential, refused without calling")
     breaker = _BREAKERS.setdefault(f"{cred}:{model}", resilience.Breaker(threshold=3, cooldown=60.0))
+    target_model = normalize_model(provider, model)
     body = json.dumps(
-        {"model": model, "temperature": 0, "max_tokens": max_tokens, "messages": [{"role": "user", "content": prompt}]}
+        {
+            "model": target_model,
+            "temperature": 0,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": prompt}],
+        }
     ).encode()
 
     def once() -> dict:

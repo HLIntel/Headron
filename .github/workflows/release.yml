@@ -68,6 +68,10 @@ jobs:
         if: env.SKIP != '1'
         run: python -m pip install --quiet --require-hashes -r scripts/requirements.lock.txt
 
+      - name: Install uv 0.12.21
+        if: env.SKIP != '1'
+        run: python -m pip install --quiet "uv==0.12.21"
+
       - name: Refuse to ship a tree that fails its own contract
         if: env.SKIP != '1'
         run: |
