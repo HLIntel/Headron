@@ -110,6 +110,7 @@ are local, and an agent editing one place should not have to read all of them.
 | [`.githooks/`](../.githooks/HEADRON.md) | `area/ci` | `contract` | 2 |
 | [`.github/`](../.github/HEADRON.md) | `area/ci` | `contract` | 3 |
 | [`.junie/`](../.junie/HEADRON.md) | `area/agent` | `contract` | 1 |
+| [`.kilo/`](../.kilo/HEADRON.md) | `area/agent` | `contract` | 1 |
 | [`.vscode/`](../.vscode/HEADRON.md) | `area/ide` | `contract` | 2 |
 | [`benchmarks/`](../benchmarks/HEADRON.md) | `area/atlas` | `contract` | 4 |
 | [`config/`](../config/HEADRON.md) | `area/ci` | `contract` | 2 |

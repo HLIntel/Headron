@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-74 modules that at most one other module imports: 29 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+75 modules that at most one other module imports: 29 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -47,6 +47,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [ronbundle](../scripts/ronbundle.py) | A `.ron` bundle: one task's contract, receipts and evidence as a directory that verifies from its… | 1 | atomicfile, obligations, receipt, receiptsign | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [scoreboard](../scripts/scoreboard.py) | What the benchmarks measure, as a floor that only rises: one row per metric, simple enough to act on | 1 |  |  |
 | [shellsplit](../scripts/shellsplit.py) | The shell-string helpers shell_verdict reads: top-level statements, pipeline stages, heredoc bodies | 1 |  |  |
+| [taskbench](../scripts/taskbench.py) | Does Headron make a model better at work OTHER than routing? Blind against with-Headron, per task… | 1 | abtest, agentpolicy, providers |  |
 | [textguard](../scripts/textguard.py) | Characters in tracked text that a reader cannot see, or cannot tell apart | 1 |  |  |
 | [treeformat](../scripts/treeformat.py) | Working-tree formatting and blame-history checks | 1 | gitobject |  |
 | [verifyinputs](../scripts/verifyinputs.py) | Content identities for verification evidence | 1 |  |  |
@@ -70,6 +71,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [links](../scripts/links.py) | `headron links`: where this release is, and what each companion reads from it | 0 | commands |  |
 | [mcpsize](../scripts/mcpsize.py) | Measure an MCP `tools/list` dump against the declared per-server token band | 0 | contextcost |  |
 | [mdshape](../scripts/mdshape.py) | mdshape — every Markdown file has a class, and each class has a rule: bounded, preserved, or… | 0 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [cli_test](../scripts/cli_test.py) |
+| [multimodel_bench](../scripts/multimodel_bench.py) | Multi-model cross-evaluation benchmark: Headron lift, tokens, and multi-model collaboration | 0 | abtest, providers, taskbench | [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
 | [packprobe](../scripts/packprobe.py) | packprobe — how many of each language pack's DECLARED commands resolve on this machine | 0 | packmanifest |  |
 | [pointers](../scripts/pointers.py) | The pointer table: every name in atlas.yaml that points at something else, in one place, read by… | 0 | knowledge, packmanifest | [pointers_test](../scripts/pointers_test.py) |
 | [propose](../scripts/propose.py) | Propose: a loop that reads what Headron believes, drafts the revision, and never lands it | 0 | atomicfile, claims | [propose_test](../scripts/propose_test.py) |
@@ -77,7 +79,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [schedtargets](../scripts/schedtargets.py) | Every ACTIVE scheduled job's target must exist on THIS host — `headron schedtargets [--root DIR]… | 0 |  | [schedtargets_test](../scripts/schedtargets_test.py) |
 | [seats](../scripts/seats.py) | Attach declared agent, model, chat, and plugin seats on this machine | 0 | atomicfile |  |
 | [staleness](../scripts/staleness.py) | What was edited longest ago, and which worktrees are hung — computed from git, never typed | 0 |  | [atlas_test](../scripts/atlas_test.py), [vanish_test](../scripts/vanish_test.py) |
-| [taskbench](../scripts/taskbench.py) | Does Headron make a model better at work OTHER than routing? Blind against with-Headron, per task… | 0 | abtest, agentpolicy, providers |  |
 | [taskimage](../scripts/taskimage.py) | Task image: one task's contract, gate graph, results, obligations and receipt, kept as a git commit… | 0 | agentpolicy, agentrun, crosscache, gitobject, headronlang, obligations, privacy_guard | [taskimage_portable_test](../scripts/taskimage_portable_test.py), [taskimage_test](../scripts/taskimage_test.py) |
 | [workflow_runner](../scripts/workflow_runner.py) | One task through Connect -> Context -> Gates -> Receipt, with every declared gate's verdict as… | 0 | agentpolicy, agentrun, atlas, obligations, receipt, runtime, verify | [workflow_runner_test](../scripts/workflow_runner_test.py) |
 | [worktree](../scripts/worktree.py) | Worktree-based agent isolation — each session gets its own git worktree | 0 |  |  |

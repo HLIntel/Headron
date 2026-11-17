@@ -58,7 +58,8 @@ _CLI_SYSTEM = "You have no tools and cannot read files. Answer only from the tex
 PROVIDERS: dict[str, dict] = {
     # ANY LOCAL OPENAI-COMPATIBLE ROUTER, at the address its owner sets — Headron names no particular one.
     "router": {
-        "url": os.environ.get("HEADRON_ROUTER_URL", "http://127.0.0.1:8080/v1/chat/completions"),
+        "url": os.environ.get("HEADRON_ROUTER_URL", "http://127.0.0.1:8799/v1/chat/completions"),
+        "headers": {"X-Client": "antigravity"},
         "keys": [],
         "rpm": 120,
     },
@@ -91,6 +92,7 @@ PROVIDERS: dict[str, dict] = {
     },
     "kilo": {
         "url": "http://127.0.0.1:8080/v1/chat/completions",
+        "url_keys": ["HEADRON_KILO_URL", "KILO_BASE_URL"],
         "keys": ["KILO_API_KEY"],
         "optional_key": True,
         "rpm": 60,
@@ -102,7 +104,7 @@ PROVIDERS: dict[str, dict] = {
     },
     "google-ai-studio": {
         "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        "keys": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+        "keys": ["GOOGLE_AI_STUDIO_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"],
         "rpm": 30,
     },
     # CLAUDE THROUGH THE CLAUDE CODE CLI, on whatever login that CLI holds — no key here. The A/B had
@@ -136,6 +138,12 @@ def endpoint(name: str) -> tuple[str, dict[str, str]]:
     if spec is None:
         raise ValueError(f"unknown provider {name!r}; declared: {', '.join(sorted(PROVIDERS))}")
     url = spec["url"]
+    if "url_keys" in spec:
+        for k in spec["url_keys"]:
+            if os.environ.get(k):
+                val = os.environ[k].rstrip("/")
+                url = f"{val}/chat/completions" if not val.endswith("/chat/completions") else val
+                break
     for field in ("CLOUDFLARE_ACCOUNT_ID",):
         if "{" + field + "}" in url:
             if not os.environ.get(field):
@@ -145,6 +153,8 @@ def endpoint(name: str) -> tuple[str, dict[str, str]]:
     # default `Python-urllib/3.x` — the same refusal from three vendors behind the same bot filter,
     # which is a fact about the client, not about the keys.
     headers = {"Content-Type": "application/json", "User-Agent": "headron-atlas-abtest/1.0"}
+    if "headers" in spec:
+        headers.update(spec["headers"])
     if spec["keys"]:
         key = next((os.environ[k] for k in spec["keys"] if os.environ.get(k)), None)
         if key is None and not spec.get("optional_key"):

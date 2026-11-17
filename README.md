@@ -102,7 +102,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Language roles | 360 pairs: 110 runnable, 0 undeclared |
 
-Entry context: ~1,634 tokens. The 215 documents (735 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
+Entry context: ~1,634 tokens. The 216 documents (736 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
 [Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
 
 <!-- END generated: measured-benefits -->
@@ -123,9 +123,9 @@ Entry context: ~1,634 tokens. The 215 documents (735 KiB) load on demand; instal
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠2 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟222 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟224 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟250 ⠿4 ⠁1 │ → headron check
+○ . │ ⠟252 ⠿4 ⠁1 │ → headron check
 ```
 
 <!-- END generated: port-example -->
@@ -161,7 +161,7 @@ Generated on every build; `check` refuses drift.
 - **368** agreement edges — each a file tied to the declaration it answers for
 - **95** instruments — each stating what it proves, what it does not, and what closes the gap
 - **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **220** harness Python files — every one held by `lint` · `format` · `typecheck`
+- **222** harness Python files — every one held by `lint` · `format` · `typecheck`
 - **3.63.0** contract version — `VERSION`, asserted in 10 other files
 
 <!-- END generated: repository-facts -->
