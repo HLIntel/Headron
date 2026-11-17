@@ -1,4 +1,4 @@
-# Language Lanes
+# Language Branches
 
 Each language has its own guide and machine route. That does not require a permanent Git branch.
 
@@ -10,7 +10,7 @@ development isolation = short-lived branch + optional worktree
 repository contract = main
 ```
 
-## Suggested lane names
+## Suggested branch names
 
 <!-- BEGIN generated: language-lanes (python scripts/atlas.py index --write) -->
 Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern`.
@@ -59,7 +59,7 @@ Derived from `atlas.yaml/artifact_routes` + `branch_policy.language_lane_pattern
 | `zig` | `lang/zig` | `lang/zig/*` |
 <!-- END generated: language-lanes -->
 
-## When a lane should graduate to a normal topic branch
+## When a language branch should graduate to a normal topic branch
 
 Move from `lang/*` to `feat/*`, `fix/*`, or `research/*` when:
 - a change crosses a language boundary
@@ -72,7 +72,7 @@ A language label can remain on the PR after the branch changes; branch names des
 
 ## What enforces this now
 
-`branchstate.py` measures what a lane actually holds — unpushed commits and their age — against
+`branchstate.py` measures what a topic branch actually holds — unpushed commits and their age — against
 `branch_policy/unpushed_bound`. The bound is in COMMITS AND HOURS rather than in branches,
 because when it was measured the tree had three branches and two worktrees while eight commits
 sat unpushed for three hours: a container count is not the quantity.

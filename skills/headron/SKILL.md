@@ -39,7 +39,7 @@ Run it the moment any of these happens, in the same turn, before moving on:
    `sightings: 1`, `prevented_by`, and EITHER `enforced_by: [module.function]` OR `unenforceable` plus
    `closed_by` plus `intake: <contract version>`. Fill the drafted line's blank fields and run it:
    it generates every value and reads the entry back — never hand-quote YAML.
-4. **Guard it now when you can:** a check that fails on the shape, a planted case in
+4. **Guard it now when you can:** a check that fails on the shape, a seeded case in
    `scripts/atlas_test.py` with its expected count raised, and a clean sweep of the whole tree.
    Intake must graduate within two minor versions; the build refuses it after that.
 5. **Fix the cause** when the break is in work this session produced. Never caption a bad result.

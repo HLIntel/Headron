@@ -77,10 +77,10 @@ harvested from the App's first, out-of-repository webhook and keep its wire beha
    `pull_request` `closed` with `merged: true` on a refused head appends an `override` row naming who
    merged it.
 
-Proof, offline: `githubapp_test.py` (run by the planted suite) drives a recorded `pull_request` fixture
+Proof, offline: `githubapp_test.py` (run by the seeded suite) drives a recorded `pull_request` fixture
 through signature → queue → a real `git` fetch → `build_report` → a fake GitHub transport → timeline,
 then the merged fixture to an override row; the signature check and the conclusion mapping are each
-planted wrong and must be caught. Only the gate run inside verify is canned there — verify's own suite proves it.
+seeded wrong and must be caught. Only the gate run inside verify is canned there — verify's own suite proves it.
 
 ### Configuration (environment only; nothing secret is tracked)
 

@@ -264,7 +264,7 @@ claude plugin install headron@headron
 The plugin adds, never subtracts: the read-only MCP route, the `headron` failure-ledger skill, and two
 hooks. Before a shell command, `headron shell --hook` puts a string Headron refuses to you as a question,
 never a denial; after an edit, `headron port --hook` returns that file's gates as context. Both stay
-silent on anything they cannot read. `python scripts/atlas_test.py` runs each hook from the manifest and plants a drift in each.
+silent on anything they cannot read. `python scripts/atlas_test.py` runs each hook from the manifest and seeds a drift in each.
 
 ## For a knowledge vault or a notes system
 

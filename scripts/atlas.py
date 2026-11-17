@@ -796,7 +796,7 @@ def learn(language: str) -> int:
     """Turn an operating card into the seven-pass mastery loop."""
     target = language if operating_card(language) is not None else route_for(language)
     card = operating_card(target) if target else None
-    if card is None:
+    if card is None or target is None:
         print(f"no operating card for {language}")
         return 2
     def field(name: str) -> str:

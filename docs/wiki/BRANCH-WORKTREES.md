@@ -28,7 +28,7 @@ typescript
 cpp
 ```
 
-Use temporary language lanes instead:
+Use temporary language branches instead:
 
 ```text
 lang/python/agent-harness
@@ -80,7 +80,7 @@ See [docs/systems/AGENT-HARNESS.md](../systems/AGENT-HARNESS.md).
 
 ## Merge rule
 
-All meaningful language lanes merge back through the canonical `main` contract. A language lane must not redefine repository-wide model, routing, MCP, CI, security, or version policy independently.
+All meaningful language branches merge back through the canonical `main` contract. A language branch must not redefine repository-wide model, routing, MCP, CI, security, or version policy independently.
 
 <!-- BEGIN generated: landed-states (python scripts/atlas.py index --write) -->
 Derived from `atlas.yaml/branch_policy/landed_states`; `branchstate.py --land` reads each one back.
@@ -104,7 +104,7 @@ costs it silently.
 
 ### The main worktree
 
-**One checkout is the main worktree and it is never a branch lane.** It sits at the
+**One checkout is the main worktree and it is never a topic branch.** It sits at the
 repository's own path, tracks the default branch, and is the only tree a human edits
 by habit. Everything else is temporary by construction. `git worktree list` prints
 the main one first; if the first row is not the path you think of as the repository,
@@ -112,17 +112,17 @@ the tree has already drifted.
 
 ### Merge rules
 
-1. **A lane merges into `main`, never into another lane.** Two lanes sharing a base
+1. **A topic branch merges into `main`, never into another topic branch.** Two topic branches sharing a base
    diverge twice and reconcile once, badly.
-2. **Rebase the lane onto `main`, then fast-forward `main`.** No merge commit for a
-   lane that is one topic; the history stays linear and `required_linear_history`
+2. **Rebase the topic branch onto `main`, then fast-forward `main`.** No merge commit for a
+   topic branch that is one topic; the history stays linear and `required_linear_history`
    on the default branch enforces it.
-3. **A lane that is `behind` and not `ahead` is finished.** `git rev-list --count
+3. **A topic branch that is `behind` and not `ahead` is finished.** `git rev-list --count
    main..<branch>` is the test, not the branch's age and not whether anyone
    remembers it. Zero means every commit is already in `main`.
-4. **Never force-push a lane someone else may have checked out**, and never force
+4. **Never force-push a topic branch someone else may have checked out**, and never force
    anything at a backup remote.
-5. **Conflicts are resolved in the lane**, then the lane is re-tested, then merged.
+5. **Conflicts are resolved in the topic branch**, then the topic branch is re-tested, then merged.
    A conflict resolved during the merge is a conflict nobody reviewed.
 
 ### Worktree rules
@@ -132,7 +132,7 @@ the tree has already drifted.
    and commit in five minutes.
 7. **One mutable writer per worktree.** Two processes writing one tree is the
    fastest way to a half-applied change nobody can attribute.
-8. **Remove the worktree in the same session that merges the lane.** `git worktree
+8. **Remove the worktree in the same session that merges the topic branch.** `git worktree
    remove <path> && git branch -d <branch>` — `-d` refuses unless the branch is
    merged, which is the guard: if it refuses, the work is not finished.
 9. **`git worktree prune` after any manual directory removal**, or the registry

@@ -14,7 +14,7 @@ The only tier that scales. A fault that cannot be represented needs no guard, no
 
 | the break | why it was silent | the mechanism that removes it |
 |---|---|---|
-| A mutation fixture hard-typed `1.1.0` while `VERSION` moved to `1.2.0`. It indented a line the check no longer read — **the case went green while planting nothing.** | A passing test and a test that tested nothing print the same word: `ok`. | **DERIVE, NEVER TYPE.** The fixture reads `VERSION`. One number, one declaration; a second copy goes stale the first time either is edited. |
+| A mutation fixture hard-typed `1.1.0` while `VERSION` moved to `1.2.0`. It indented a line the check no longer read — **the case went green while seeding nothing.** | A passing test and a test that tested nothing print the same word: `ok`. | **DERIVE, NEVER TYPE.** The fixture reads `VERSION`. One number, one declaration; a second copy goes stale the first time either is edited. |
 | A rate-limit latch assigned `latched_until = ?`, so a 429 rewrote a 402's day-long latch down to 60 s. | Both are "a latch was set". Nothing distinguishes forward from backward. | **A MONOTONIC WRITE.** `MAX(latched_until, excluded.latched_until)` — the latch is structurally incapable of moving backward, so no caller can get the order wrong. |
 | A safe/paper route that merely *sets a flag* can be flipped by any caller. | The flag and the real route share one code path. | **STRUCTURAL INCAPABILITY.** The safe route loads no key and takes no nonce. There is nothing to set wrongly. |
 
@@ -36,7 +36,7 @@ success output, and the exit code must differ too.** Either alone has been obser
 
 A detector nobody runs is a record of what went wrong, not prevention. Two rules keep this tier honest:
 
-- **Mutation-test every detector both ways.** Sensitivity — plant the defect, assert it fails. Specificity — sweep the whole real tree, zero findings, or every finding justified at the exemption. *Mutation testing proves sensitivity and says nothing about specificity*, and the reaction to a noisy guard is never to fix it, it is to silence it.
+- **Mutation-test every detector both ways.** Sensitivity — seed the defect, assert it fails. Specificity — sweep the whole real tree, zero findings, or every finding justified at the exemption. *Mutation testing proves sensitivity and says nothing about specificity*, and the reaction to a noisy guard is never to fix it, it is to silence it.
 - **An exemption is a behaviour change.** It invalidates the test that asserted the old behaviour, and that test's next failure will be read as the guard being broken. Update the test in the same commit, and give the exemption its own case — the exemption that disarms a test is usually itself untested.
 
 ### The ordering, stated once

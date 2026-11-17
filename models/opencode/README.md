@@ -25,8 +25,8 @@ opencode keeps every tool it ships with — file, shell, search, edit, subagent,
 
 ## The mistake it makes
 
-**Two sessions writing the same worktree.** One mutable writer per worktree; a lane merges to the
-default branch only, and a lane with `ahead=0` is finished and removed by the session that merged
+**Two sessions writing the same worktree.** One mutable writer per worktree; a topic branch merges to the
+default branch only, and a topic branch with `ahead=0` is finished and removed by the session that merged
 it. Parallelism is in the worktrees, never in the writers.
 
 Official: https://opencode.ai/docs

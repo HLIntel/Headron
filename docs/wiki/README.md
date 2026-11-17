@@ -12,7 +12,7 @@ The wiki complements the repository contract. It should route to canonical files
 | What tools should be composed? | [Tool Orchestration](TOOL-ORCHESTRATION.md) |
 | How should production concerns vary by language? | [Language Operations](LANGUAGE-OPERATIONS.md) |
 | How should branches/worktrees work? | [Branches and Worktrees](BRANCH-WORKTREES.md) |
-| Should each language have its own branch? | [Language Lanes](LANGUAGE-LANES.md) |
+| Should each language have its own branch? | [Language Branches](LANGUAGE-LANES.md) |
 | How should issues be tagged? | [Labels and Tags](LABELS-TAGS.md) |
 | What GitHub security/AI controls matter? | [GitHub Finalization](../GITHUB-FINALIZATION.md) |
 | What can this repository PROVE about itself? | [Certification, per check](../CERTIFICATION.md) |

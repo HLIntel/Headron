@@ -56,7 +56,7 @@ Recorded because naming a method you are **not** using is more honest than imply
 
 | concept | status here |
 |---|---|
-| **Property-based testing** | **PARTIAL.** Every check is still mutation-tested against *hand-planted* defects, which were wrong three times in one session (a window smaller than the defect; a threshold below the planted value; a file outside the roster). Generators now cover part of the surface: a seeded property sweep over the router and the entry grammar (`scripts/atlas_test.py`), property tests over the policy core (`scripts/agent_properties_test.py`), and coverage-guided fuzzing (`fuzz/`, `FuzzPool`). The other checks have no generator. |
+| **Property-based testing** | **PARTIAL.** Every check is still mutation-tested against *hand-seeded* defects, which were wrong three times in one session (a window smaller than the defect; a threshold below the seeded value; a file outside the roster). Generators now cover part of the surface: a seeded property sweep over the router and the entry grammar (`scripts/atlas_test.py`), property tests over the policy core (`scripts/agent_properties_test.py`), and coverage-guided fuzzing (`fuzz/`, `FuzzPool`). The other checks have no generator. |
 | **Symbolic execution** | **NOT USED.** Shell and small scripts; the cost would exceed the benefit. |
 | **Time-travel debugging** | **PARTIALLY COVERED** by append-only ledgers — guard verdicts, agent runs, heal actions — which reconstruct what happened, though not variable state. |
 | **Continuous AST linting** | **NOT REACHED.** Checks run on demand and on a schedule; the edit hook (`.agent/bootstrap.json` hooks.edit) only routes the agent to the gates that apply — it runs none. Edit-time checking is the next shift left and is not done. |
