@@ -96,14 +96,13 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 | Instrument | Recorded result |
 | :--- | :--- |
 | Enforcement | 31/31 breaks refused across 20 toolchains; **862** declared planted cases |
-| Failure ledger | 131 shapes, 226 sightings; 107 in-tree guarded, 24 host-only |
-| Field ledger | 940 verifications (136 clean); 1133 refusals; 394 landings; 711 lessons; 394 sessions |
 | Verification outcomes | 17,397 checks: 7,357 PASS, 1,097 REUSED, 1,278 FAIL, 7,665 NOT RUN. 533 runs failed; 271 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
-| Language roles | 360 pairs: 110 runnable, 0 undeclared |
+| Task bench, 3 Claude models (contract 2.29.0) | with Headron 137/138; blind 78/138; every task answered by both arms |
+| Free-model screen, 18 lanes answered (contract 3.63.0, 22 tasks) | on the 138 tasks both arms answered: with Headron 115/138; blind 58/138. 88 lanes gave no answer and carry no score |
 
-Entry context: ~1,634 tokens. The 216 documents (740 KiB) load on demand; install: 12 KiB; hash lock with test tools: 8 packages.
-[Field records](benchmarks/field-latest.json). [Routing data](benchmarks/ab-latest.json). Measures can overlap.
+Entry context: ~1,634 tokens; the rest loads on demand. Each row is its own record, contract version and task set: rows are never summed into one figure, and no run crowns a model.
+[Routing data](benchmarks/ab-latest.json). [Task records](benchmarks/tasks-latest.json), [screen](benchmarks/screen-universal.json).
 
 <!-- END generated: measured-benefits -->
 
@@ -150,21 +149,6 @@ $ headron port . --line
 - **Why a rule:** `headron why` · `headron failures` · [instruments](docs/INSTRUMENTS.md)
 - **Companion products:** [desktop, web, enterprise](docs/CONSUMING.md#optional-hlintel-services)
 - **Security:** [policy](SECURITY.md) · [OpenSSF](docs/OPENSSF.md) · [contributing](CONTRIBUTING.md)
-
-## Counts, computed
-
-Generated on every build; `check` refuses drift.
-
-<!-- BEGIN generated: repository-facts (python scripts/atlas.py index --write) -->
-
-- **52** hard invariants — enforced on every change, zero unowned
-- **378** agreement edges — each a file tied to the declaration it answers for
-- **95** instruments — each stating what it proves, what it does not, and what closes the gap
-- **385** tool entries — across 40 manifests and 5 kinds, validated against `tools/tools.schema.json`
-- **222** harness Python files — every one held by `lint` · `format` · `typecheck`
-- **3.63.0** contract version — `VERSION`, asserted in 10 other files
-
-<!-- END generated: repository-facts -->
 
 ## Project
 

@@ -267,6 +267,17 @@ def screen_record_errors(doc: dict[str, Any]) -> list[str]:
             tok = a.get("tokens")
             if tok != "unmeasured" and not (isinstance(tok, int) and tok > 0):
                 errors.append(f'{where}: tokens {tok!r}; an answer with no usage is "unmeasured", never 0')
+        pair = got.get("paired") or {}
+        cap = min((a.get("answered") or 0 for a in arms.values()), default=0) if len(arms) == 2 else 0
+        n = pair.get("n")
+        if not (isinstance(n, int) and 0 <= n <= cap and all(0 <= pair.get(k, -1) <= n for k in ("blind", "headron"))):
+            errors.append(
+                f"{lane}: paired {pair} exceeds what both arms answered ({cap}); a pair is one task, both answered"
+            )
+    total = doc.get("paired") or {}
+    for k in ("n", "blind", "headron"):
+        if total.get(k) != sum((g.get("paired") or {}).get(k, 0) for g in lanes.values()):
+            errors.append(f"paired {k} is not the sum of its lanes: the headline pair is counted, never typed")
     for lane, why in excluded.items():
         if not (isinstance(why, dict) and why.get("reason")) or {"score", "correct", "ci95"} & set(why):
             errors.append(f"{lane}: an excluded lane names its reason and carries no number")

@@ -234,6 +234,14 @@ def screen_case(module: ModuleType) -> None:
         "an excluded lane with a number": (lambda d, a: d["excluded"][gone].update(score=0.0), "carries no number"),
         "a lane both scored and excluded": (lambda d, a: d["excluded"].update({lane: {"reason": "x"}}), "both scored"),
         "an unmeasured run claimed as measured": (lambda d, a: d.pop("obtained_by"), "measured_live"),
+        "a paired count above what an arm answered": (
+            lambda d, a: d["lanes"][lane]["paired"].update(n=a["answered"] + 1),
+            "exceeds what both arms answered",
+        ),
+        "a headline pair typed, not summed": (
+            lambda d, a: d["paired"].update(n=d["paired"]["n"] + 1),
+            "sum of its lanes",
+        ),
     }
     for name, (change, needle) in plants.items():
         if not any(needle in e for e in planted(change)):

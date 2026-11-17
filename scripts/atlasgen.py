@@ -352,37 +352,6 @@ def runtime_entry_block() -> str:
     return "\n".join(rows) + "\n\nMeasured from each file on every build."
 
 
-def facts_block() -> str:
-    """Every count this page would otherwise state in prose, derived on every run.
-
-    A number typed into a document is stale the moment the tree moves, and the reader cannot see
-    that it moved. So no count is typed anywhere in the documents: each one is computed here and
-    `atlas.py check` fails when the rendered block differs from the tree.
-
-    Rows the `glance` line already prints on docs/INDEX.md stay off this page unless they back a
-    claim here: edges and instruments do, because they say whether the rosters above them are real.
-    """
-    from knowledge import glance_figures  # noqa: PLC0415
-
-    f, g = repository_figures(), glance_figures()
-    held = " · ".join(
-        f"`{gate['id']}`" for gate in (atlas().get("verification_policy") or {}).get("done_set") or []
-        if gate["id"] in ("lint", "format", "typecheck"))
-    # COVERAGE CONTINUES HERE (3.54.0): measured-benefits ends on its **Coverage** header, so these rows
-    # read as one list under one heading. Tools and edges sit beside each other: a roster is a claim,
-    # an edge is a claim with a file behind it.
-    rows = [
-        ("hard invariants", g["invariants"], "enforced on every change, zero unowned"),
-        ("agreement edges", g["edges"], "each a file tied to the declaration it answers for"),
-        ("instruments", g["instruments"], "each stating what it proves, what it does not, and what closes the gap"),
-        ("tool entries", f["tool_entries"], f"across {f['tool_manifests']} manifests and {f['entry_kinds']} kinds, "
-         f"validated against `{MANIFEST_SCHEMA}`"),
-        ("harness Python files", f["harness_py"], f"every one held by {held}"),
-        ("contract version", read("VERSION").strip(), f"`VERSION`, asserted in {f['version_sites']} other files"),
-    ]
-    return "\n".join(f"- **{value}** {label} — {source}" for label, value, source in rows)
-
-
 def repository_figures() -> dict:
     """The repository-facts counts as data: the README block renders them and `.agent/facts.json` carries them."""
     manifests = list((ROOT / "languages").rglob("tools.yaml"))
@@ -756,7 +725,6 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "module-leaves": (("docs/MODULES-LEAVES.md",), lambda: __import__("importgraph").leaves_block()),
     "pointer-table": (("docs/POINTERS.md",), lambda: __import__("pointers").table_block()),
     "agreement-edges": (("docs/CERTIFICATION.md",), lambda: __import__("agreement").edges_block()),
-    "repository-facts": (("README.md",), facts_block),
     "runtime-entry": (("models/README.md",), runtime_entry_block),
     "measured-benefits": (("README.md",), measured_block),
     "headline": (("README.md",), headline_block),
