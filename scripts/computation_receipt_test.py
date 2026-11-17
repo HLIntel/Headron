@@ -26,7 +26,7 @@ def test_build_and_verify_intact() -> None:
         inputs={"metric": "arr", "value": 100},
         outputs={"diff": 10},
         status="ok",
-        verification={"checks": [{"id": "finance.variance.contract", "state": "PASS"}]},
+        checks=[{"id": "finance.variance.contract", "state": "PASS"}],
         evidence_refs=("knowledge.py",),
     )
     assert comp["schema"] == 1
@@ -81,6 +81,7 @@ def test_microprogram_execution_receipt() -> None:
     assert not findings, f"microprogram receipt failed verification: {findings}"
     assert res.receipt["program"] == "mind.search"
     assert res.receipt["status"] == res.status
+    assert (res.status == "ok") == (res.receipt["verification"]["verdict"] == "PASS")
     assert res.to_dict().get("receipt") == res.receipt
 
 
@@ -98,6 +99,58 @@ def test_calculation_receipt() -> None:
     assert res.receipt is not None
     findings = receipt.verify_bytes(receipt.canonical(res.receipt))
     assert not findings, f"calculation receipt failed verification: {findings}"
+    assert res.receipt["verification"]["verdict"] == "PASS"
+
+    class BrokenCalc(DummyCalc):
+        @staticmethod
+        def operation(ctx: object) -> tuple[dict, tuple[str, ...]]:
+            raise TypeError("not a number")
+
+    res = BrokenCalc().run({"val": 1})
+    assert res.status == "refused" and res.next == "fix input"
+    assert res.receipt["verification"] == {
+        "verdict": "FAIL",
+        "checks": [{"id": "test.dummy.operation", "state": "FAIL", "why": "not a number"}],
+    }, res.receipt["verification"]
+    assert not receipt.verify_bytes(receipt.canonical(res.receipt))
+
+
+def test_verdict_is_derived_never_contradicted() -> None:
+    """The producer derives the verdict from the checks and refuses a status that contradicts it."""
+    rows = [{"id": "a", "verdict": "REUSED", "why": "dropped on PASS"}, {"id": "b", "state": "SKIP"}]
+    comp = receipt.build_computation_receipt(
+        program="p", version="1", inputs={}, outputs=None, status="unknown", checks=rows
+    )
+    assert comp["verification"] == {
+        "verdict": "NOT RUN",
+        "checks": [{"id": "a", "state": "PASS"}, {"id": "b", "state": "SKIP", "why": "verdict 'SKIP'"}],
+    }, comp["verification"]
+    for status, state in (("ok", "FAIL"), ("refused", "PASS"), ("ok", "SKIP")):
+        try:
+            receipt.build_computation_receipt(
+                program="p", version="1", inputs={}, outputs={}, status=status, checks=[{"id": "c", "state": state}]
+            )
+        except ValueError as exc:
+            assert "contradicts" in str(exc), exc
+        else:
+            raise AssertionError(f"status {status} with a {state} check must be refused")
+
+
+def test_legacy_v1_verification_still_verifies() -> None:
+    """Receipts written before the one-producer path carried {status, checks}; they must keep verifying."""
+    body = {
+        "schema": 1,
+        "kind": receipt.COMPUTATION_KIND,
+        "program": "legacy.calc",
+        "version": "1",
+        "status": "ok",
+        "input_digest": receipt.digest({"x": 1}),
+        "output_digest": receipt.digest({"y": 2}),
+        "verification": {"status": "PASS", "checks": [{"id": "legacy.calc.contract", "state": "PASS"}]},
+        "evidence_refs": [],
+    }
+    legacy = {"receipt_id": receipt.digest(body), **body}
+    assert not receipt.verify_bytes(receipt.canonical(legacy))
 
 
 def test_cli_verification() -> None:
@@ -133,6 +186,10 @@ def run_cases() -> None:
     print("  ok    calculation execution binds inputs, outputs and receipt")
     test_cli_verification()
     print("  ok    CLI verification of computation receipt")
+    test_verdict_is_derived_never_contradicted()
+    print("  ok    computation verdict derived from checks; contradicting status refused")
+    test_legacy_v1_verification_still_verifies()
+    print("  ok    legacy v1 {status, checks} computation receipt still verifies")
 
 
 if __name__ == "__main__":

@@ -111,7 +111,7 @@ def run_workflow(
         inputs=inputs,
         outputs={"verdict": verdict, "checks": measured_rows},
         status=STATUS[verdict],
-        verification={"verdict": verdict, "checks": measured_rows},
+        checks=measured_rows,
         evidence_refs=(target_path,),
     )
 

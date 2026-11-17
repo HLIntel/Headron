@@ -26,7 +26,7 @@ import json
 import math
 import re
 import sys
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, NotRequired, TypedDict
@@ -141,15 +141,19 @@ def digest(obj: object) -> str:
     return hashlib.sha256(canonical(obj)).hexdigest()
 
 
+def as_check(row: Mapping[str, Any]) -> Check:
+    """Any result row (`state` or `verdict`, `id`, optional `why`) as a receipt check. A PASS drops its why, so a
+    re-used proof and a fresh one write the same bytes; a non-PASS always says why."""
+    raw = row.get("state", row.get("verdict"))
+    check: Check = {"id": str(row.get("id", "")), "state": check_state(raw)}
+    if check["state"] != "PASS":
+        check["why"] = str(row.get("why") or f"verdict {raw!r}")[:FINDING_WHY_CAP]
+    return check
+
+
 def build(rows: list[dict], *, base_commit: str | None, policy_digest: str | None, input_digest: str) -> Receipt:
-    """One receipt from verify rows. A PASS row's why is dropped, so a re-used proof and a fresh one write the same bytes."""
-    checks: list[Check] = []
-    for row in rows:
-        state = check_state(row.get("verdict"))
-        check: Check = {"id": str(row.get("id", "")), "state": state}
-        if state != "PASS":
-            check["why"] = str(row.get("why") or f"verdict {row.get('verdict')!r}")[:FINDING_WHY_CAP]
-        checks.append(check)
+    """One receipt from verify rows."""
+    checks = [as_check(row) for row in rows]
     states = [check["state"] for check in checks]
     body: ReceiptBody = {
         "schema": RECEIPT_SCHEMA,
@@ -171,28 +175,27 @@ def build_computation_receipt(
     inputs: Any,
     outputs: Any,
     status: str,
-    verification: Mapping[str, Any] | None = None,
-    evidence_refs: tuple[str, ...] | list[str] = (),
+    checks: Iterable[Mapping[str, Any]] = (),
+    evidence_refs: Iterable[str] = (),
 ) -> dict:
-    """Build a computation receipt binding inputs, version, outputs, and verification results."""
-    in_digest = digest(inputs)
-    out_digest = digest(outputs) if outputs is not None else None
-    verif = dict(
-        verification
-        or {
-            "status": "PASS" if status == "ok" else "FAIL",
-            "checks": [{"id": f"{program}.contract", "state": "PASS" if status == "ok" else "FAIL"}],
-        }
-    )
+    """The one computation-receipt producer. Callers pass the rows they already have (`as_check` shape); the
+    verdict is derived here, never hand-mapped. No rows: the status is the one check. Raises when status and
+    verdict disagree (ok iff PASS), so a contradictory receipt is never written."""
+    rows = [as_check(row) for row in checks] or [
+        as_check({"id": f"{program}.status", "state": "PASS" if status == "ok" else "FAIL", "why": f"status {status}"})
+    ]
+    verdict = verdict_of([row["state"] for row in rows])
+    if (status == "ok") != (verdict == "PASS"):
+        raise ValueError(f"{program}: status {status!r} contradicts check verdict {verdict}")
     body: dict[str, Any] = {
         "schema": RECEIPT_SCHEMA,
         "kind": COMPUTATION_KIND,
         "program": str(program),
         "version": str(version),
         "status": str(status),
-        "input_digest": in_digest,
-        "output_digest": out_digest,
-        "verification": verif,
+        "input_digest": digest(inputs),
+        "output_digest": digest(outputs) if outputs is not None else None,
+        "verification": {"verdict": verdict, "checks": rows},
         "evidence_refs": [str(r) for r in evidence_refs],
     }
     return {"receipt_id": digest(body), **body}
