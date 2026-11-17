@@ -477,4 +477,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    with gaterunner.stop_children_on_sigterm():  # a cancelled job stops its units' sessions, not orphans them
+        sys.exit(main())

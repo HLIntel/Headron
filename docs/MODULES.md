@@ -3,7 +3,7 @@
 Part of [HEADRON](HEADRON.md). Proofs per instrument: [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-139 modules and 432 imports between them, read from the source; 69 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 97 modules use it. These 66 rows are the modules at least 2 others use; the other 73, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+139 modules and 432 imports between them, read from the source; 70 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 97 modules use it. These 66 rows are the modules at least 2 others use; the other 73, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -58,7 +58,7 @@ flowchart LR
 | [branchstate](../scripts/branchstate.py) | Unpushed work, bounded by what actually grows — not by how many… | 5 | cilocal, consumergates, doctor, gaterunner, ghaudit, verify | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +7 |
 | [decide](../scripts/decide.py) | Compiled decision table engine — the System One core | 5 |  | [decide_test](../scripts/decide_test.py), [reflex_test](../scripts/reflex_test.py) |
 | [port](../scripts/port.py) | port — plug any agent into everything Headron knows about what it… | 5 | agreement, atlas, commands, dirscope, knowledge, localtools, sweep, upstream | [atlas_rules_test](../scripts/atlas_rules_test.py), [sweep_test](../scripts/sweep_test.py) +1 |
-| [resilience](../scripts/resilience.py) | Retry what can succeed, refuse what cannot, and never hammer what… | 5 |  | [agent_test](../scripts/agent_test.py), [atlas_test](../scripts/atlas_test.py) +3 |
+| [resilience](../scripts/resilience.py) | Retry what can succeed, refuse what cannot, and never hammer what… | 5 |  | [agent_test](../scripts/agent_test.py), [atlas_test](../scripts/atlas_test.py) +4 |
 | [abtest](../scripts/abtest.py) | Does the atlas actually help a model? Three arms, one model,… | 4 | agentpolicy, atlasinv, contextcost, providers, resilience | [agent_test](../scripts/agent_test.py), [bounds_test](../scripts/bounds_test.py) +1 |
 | [agentaudit](../scripts/agentaudit.py) | The audit stream: a hash chain, not a log | 4 |  | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +2 |
 | [agents](../scripts/agents.py) | Which agent sessions are live on this machine: the registry… | 4 | agentaudit, atomicfile, cilocal, runtime | [agents_test](../scripts/agents_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +2 |
@@ -75,7 +75,7 @@ flowchart LR
 | [cipipeline](../scripts/cipipeline.py) | Headron's CI, declared in Python: every job, its steps, what it… | 3 | micrograph | [cilocal_test](../scripts/cilocal_test.py) |
 | [claims](../scripts/claims.py) | Claims: what Headron believes, the evidence for it, and… | 3 |  | [claims_test](../scripts/claims_test.py) |
 | [consumergates](../scripts/consumergates.py) | Consumer gate discovery, shared by landing and verification | 3 | consumerimpact, verify | [consumer_test](../scripts/consumer_test.py) |
-| [gaterunner](../scripts/gaterunner.py) | Bounded process capture shared by verification, landing and local… | 3 |  | [readiness_test](../scripts/readiness_test.py) |
+| [gaterunner](../scripts/gaterunner.py) | Bounded process capture shared by verification, landing and local… | 3 |  | [gaterunner_test](../scripts/gaterunner_test.py), [readiness_test](../scripts/readiness_test.py) |
 | [mind](../scripts/mind.py) | Headron Mind API — unified orchestration layer for agent workflows | 3 | adaptive, agentpolicy, atlasindex, decide, graph, knowledge, microprogram, mind_diagnostics, port, receipt, reflex, safeedit, slot, sweep, verify | [mcp_test](../scripts/mcp_test.py), [microprogram_test](../scripts/microprogram_test.py) +1 |
 | [obligations](../scripts/obligations.py) | Task Obligation Ledger: a task's requirements kept outside the… | 3 | agentpolicy, atlas, headronlang | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [receiptsign](../scripts/receiptsign.py) | Who wrote a receipt: a detached SSH signature over its exact bytes | 3 | receipt | [receiptsign_test](../scripts/receiptsign_test.py) |

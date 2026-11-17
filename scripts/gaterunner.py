@@ -3,16 +3,22 @@
 Drain pipes continuously while retaining only their tails. A noisy tool cannot
 grow memory or a temporary log without bound. The deadline includes descendants
 holding a pipe open; on POSIX the isolated process group is stopped together.
+
+SIGTERM (a `timeout`, a cancelled CI job) ends Python without running `finally` or `except BaseException`, and
+every child here sits in its own session, so the default action orphaned the whole group (measured: a gate's
+`sleep` outlived its terminated runner). `stop_children_on_sigterm` turns SIGTERM into SystemExit(143) so the
+stop paths run; `run` wears it, and so does every entry point that holds children of its own.
 """
 
 from __future__ import annotations
 
+import contextlib
 import os
 import signal
 import subprocess
 import threading
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import IO
@@ -36,6 +42,27 @@ def _drain(pipe: IO[bytes], tail: bytearray, count: list[int], keep: int, ended:
     finally:
         pipe.close()
         ended.set()
+
+
+def _exit_on_sigterm(signum: int, _frame: object) -> None:
+    raise SystemExit(128 + signum)
+
+
+@contextlib.contextmanager
+def stop_children_on_sigterm() -> Iterator[None]:
+    """Inside, SIGTERM raises SystemExit(143) so child-stopping code runs. Main thread only; a handler already set is kept."""
+    if (
+        os.name != "posix"
+        or threading.current_thread() is not threading.main_thread()
+        or signal.getsignal(signal.SIGTERM) is not signal.SIG_DFL
+    ):
+        yield
+        return
+    previous = signal.signal(signal.SIGTERM, _exit_on_sigterm)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, previous)
 
 
 def _stop(process: subprocess.Popen) -> None:
@@ -66,15 +93,18 @@ def run(
     # source is a write, and enforcement must not manufacture its own refusal.
     child_env["PYTHONDONTWRITEBYTECODE"] = "1"
     deadline = time.monotonic() + timeout
-    with subprocess.Popen(
-        argv,
-        cwd=cwd,
-        env=child_env,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT if merge else subprocess.PIPE,
-        start_new_session=os.name == "posix",
-    ) as process:
+    with (
+        stop_children_on_sigterm(),
+        subprocess.Popen(
+            argv,
+            cwd=cwd,
+            env=child_env,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT if merge else subprocess.PIPE,
+            start_new_session=os.name == "posix",
+        ) as process,
+    ):
         tails, counts, events = [], [], []
         for pipe in (process.stdout, process.stderr):
             if pipe is None:
