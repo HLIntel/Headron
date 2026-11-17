@@ -81,7 +81,7 @@ def _ci(repo: Path, shared: Path, *argv: str, **env: str) -> subprocess.Complete
             "CI_LOCAL_JOBS": "",
             "CI_LOCAL_WORKERS": "2",
             "SHARED": str(shared),
-            "HEADRON_SLOT_LOAD": "1000",
+            "HEADRON_SLOT_IDLE": "0",
             **env,
         },
         capture_output=True,
@@ -321,7 +321,7 @@ def run_cases(module: ModuleType, base: Path) -> None:
         serial.returncode == 0 and "::: started" not in serial.stdout,
     )
     repo, shared = _repo(base, "loaded", ALONE)
-    loaded = _ci(repo, shared, HEADRON_SLOT_LOAD="0")
+    loaded = _ci(repo, shared, HEADRON_SLOT_IDLE="2")
     _case(
         module,
         "on a machine with no spare cores, units run one at a time and still pass",

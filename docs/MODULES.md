@@ -104,6 +104,6 @@ flowchart LR
 | [mind_diagnostics](../scripts/mind_diagnostics.py) | Headron Mind API Diagnostics & Recovery — failure diagnosis and… | 2 | adaptive, knowledge, mind |  |
 | [onboard](../scripts/onboard.py) | `headron init`: the first five minutes in a repository, in one… | 2 | branchstate, consumergates, enforce, localtools, verify |  |
 | [providers](../scripts/providers.py) | Where a measurement may send a prompt: OpenAI-compatible… | 2 | atomicfile, resilience | [agent_test](../scripts/agent_test.py) |
-| [slot](../scripts/slot.py) | A few heavy suites per MACHINE, across every repository and every… | 2 | resilience |  |
+| [slot](../scripts/slot.py) | A few heavy suites per MACHINE, across every repository and every… | 2 | resilience | [slot_test](../scripts/slot_test.py) |
 | [upstream](../scripts/upstream.py) | THE UPSTREAM COUNT (3.53.0): commits on the default branch that a… | 2 |  | [upstream_test](../scripts/upstream_test.py) |
 <!-- END generated: module-map -->
