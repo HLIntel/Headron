@@ -24,12 +24,14 @@ def _names(path: str) -> set[str]:
     return {".".join(parts[i:]) for i in range(len(parts))}
 
 
-def _imports(source: bytes) -> set[str]:
+def _imports(source: bytes) -> set[str] | None:
     found: set[str] = set()
     try:
         encoding, _ = tokenize.detect_encoding(io.BytesIO(source).readline)
         parsed = parsed_python(source.decode(encoding), "base file")
-        nodes = walked(parsed) if parsed else ()
+        if parsed is None:
+            return None
+        nodes = walked(parsed)
         for node in nodes:
             if isinstance(node, ast.Import):
                 found.update(alias.name for alias in node.names)
@@ -39,17 +41,14 @@ def _imports(source: bytes) -> set[str]:
                     found.add(module)
                 found.update(".".join(filter(None, (module, alias.name))) for alias in node.names)
     except (SyntaxError, ValueError, UnicodeError):
-        pass  # the deletion remains unresolved even if a base file cannot be parsed
+        return None
     return found
 
 
-def python_dependents(tree: Path, deleted: list[str], base: str | None) -> list[str] | None:
-    """Return surviving candidates from the merge base; None when the base could not be inspected at all.
-
-    An empty list says the base was read and nothing imports the deleted file. None says nothing was read, and
-    a caller that reports the two alike tells a reader the dependents were looked for."""
+def python_dependents(tree: Path, deleted: list[str], base: str | None) -> tuple[list[str], bool]:
+    """Return surviving candidates and whether every base Python file was inspected."""
     if not any(path.endswith(".py") for path in deleted):
-        return []
+        return [], True
     default = (atlas().get("branch_policy") or {}).get("default_base") or "main"
     refs = (base,) if base else ("origin/HEAD", f"origin/{default}")
     commit = None
@@ -60,7 +59,7 @@ def python_dependents(tree: Path, deleted: list[str], base: str | None) -> list[
         except (subprocess.SubprocessError, OSError):
             continue
     if not commit:
-        return None
+        return [], False
     try:
         paths = [
             p.decode("utf-8", "surrogateescape")
@@ -69,12 +68,13 @@ def python_dependents(tree: Path, deleted: list[str], base: str | None) -> list[
         ]
         imports = {p: _imports(_git(tree, "show", f"{commit}:{p}")) for p in paths}
     except (subprocess.SubprocessError, OSError):
-        return None
+        return [], False
+    complete = all(uses is not None for uses in imports.values())
     affected = set(deleted)
     while True:
         names = set().union(*(_names(path) for path in affected if path.endswith(".py")))
-        added = {path for path, uses in imports.items() if path not in affected and uses & names}
+        added = {path for path, uses in imports.items() if path not in affected and uses is not None and uses & names}
         if not added:
             break
         affected.update(added)
-    return sorted(path for path in affected - set(deleted) if (tree / path).is_file())
+    return sorted(path for path in affected - set(deleted) if (tree / path).is_file()), complete
