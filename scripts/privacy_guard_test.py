@@ -171,6 +171,7 @@ def main() -> int:
     # each declared key shape fires on its prefix (fillers split and low-entropy, so no scanner reads them)
     fill = b"x" * 40
     for label, value in (
+        ("OpenAI key", b"oai" + b"-" + fill),
         ("OpenAI key", b"sk-" + b"proj-" + fill),
         ("Anthropic key", b"sk-" + b"ant-" + fill),
         ("npm token", b"npm" + b"_" + b"x" * 36),
