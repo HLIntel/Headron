@@ -47,6 +47,11 @@ class CapabilityViolation(PermissionError):
     """Raised when an operation exceeds declared worker capabilities."""
 
 
+def is_sensitive_var(k: str) -> bool:
+    """Check if an environment variable name matches sensitive token prefixes or suffixes."""
+    return any(k.startswith(p) for p in SENSITIVE_PREFIXES) or any(k.endswith(s) for s in SENSITIVE_SUFFIXES)
+
+
 def isolated_environment(
     base_env: dict[str, str] | None = None, allowed_vars: tuple[str, ...] = (), allow_network: bool = False
 ) -> dict[str, str]:
@@ -58,9 +63,7 @@ def isolated_environment(
     for k, v in source.items():
         if k in allowed_set:
             cleaned[k] = v
-        elif not any(k.startswith(p) for p in SENSITIVE_PREFIXES) and not any(
-            k.endswith(s) for s in SENSITIVE_SUFFIXES
-        ):
+        elif not is_sensitive_var(k):
             cleaned[k] = v
 
     if not allow_network:
@@ -92,6 +95,12 @@ def run_isolated(
 
     env = isolated_environment(allow_network=caps.allow_network)
     if extra_env:
-        env.update(extra_env)
+        for k, v in extra_env.items():
+            if not is_sensitive_var(k):
+                env[k] = v
+        if not caps.allow_network:
+            env["http_proxy"] = "http://127.0.0.1:0"
+            env["https_proxy"] = "http://127.0.0.1:0"
+            env["NO_NETWORK"] = "1"
 
     return subprocess.run(argv, cwd=str(cwd), capture_output=True, check=False, timeout=caps.timeout_s, env=env)

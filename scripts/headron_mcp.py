@@ -14,15 +14,13 @@ that run declared verification (`proof --verify`) never appear in a tool's schem
 sent; instruments (which include landing and pushing) are not offered at all. A client cannot set them
 wrongly because it cannot set them.
 
-Transport: newline-delimited JSON-RPC 2.0 on stdin/stdout. Calls run in a bounded child process;
-resources read atlas.yaml on demand. Results carry the exit verdict and a record or text.
+Transport: newline-delimited JSON-RPC 2.0 on stdin/stdout. Calls run in a bounded child process.
+Results carry the exit verdict and a record or text.
 
   python scripts/headron_mcp.py                 serve on stdio
   python scripts/headron_mcp.py --check         speak the protocol to itself once; the exit code is the verdict
   claude mcp add headron -e HEADRON_ROOT=<atlas> -- headron-mcp    register an installed copy with Claude Code
-
-Any runtime that speaks MCP over stdio can run it. Core environment variables include:
-`HEADRON_ROOT` (the atlas) and `HEADRON_CLIENT_DIR` (the directory relative paths resolve against).
+  Uses HEADRON_ROOT (atlas) and HEADRON_CLIENT_DIR (project working directory).
 """
 
 from __future__ import annotations
@@ -56,6 +54,7 @@ from mind_verifier import verify_key as _verify_mind_key
 # THE ONE WRITE THIS ROUTE MAKES (3.51.0) is outside the tree: a heartbeat in the agent registry, so a
 # client that runs only this server is still counted. It fails open: a missed beat never fails a call.
 CLIENT: dict[str, str | None] = {"name": None}
+_OMIT_ENV = ("HEADRON_MIND_KEY", "HEADRON_MIND_TOKEN")
 
 
 def _beat(ended: bool = False) -> None:
@@ -450,7 +449,8 @@ def _child(argv: list[str], out: int, err: int) -> None:
                 if callable(getattr(value, "cache_clear", None)) and hasattr(value, "cache_info"):
                     value.cache_clear()
         os.environ["HEADRON_READ_ONLY"] = "1"
-        os.environ.pop("HEADRON_MIND_KEY", None)
+        for _k in _OMIT_ENV:
+            os.environ.pop(_k, None)
         null = os.open(os.devnull, os.O_RDONLY)
         for source, target in ((null, 0), (out, 1), (err, 2)):
             os.dup2(source, target)
@@ -722,7 +722,7 @@ def call(name: str, arguments: dict) -> dict:
             if _forkable() and threading.current_thread() is threading.main_thread()
             else subprocess.run(
                 [sys.executable, str(ROOT / "scripts" / "atlas.py"), *argv],
-                env={**{k: v for k, v in os.environ.items() if k != "HEADRON_MIND_KEY"}, "HEADRON_READ_ONLY": "1"},  # noqa: S603
+                env={k: v for k, v in os.environ.items() if k not in _OMIT_ENV} | {"HEADRON_READ_ONLY": "1"},  # noqa: S603
                 stdin=subprocess.DEVNULL,  # the client's JSON-RPC stream is ours: a `--hook` child read it and hung the session
                 capture_output=True,
                 text=True,

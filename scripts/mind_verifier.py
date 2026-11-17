@@ -33,9 +33,12 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def hosted_config() -> tuple[str | None, str | None]:
-    """Return (url, key) for hosted Mind REST API if configured, else (None, None)."""
+    """Return (url, token_or_key) for hosted Mind REST API if configured, else (None, None).
+
+    Supports short-lived session tokens (HEADRON_MIND_TOKEN) or legacy keys (HEADRON_MIND_KEY).
+    """
     url = os.environ.get("HEADRON_MIND_URL")
-    key = os.environ.get("HEADRON_MIND_KEY")
+    key = os.environ.get("HEADRON_MIND_TOKEN") or os.environ.get("HEADRON_MIND_KEY")
     clean_url = url.strip() if url and url.strip() else None
     clean_key = key.strip() if key and key.strip() else None
     if clean_url and urllib.parse.urlsplit(clean_url).scheme not in ("http", "https"):
@@ -96,7 +99,8 @@ def key_state(url: str, key: str) -> str:
 def verify_key() -> None:
     """When configured, ask the entitlement service before executing a Mind tool."""
     url = os.environ.get("HEADRON_MIND_VERIFIER_URL", "").strip()
-    if url and key_state(url, os.environ.get("HEADRON_MIND_KEY", "").strip()) != "active":
+    key = (os.environ.get("HEADRON_MIND_TOKEN") or os.environ.get("HEADRON_MIND_KEY") or "").strip()
+    if url and key_state(url, key) != "active":
         # Neither credentials, endpoint details, nor provider response bodies belong in MCP errors.
         raise ValueError("Mind key verification failed or is unavailable")
 
@@ -214,7 +218,7 @@ def _report(args: argparse.Namespace, status: str, classes: list[str], gates: li
 
 
 def _activate(args: argparse.Namespace) -> int:
-    key = os.environ.get("HEADRON_MIND_KEY", "").strip()
+    key = (os.environ.get("HEADRON_MIND_TOKEN") or os.environ.get("HEADRON_MIND_KEY") or "").strip()
     if not key:
         _report(args, "inactive", [], [], [])
         return 0
