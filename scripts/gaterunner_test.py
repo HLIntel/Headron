@@ -12,6 +12,7 @@ import os
 import signal
 import subprocess
 import sys
+import tempfile
 import uuid
 from pathlib import Path
 
@@ -48,6 +49,48 @@ def test_sigterm_stops_the_gate_group() -> None:
         subprocess.run(["pkill", "-f", token], check=False, timeout=10)
 
 
+def test_sigterm_stops_every_running_graph_node() -> None:
+    """Width 2 through micrograph: SIGTERM reaches the main thread, its `finally` stops both nodes' groups."""
+    if os.name != "posix":
+        return
+    token = f"headron-node-{uuid.uuid4().hex[:12]}"
+    mark = Path(tempfile.mkdtemp()) / "stopping"
+    code = f"""
+import subprocess, sys, time, gaterunner, micrograph
+MARK = {str(mark)!r}
+class Sleeper:
+    def __init__(self, name):
+        self.p = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(600)", {token[:8]!r} + {token[8:]!r}],
+                                  start_new_session=True)
+    def poll(self):
+        return None
+    def stop(self):
+        open(MARK, "a").close()
+        time.sleep(1)  # a stop slow enough that the second TERM lands inside it
+        gaterunner._stop(self.p)
+nodes = [micrograph.Node("a", timeout_s=120), micrograph.Node("b", timeout_s=120)]
+with gaterunner.stop_children_on_sigterm():
+    micrograph.run(nodes, lambda node, _t: Sleeper(node.name), budget_s=240, width=2)
+"""
+    runner = subprocess.Popen([sys.executable, "-c", code], cwd=HERE, env={**os.environ, "PYTHONPATH": str(HERE)})
+
+    def count() -> int:
+        return len(subprocess.run(["pgrep", "-f", token], capture_output=True, text=True, timeout=10).stdout.split())
+
+    try:
+        assert wait_until(lambda: count() == 2, timeout=30, interval=0.1), "both nodes never started"
+        runner.send_signal(signal.SIGTERM)
+        assert wait_until(mark.exists, timeout=30, interval=0.05), "the graph never began stopping"
+        runner.send_signal(signal.SIGTERM)  # a forwarded second TERM, mid-stop, must not cut the stop short
+        assert runner.wait(timeout=30) == 143, runner.returncode
+        wait_until(lambda: count() == 0, timeout=5, interval=0.1)
+        assert count() == 0, "a graph node outlived its terminated runner: orphaned"
+    finally:
+        if runner.poll() is None:
+            runner.kill()
+        subprocess.run(["pkill", "-f", token], check=False, timeout=10)
+
+
 def test_handler_scoped_and_caller_kept() -> None:
     if os.name != "posix":
         return
@@ -66,7 +109,11 @@ def test_handler_scoped_and_caller_kept() -> None:
 
 
 def run_cases() -> None:
-    for case in (test_sigterm_stops_the_gate_group, test_handler_scoped_and_caller_kept):
+    for case in (
+        test_sigterm_stops_the_gate_group,
+        test_sigterm_stops_every_running_graph_node,
+        test_handler_scoped_and_caller_kept,
+    ):
         case()
         print(f"  ok    {case.__name__}")
 
