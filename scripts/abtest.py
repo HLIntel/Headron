@@ -432,29 +432,45 @@ def model_details() -> str:
     graded = 0
     routing = {k: v for k, v in _record("ab-latest.json").get("models", {}).items() if ":" in k}
     if routing:
-        out += ["Routing questions (unassisted vs scoped prompt):", "",
-                "| Model | Contract | Unassisted | Scoped | Tokens/question |", "| :--- | :--- | :--- | :--- | :--- |"]
+        out += [
+            "Routing questions (unassisted vs scoped prompt):",
+            "",
+            "| Model | Contract | Unassisted | Scoped | Tokens/question |",
+            "| :--- | :--- | :--- | :--- | :--- |",
+        ]
         for name in sorted(routing):
             m = routing[name]
             graded += sum(a["asked"] for a in m.values() if isinstance(a, dict) and "asked" in a)
             u, s = m["unassisted"], m["scoped"]
-            out.append(f"| `{name}` | {m['measured_at']} | {u['correct']}/{u['asked']} | {s['correct']}/{s['asked']} "
-                       f"| {u['tokens_per_question']:,.0f} → {s['tokens_per_question']:,.0f} |")
+            out.append(
+                f"| `{name}` | {m['measured_at']} | {u['correct']}/{u['asked']} | {s['correct']}/{s['asked']} "
+                f"| {u['tokens_per_question']:,.0f} → {s['tokens_per_question']:,.0f} |"
+            )
         out.append("")
     tasks = _record("tasks-latest.json").get("models", {})
     if tasks:
-        out += ["Task bench (blind vs with Headron, by kind):", "",
-                "| Model | Contract | Kind | Blind | With Headron |", "| :--- | :--- | :--- | :--- | :--- |"]
+        out += [
+            "Task bench (blind vs with Headron, by kind):",
+            "",
+            "| Model | Contract | Kind | Blind | With Headron |",
+            "| :--- | :--- | :--- | :--- | :--- |",
+        ]
         for name in sorted(tasks):
             for kind, cell in sorted((k, c) for k, c in tasks[name].items() if isinstance(c, dict)):
                 graded += cell["blind"]["asked"] + cell["headron"]["asked"]
-                out.append(f"| `{name}` | {tasks[name]['measured_at']} | {kind} | {cell['blind']['correct']}/"
-                           f"{cell['blind']['asked']} | {cell['headron']['correct']}/{cell['headron']['asked']} |")
+                out.append(
+                    f"| `{name}` | {tasks[name]['measured_at']} | {kind} | {cell['blind']['correct']}/"
+                    f"{cell['blind']['asked']} | {cell['headron']['correct']}/{cell['headron']['asked']} |"
+                )
         out.append("")
     screen = _record("screen-universal.json")
     if screen:
-        out += ["Free-model screen (paired tasks only; tokens are the lane's whole run):", "",
-                "| Lane | Paired | Blind | With Headron | Tokens blind / Headron |", "| :--- | :--- | :--- | :--- | :--- |"]
+        out += [
+            "Free-model screen (paired tasks only; tokens are the lane's whole run):",
+            "",
+            "| Lane | Paired | Blind | With Headron | Tokens blind / Headron |",
+            "| :--- | :--- | :--- | :--- | :--- |",
+        ]
         for name in sorted(screen["lanes"]):
             lane = screen["lanes"][name]
             graded += sum(a["answered"] for a in lane["arms"].values())
