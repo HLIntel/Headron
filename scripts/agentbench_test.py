@@ -89,13 +89,6 @@ REFERENCE = {
         "import re\n\n\ndef seconds(text):\n    units = {'h': 3600, 'm': 60, 's': 1}\n"
         "    return sum(int(n) * units[u] for n, u in re.findall(r'(\\d+)([hms])', text))\n"
     ),
-    "ratelimit": (
-        "import time\n\n\nclass Limiter:\n    def __init__(self, per_second):\n        self.gap = 1.0 / per_second\n"
-        "        self.last = None\n\n    def allow(self, now=None):\n"
-        "        now = time.monotonic() if now is None else now\n"
-        "        if self.last is not None and now - self.last < self.gap:\n            return False\n"
-        "        self.last = now\n        return True\n"
-    ),
     "window": "def window(xs, n):\n    return [xs[i : i + n] for i in range(len(xs) - n + 1)]\n",
 }
 
