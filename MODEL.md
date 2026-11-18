@@ -12,16 +12,18 @@ Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.
 | `chat` | `ideation` · `research` | — | [chat](models/chat/README.md) |
 | `claude` | `architecture` · `research` · `tool_orchestration` | — | [claude](models/claude/README.md) |
 | `cli` | — | `deterministic_local_harness` | — |
+| `copilot` | `interactive_edit` | — | [copilot](models/copilot/README.md) |
 | `cursor` | `interactive_edit` | — | [cursor](models/cursor/README.md) |
 | `generic_llm` | `research` | — | [llm](models/llm/README.md) |
 | `github_actions` | `verification` | `authoritative_repository_verification` | — |
 | `hermes` | `tool_orchestration` | — | [hermes](models/hermes/README.md) |
+| `kilo` | `deterministic_repo_edit` · `research` | — | [kilo](models/kilo/README.md) |
 | `native_toolchain` | `verification` | `authoritative_language_verification` | — |
 | `openai_codex` | `architecture` · `deterministic_repo_edit` | — | [openai](models/openai/README.md) |
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [opencode](models/opencode/README.md) |
 | `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [vscode](models/vscode/README.md) |
 
-Entry only: [aider](models/aider/README.md) · [antigravity](models/antigravity/README.md) · [cline](models/cline/README.md) · [devin](models/devin/README.md) · [gemini](models/gemini/README.md) · [goose](models/goose/README.md) · [headron-desktop](models/headron-desktop/README.md) · [junie](models/junie/README.md) · [kilo](models/kilo/README.md) · [windsurf](models/windsurf/README.md) · [zed](models/zed/README.md).
+Entry only: [aider](models/aider/README.md) · [antigravity](models/antigravity/README.md) · [cline](models/cline/README.md) · [devin](models/devin/README.md) · [gemini](models/gemini/README.md) · [goose](models/goose/README.md) · [headron-desktop](models/headron-desktop/README.md) · [junie](models/junie/README.md) · [windsurf](models/windsurf/README.md) · [zed](models/zed/README.md).
 <!-- END generated: runtimes -->
 
 > **Agent/model directive:** Ask before reading: `headron gate <file> <gate>` for one command,

@@ -19,18 +19,19 @@ same git hook, and the same Headron CLI. Set `HEADRON_AGENT` to the engine name 
 `cursor-grok`, …) so every verification records which agent produced the change. `scripts/runtime.py`
 rolls those ids up to the `cursor` family for scoring; it never invents a second contract.
 
+## Dynamic connectivity & unbreakable discovery
+
+To prevent breakages when Cursor extensions or CLI interfaces update:
+- **Dual-path invocation:** Run `headron port <path> --frame agent --json` (or fallback `python scripts/atlas.py port <path> --frame agent --json`).
+- **Structured output:** Depend on `--json` records (`tools/atlas-output.schema.json`), never unpiped chat formatting.
+- **Fail-safe verification:** Run the contract before you claim done, judging purely by the exit code:
+  ```bash
+  python scripts/atlas.py check && python scripts/atlas_test.py
+  ```
+
 ## What it is routed for
 
 `interactive_edit` — fast local iteration with the editor's own diagnostics in the loop.
-
-## Use its strength
-
-The native language server is the authority while you type. Run the contract before you claim
-done:
-
-```bash
-python scripts/atlas.py check && python scripts/atlas_test.py
-```
 
 ## Native tools stay
 

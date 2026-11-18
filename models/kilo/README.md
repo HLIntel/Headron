@@ -11,26 +11,21 @@ this repository refuses.
 ## Clean entry dev spot & model roles
 
 `.kilo/config.json` declares the local development base URL and companion model roles:
-- `companion`: fast iterative drafting and formatting
-- `reviewer`: gate policy validation and mutation audit
-- `audit`: contract checking and invariant proofs
+- `companion`: fast iterative drafting and formatting (`small`)
+- `reviewer`: gate policy validation and mutation audit (`code`)
+- `audit`: contract checking and invariant proofs (`deep`)
 
 Use these roles to dispatch targeted subtasks without manual reconfiguration.
 
-## Use its strength
+## Dynamic connectivity & unbreakable discovery
 
-Kilo provides multi-model reasoning and companion task execution across engineering pipelines. Route the file
-first, then let the execution plan follow the gates the pack declares:
-
-```bash
-python scripts/atlas.py port <file> --frame agent --json
-```
-
-Verify contracts and gates on their exit codes before completing:
-
-```bash
-python scripts/atlas.py check && python scripts/verify.py
-```
+To remain resilient across environment changes, gateway migrations, or host updates:
+- **Dual-path invocation:** Run `headron port <file> --frame agent --json` (or fallback `python scripts/atlas.py port <file> --frame agent --json`).
+- **Structured output:** Depend on `--json` records (`tools/atlas-output.schema.json`), never unpiped terminal output.
+- **Fail-safe verification:** Verify contracts and gates strictly on their exit codes before completing:
+  ```bash
+  python scripts/atlas.py check && python scripts/verify.py
+  ```
 
 ## Native tools stay
 

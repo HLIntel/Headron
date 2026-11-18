@@ -4,7 +4,7 @@ One contract, thin adapters for each place an agent runs. Adapters only tell a r
 enter; rules stay in [`atlas.yaml`](../atlas.yaml), and every surface returns the same gate verdicts.
 
 **Ready now:** [Google Antigravity](antigravity/README.md) · [Junie](junie/README.md) · [Claude Code](claude/README.md) · [OpenAI Codex](openai/README.md) ·
-[GitHub Copilot](../AGENTS.md) · [Cursor and Grok Bot](cursor/README.md) ·
+[GitHub Copilot](copilot/README.md) · [Cursor and Grok Bot](cursor/README.md) · [Kilo](kilo/README.md) ·
 [OpenCode](opencode/README.md) · [Hermes](hermes/README.md) · [VS Code](vscode/README.md) ·
 [Gemini CLI](gemini/README.md) · [goose](goose/README.md) · [Zed](zed/README.md) · [Aider](aider/README.md) · [Devin CLI](devin/README.md) ·
 [Headron Desktop](headron-desktop/README.md) · [generic `llms.txt` clients](llm/README.md) · any MCP client.
@@ -50,6 +50,7 @@ in [MODEL.md](../MODEL.md). See [ROUTING.md](ROUTING.md) for task and host routi
 | Cline | `AGENTS.md` | 905 |
 | Windsurf | `AGENTS.md` | 905 |
 | Kilo | `AGENTS.md` | 905 |
+| GitHub Copilot | `.github/copilot-instructions.md` | 406 |
 
 Measured from each file on every build.
 <!-- END generated: runtime-entry -->

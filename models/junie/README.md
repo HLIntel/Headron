@@ -9,20 +9,15 @@ working files) live under [`.junie/`](../../.junie/HEADRON.md), which is declare
 scope in `atlas.yaml/directory_scopes/.junie`. Keep any Junie-specific rule file thin and let it
 point at `AGENTS.md`: a second copy of the rules is the drift this repository refuses.
 
-## Use its strength
+## Dynamic connectivity & unbreakable discovery
 
-Junie plans multi-step edits. Put the route first, then let the plan follow the gates the route
-names:
-
-```bash
-python scripts/atlas.py port <file> --frame agent --json
-```
-
-Run the contract before claiming done:
-
-```bash
-python scripts/atlas.py check && python scripts/verify.py
-```
+Junie plans and executes multi-step edits. To prevent breaks across JetBrains plugin updates:
+- **Dual-path invocation:** Run `headron port <file> --frame agent --json` (or fallback `python scripts/atlas.py port <file> --frame agent --json`).
+- **Structured output:** Depend on `--json` records (`tools/atlas-output.schema.json`), never terminal prose.
+- **Fail-safe verification:** Run the contract before claiming done, judging strictly by exit code:
+  ```bash
+  python scripts/atlas.py check && python scripts/verify.py
+  ```
 
 ## Native tools stay
 

@@ -13,20 +13,17 @@ second copy of it.
 Keep every rule file thin and let it point at `AGENTS.md`: a second copy of the rules is the drift
 this repository refuses.
 
-## Use its strength
+## Dynamic connectivity & unbreakable discovery
 
-Antigravity takes long context and visual review well. Give it the route, not the whole tree:
+Antigravity executes long-context and multi-modal reasoning natively. To remain resilient across
+CLI, SDK, or toolchain updates, use dynamic protocol discovery rather than hardcoded assumptions:
 
-```bash
-python scripts/atlas.py port <file|dir> --frame agent --json
-python scripts/atlas.py find "<query>" --snippet
-```
-
-Run the contract before claiming done:
-
-```bash
-python scripts/atlas.py check && python scripts/verify.py
-```
+- **Dual-path invocation:** Run `headron port <target> --frame agent --json` (or fallback `python scripts/atlas.py port <target> --frame agent --json`).
+- **Structured output:** Depend on `--json` records (`tools/atlas-output.schema.json`), never unpiped terminal formatting.
+- **Fail-safe verification:** Judge outcomes strictly by exit code (`0` = PASS, non-zero = FAIL):
+  ```bash
+  python scripts/atlas.py check && python scripts/verify.py
+  ```
 
 ## Native tools stay
 

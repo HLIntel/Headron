@@ -32,6 +32,7 @@ one adapter per runtime — how each one loads this atlas and what it loads firs
 - [chat/README.md](chat/README.md)
 - [claude/README.md](claude/README.md)
 - [cline/README.md](cline/README.md)
+- [copilot/README.md](copilot/README.md)
 - [cursor/README.md](cursor/README.md)
 - [devin/README.md](devin/README.md)
 - [gemini/README.md](gemini/README.md)

@@ -4,10 +4,12 @@ Rules: [CLAUDE.md](../../CLAUDE.md), [AGENTS.md](../../AGENTS.md). Runtimes: [MO
 
 ## How it loads
 
-Three files in this repository, none of which is a contract:
+Files in this repository, none of which is a contract:
 
 | file | what it does |
 |---|---|
+| [headron.code-workspace](../../headron.code-workspace) | multi-root Microsoft workspace with unified settings and extension recommendations |
+| [.vscode/extensions.json](../../.vscode/extensions.json) | workspace-recommended extensions (Copilot, Python, Ruff) |
 | [.vscode/mcp.json.example](../../.vscode/mcp.json.example) | MCP servers, **pinned** — copy to `mcp.json`, never `@latest` |
 | [.vscode/tasks.json](../../.vscode/tasks.json) | the instruments as tasks, so a verdict is one keystroke |
 | [.vscode/launch.json](../../.vscode/launch.json) | debug the harness itself |

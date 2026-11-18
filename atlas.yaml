@@ -1623,11 +1623,11 @@ routing_policy:
 # capable one — the roster claimed a capability the running process does not have.
 model_routes:
   architecture: [claude, openai_codex]
-  interactive_edit: [cursor, vscode]
-  deterministic_repo_edit: [openai_codex, opencode]
+  interactive_edit: [cursor, vscode, copilot]
+  deterministic_repo_edit: [openai_codex, opencode, kilo]
   terminal_parallelism: [opencode]
   tool_orchestration: [claude, hermes]   # claude FIRST: it dispatches subagents and returns typed results
-  research: [chat, generic_llm, claude]
+  research: [chat, generic_llm, claude, kilo]
   ideation: [chat]
   verification: [native_toolchain, github_actions]
 
@@ -4342,6 +4342,7 @@ runtime_entry:
 - {runtime: Cline, id: cline, loads: AGENTS.md, adapter: models/cline/README.md}
 - {runtime: Windsurf, id: windsurf, loads: AGENTS.md, adapter: models/windsurf/README.md}
 - {runtime: Kilo, id: kilo, loads: AGENTS.md, adapter: models/kilo/README.md}
+- {runtime: GitHub Copilot, id: copilot, loads: .github/copilot-instructions.md, adapter: models/copilot/README.md}
 
 # THE LOCAL ATTACHMENT ROSTER. runtime_entry keeps its own display and loading facts; seats derives rows from it
 # and from these companion ids, instead of clients carrying another agent list. The desktop hosts seats, not itself.
@@ -4392,6 +4393,7 @@ native_agent_tools:
     cline: {tool_config: [], headron_via: [cli, git_hook, mcp_read_only], none_because: 'Cline configures its tools in VS Code or desktop settings outside the repository; AGENTS.md is the instruction file it reads'}
     windsurf: {tool_config: [.windsurfrules], headron_via: [cli, git_hook, mcp_read_only]}
     kilo: {tool_config: [.kilo/config.json], headron_via: [cli, git_hook, mcp_read_only]}
+    copilot: {tool_config: [.github/copilot-instructions.md], headron_via: [cli, git_hook, mcp_read_only]}
 
 # A CHAT CANNOT RUN THE HARNESS, AND IT IS STILL WORTH ROUTING. ChatGPT, Claude.ai, Gemini, Grok or
 # a local model in a chat window is where research, ideas and second opinions happen, often FOR an

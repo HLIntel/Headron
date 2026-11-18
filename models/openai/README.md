@@ -7,12 +7,15 @@ Rules: [CLAUDE.md](../../CLAUDE.md), [AGENTS.md](../../AGENTS.md). Runtimes: [MO
 `AGENTS.md` at the repository root is the convention this runtime reads, and it is **generated**
 from the same body as `CLAUDE.md` — one declaration, two files, no drift.
 
-## Use in this order
+## Dynamic connectivity & unbreakable discovery
 
-```bash
-python scripts/atlas.py route <path> --json
-python scripts/atlas.py check                    # the exit code is the verdict
-```
+Codex executes deterministic repository edits and architecture tasks. To prevent brittle breakages:
+- **Dual-path invocation:** Run `headron port <path> --frame agent --json` (or fallback `python scripts/atlas.py port <path> --frame agent --json`).
+- **Structured output:** Depend on `--json` records (`tools/atlas-output.schema.json`), never unpiped text.
+- **Fail-safe verification:** Run the contract and check that the exit code is zero:
+  ```bash
+  python scripts/atlas.py check
+  ```
 
 ## What it is routed for
 

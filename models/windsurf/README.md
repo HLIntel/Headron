@@ -7,20 +7,15 @@ Rules: [CLAUDE.md](../../CLAUDE.md), [AGENTS.md](../../AGENTS.md). Runtimes: [MO
 Windsurf reads `AGENTS.md` and `.windsurfrules`. Keep any `.windsurfrules` file thin and let it
 point to `AGENTS.md`: a second copy of the rules is the drift this repository refuses.
 
-## Use its strength
+## Dynamic connectivity & unbreakable discovery
 
-Windsurf pairs fast semantic indexing with real-time Cascade workspace diffs. Route first to load
-only the specific tools and gates the file owes:
-
-```bash
-headron port <file> --frame agent --json
-```
-
-Verify the contract before claiming a change is finished:
-
-```bash
-headron verify
-```
+Windsurf pairs fast semantic indexing with Cascade workspace diffs. To ensure unbreakable connectivity:
+- **Dual-path invocation:** Run `headron port <file> --frame agent --json` (or fallback `python scripts/atlas.py port <file> --frame agent --json`).
+- **Structured output:** Depend on `--json` records (`tools/atlas-output.schema.json`), never unpiped chat formatting.
+- **Fail-safe verification:** Verify contracts and gates strictly on their exit codes:
+  ```bash
+  python scripts/atlas.py check && python scripts/verify.py
+  ```
 
 ## Native tools stay
 

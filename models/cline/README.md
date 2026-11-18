@@ -8,20 +8,15 @@ Cline reads `AGENTS.md` and path-scoped instruction files configured in the work
 additional rule file thin and let it point to `AGENTS.md`: a second copy of the rules is the
 drift this repository refuses.
 
-## Use its strength
+## Dynamic connectivity & unbreakable discovery
 
-Cline executes interactive terminal workflows and targeted edits with direct workspace awareness.
-Route first to load only the checks the specific file owes:
-
-```bash
-headron port <file> --frame agent --json
-```
-
-Verify the contract before claiming a change is finished:
-
-```bash
-headron verify
-```
+Cline executes interactive terminal workflows and targeted edits with workspace awareness:
+- **Dual-path invocation:** Run `headron port <file> --frame agent --json` (or fallback `python scripts/atlas.py port <file> --frame agent --json`).
+- **Structured output:** Depend on `--json` records (`tools/atlas-output.schema.json`), never volatile text summaries.
+- **Fail-safe verification:** Verify contracts and gates strictly on their exit codes:
+  ```bash
+  python scripts/atlas.py check && python scripts/verify.py
+  ```
 
 ## Native tools stay
 
