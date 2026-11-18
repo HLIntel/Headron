@@ -1,0 +1,56 @@
+{
+  "folders": [
+    {
+      "name": "Headron Core",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.git": true,
+      "**/.hg": true,
+      "**/.svn": true,
+      "**/__pycache__": true,
+      "**/.pytest_cache": true,
+      "**/.mypy_cache": true,
+      "**/.ruff_cache": true,
+      "**/.venv": true,
+      "**/node_modules": true,
+      "**/target": true,
+      "**/dist": true,
+      "**/build": true
+    },
+    "files.watcherExclude": {
+      "**/.git/objects/**": true,
+      "**/.git/subtree-cache/**": true,
+      "**/node_modules/**": true,
+      "**/target/**": true,
+      "**/dist/**": true,
+      "**/build/**": true,
+      "**/.venv/**": true
+    },
+    "files.associations": {
+      "*.headron": "json",
+      "atlas.yaml": "yaml",
+      "llms.txt": "markdown"
+    },
+    "search.exclude": {
+      "**/.venv": true,
+      "**/__pycache__": true,
+      "**/.git": true,
+      "**/node_modules": true
+    },
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "github.copilot.chat.editor.instructionsFile": ".github/copilot-instructions.md"
+  },
+  "extensions": {
+    "recommendations": [
+      "github.copilot",
+      "github.copilot-chat",
+      "ms-python.python",
+      "charliermarsh.ruff",
+      "tamasfe.even-better-toml",
+      "redhat.vscode-yaml"
+    ]
+  }
+}

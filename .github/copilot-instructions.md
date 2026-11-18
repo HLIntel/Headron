@@ -7,7 +7,7 @@ there is no fourth copy of the same body.
 
 ## The three things worth repeating here
 
-1. **Route before you read.** `python scripts/atlas.py route <path> --json` gives the language
+1. **Route before you read.** `python scripts/atlas.py port <path> --frame agent --json` (or `atlas.py route`) gives the language
    pack, its operating card, its tool manifest, the label, the topic branch and the gates. Reading
    this repository breadth-first is the failure it exists to prevent.
 2. **Never type a count, a date or a tool name into prose.** Counts are generated, claims are

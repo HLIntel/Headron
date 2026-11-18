@@ -5,13 +5,14 @@ Rules: [CLAUDE.md](../../CLAUDE.md), [AGENTS.md](../../AGENTS.md). Runtimes: [MO
 ## How it loads
 
 `AGENTS.md`, generated. OpenCode runs in a terminal workspace, so the instruments are directly
-available — there is no reason to describe the repository to it when it can ask:
+available — there is no reason to describe the repository to it when it can ask.
 
-```bash
-python scripts/atlas.py route <path> --json
-python scripts/atlas.py doctor                   # what this machine can actually run
-python scripts/exrun.py                          # every example, run, with skips explained
-```
+## Dynamic connectivity & unbreakable discovery
+
+OpenCode provides terminal agent execution and parallelism. To ensure unbreakable connectivity:
+- **Dual-path invocation:** Run `headron port <path> --frame agent --json` (or fallback `python scripts/atlas.py port <path> --frame agent --json`).
+- **Machine diagnostics:** Run `headron doctor` (`python scripts/atlas.py doctor`) to check available toolchains on this host.
+- **Fail-safe verification:** Judge completion strictly on process exit codes.
 
 ## What it is routed for
 
