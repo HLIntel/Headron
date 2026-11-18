@@ -402,6 +402,8 @@ instrument_roster:
     claims_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     propose_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     decide_test.py: 'a case module for the compiled decision table engine; its proof and limits are that instrument''s'
+    microcode.py: 'in-memory AST shape evaluation and streaming telemetry engine; reached through atlasindex.py and microcode_test.py'
+    microcode_test.py: 'a unit test for the microcode engine; exercised directly'
     reflex.py: 'single-pass diff classification for the pipeline ingest stage; reached through pipeline.py'
     pipeline.py: 'finite state machine pipeline; reached through decide_cli.py and mind.py'
     reflex_test.py: 'a case module for command classification; its proof and limits are that instrument''s'
@@ -6253,6 +6255,7 @@ orphan_exemptions:
   crosscache.prune_cache: 'cross-session execution cache size management and deterministic pruning; run on demand'
   crosscache.cache_stats: 'cross-session execution cache metrics and footprint reporting; run on demand'
   providers.resolve_fallback: 'fallback provider chain resolution for resilient multi-provider routing; run on demand'
+  microcode.run_micro_audit: 'in-memory AST shape evaluation and telemetry runner called on demand or for fast diff audits'
   testgroups.scrub_git_env: the case harness every test module takes it from; a test is its only caller by design
   testgroups.run_counted: the case harness a test module runs its cases under; a test is its only caller by design
   testgroups.micro_shreds: the case harness that splits a test module's cases; a test is its only caller by design
