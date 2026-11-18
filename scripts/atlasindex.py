@@ -237,6 +237,10 @@ _SHARD_CACHE: dict[str, str] = {}
 def _get_cached_records() -> tuple[list[dict], dict[str, float], list[tuple[Counter[str], float]]]:
     global _RECORDS_CACHE, _IDF_CACHE, _VECTORS_CACHE
     with _CACHE_LOCK:
+        rebuilt = bool(_RECORDS_CACHE and verify(_RECORDS_CACHE))
+        if rebuilt:
+            build()
+            _RECORDS_CACHE = _IDF_CACHE = _VECTORS_CACHE = None
         if _RECORDS_CACHE is None or _IDF_CACHE is None or _VECTORS_CACHE is None:
             records = load()
             missing = not records and not (ROOT / STORE / "chunks.jsonl").exists()
@@ -245,7 +249,7 @@ def _get_cached_records() -> tuple[list[dict], dict[str, float], list[tuple[Coun
             # A STALE store rebuilds too: measured at 3.63.0, a long-lived checkout at a fresh clone's
             # SHA cited changed files and had never indexed 7 tracked ones, so warm answered worse
             # than cold. verify() is by content (20 ms measured over 544 files), never by modification time.
-            if missing or (records and verify(records)):
+            if not rebuilt and (missing or (records and verify(records))):
                 build()
                 records = load()
             counters = [Counter(record["tokens"]) for record in records]
@@ -474,21 +478,18 @@ def verify(records: list[dict] | None = None) -> list[str]:
             "the index is empty — `atlas index build` first; an empty index answers every "
             "question with silence, which reads exactly like a question with no answer"
         ]
-    # One check per indexed FILE, not per chunk: a file's chunks share its checksum (~7 chunks a file).
-    for rel, checksums in _checksums_by_path(records).items():
+    indexed = _checksums_by_path(records)
+    indexable = set(map(_rel, _indexable()))
+    # One check per indexed FILE, not per chunk: a file's chunks share its checksum.
+    for rel, checksums in indexed.items():
         path = ROOT / rel
-        if not path.exists():
-            problems.append(f"{rel} is indexed and no longer in the tree")
+        if rel not in indexable:
+            problems.append(f"{rel} is indexed and no longer a tracked indexable file")
         elif checksums != {_checksum(text_of(path, errors="replace"))}:
             problems.append(f"{rel} changed since it was indexed (STALE, not current)")
     # The other direction: a tracked file the store never chunked is invisible to every query, and
     # the record-by-record check above cannot see an absence.
-    indexed = _checksums_by_path(records)
-    problems.extend(
-        f"{rel} is tracked and not indexed (STALE, not current)"
-        for rel in map(_rel, _indexable())
-        if rel not in indexed
-    )
+    problems.extend(f"{rel} is tracked and not indexed (STALE, not current)" for rel in indexable if rel not in indexed)
     return sorted(set(problems))
 
 

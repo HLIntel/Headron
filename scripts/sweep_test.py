@@ -250,6 +250,19 @@ def _warm_store_cases(root: Path) -> None:
     assert cached([current], [kept]) == 0, "a current store is read, not rebuilt"
     assert cached([current], [kept, added]) == 1, "a tracked file the store never indexed rebuilds it"
     assert cached([dict(current, checksum="0" * 64)], [kept]) == 1, "a changed file rebuilds the store"
+    with (
+        patch.multiple(atlasindex, _RECORDS_CACHE=None, _IDF_CACHE=None, _VECTORS_CACHE=None),
+        patch.object(atlasindex, "ROOT", root),
+        patch.object(atlasindex, "tracked", return_value=[kept]) as tracked,
+    ):
+        atlasindex.build()
+        assert {r["path"] for r in atlasindex._get_cached_records()[0]} == {"kept.md"}
+        tracked.return_value = [kept, added]
+        assert {r["path"] for r in atlasindex._get_cached_records()[0]} == {"kept.md", "added.md"}
+        kept.write_text("# kept\nchangedword\n", encoding="utf-8")
+        assert "changedword" in {t for r in atlasindex._get_cached_records()[0] for t in r["tokens"]}
+        tracked.return_value = [added]
+        assert {r["path"] for r in atlasindex._get_cached_records()[0]} == {"added.md"}
     with patch.object(atlasindex, "ROOT", root), patch.object(atlasindex, "tracked", return_value=[kept, added]):
         assert any("added.md" in p and "not indexed" in p for p in atlasindex.verify([current]))
 
