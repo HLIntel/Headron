@@ -24,7 +24,7 @@ from atlascore import ROOT, parsed_python, text_of, walked
 
 HUB_IMPORTERS = 8  # a module this many others import is drawn in the diagram
 SHARED_IMPORTERS = 2  # below this a module is a leaf: docs/MODULES-LEAVES.md, so neither page outgrows the note cap
-PURPOSE_CHARS = 100
+PURPOSE_CHARS = 95
 TESTS_SHOWN = 2
 UNIVERSAL = "atlascore"  # nearly every module imports it, so a row or an arrow for it says nothing
 NETWORK_IMPORTS = (
@@ -163,7 +163,7 @@ def map_block(root: Path = ROOT) -> str:
             "",
             _diagram(users, graph),
             "",
-            *_table(shared, users, graph, root, limit=48),
+            *_table(shared, users, graph, root, limit=45),
         ]
     )
 
