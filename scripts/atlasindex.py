@@ -237,7 +237,7 @@ _SHARD_CACHE: dict[str, str] = {}
 def _get_cached_records() -> tuple[list[dict], dict[str, float], list[tuple[Counter[str], float]]]:
     global _RECORDS_CACHE, _IDF_CACHE, _VECTORS_CACHE
     with _CACHE_LOCK:
-        rebuilt = bool(_RECORDS_CACHE and verify(_RECORDS_CACHE))
+        rebuilt = _RECORDS_CACHE is not None and bool(verify(_RECORDS_CACHE) if _RECORDS_CACHE else _indexable())
         if rebuilt:
             build()
             _RECORDS_CACHE = _IDF_CACHE = _VECTORS_CACHE = None

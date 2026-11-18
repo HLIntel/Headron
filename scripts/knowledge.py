@@ -657,7 +657,7 @@ def proof_flow_block() -> str:
     """
     return ('<p align="center">\n'
             '  <img src="docs/media/headron-proof-flow.svg" width="900"\n'
-            '       alt="Headron Architecture: contract, targeted evidence, integrity audit, unified verdict.">\n'
+            '       alt="Headron routes, context, contracts, checks, receipts and an illustrative Harness view.">\n'
             '</p>')
 
 

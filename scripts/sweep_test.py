@@ -265,6 +265,15 @@ def _warm_store_cases(root: Path) -> None:
         assert {r["path"] for r in atlasindex._get_cached_records()[0]} == {"added.md"}
     with patch.object(atlasindex, "ROOT", root), patch.object(atlasindex, "tracked", return_value=[kept, added]):
         assert any("added.md" in p and "not indexed" in p for p in atlasindex.verify([current]))
+    with (
+        patch.multiple(atlasindex, _RECORDS_CACHE=None, _IDF_CACHE=None, _VECTORS_CACHE=None),
+        patch.object(atlasindex, "ROOT", root),
+        patch.object(atlasindex, "tracked", return_value=[]) as tracked,
+    ):
+        atlasindex.build()
+        assert atlasindex._get_cached_records()[0] == []
+        tracked.return_value = [added]
+        assert {r["path"] for r in atlasindex._get_cached_records()[0]} == {"added.md"}
 
 
 def test_build_replaces_store_atomically():
