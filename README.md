@@ -38,7 +38,7 @@ check is never a pass, whoever wrote the change. `headron ci` runs CI locally.
 
 <p align="center">
   <img src="docs/media/headron-proof-flow.svg" width="900"
-       alt="Headron Architecture: contract, targeted evidence, integrity audit, unified verdict.">
+       alt="Headron routes, context, contracts, checks, receipts and an illustrative Harness view.">
 </p>
 
 <!-- END generated: proof-flow -->

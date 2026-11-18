@@ -1,198 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="300" viewBox="0 0 1060 300" fill="none" role="img" aria-labelledby="title desc">
-  <title id="title">Headron Verification Architecture</title>
-  <desc id="desc">Contract-driven proof gates, sub-second evidence caching, zero-leak audit, and deterministic landing across all autonomous agents.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="590" viewBox="0 0 1200 590" role="img" aria-labelledby="title desc">
+  <title id="title">Headron verification architecture</title>
+  <desc id="desc">A task is routed with context and a contract, checked through focused or full verification, and reported with results and an optional receipt. An illustrative desktop and phone show a possible Harness view.</desc>
   <defs>
-    <!-- Background Gradient -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#060c18"/>
-      <stop offset="50%" stop-color="#0a1428"/>
-      <stop offset="100%" stop-color="#070f20"/>
-    </linearGradient>
-
-    <!-- Node Card Gradients -->
-    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#0f1d38"/>
-      <stop offset="100%" stop-color="#0b162c"/>
-    </linearGradient>
-
-    <linearGradient id="verdictGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#112952"/>
-      <stop offset="100%" stop-color="#0c1d3c"/>
-    </linearGradient>
-
-    <!-- Border Gradients -->
-    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e3a6a"/>
-      <stop offset="50%" stop-color="#132747"/>
-      <stop offset="100%" stop-color="#1e3a6a"/>
-    </linearGradient>
-
-    <linearGradient id="verdictBorder" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="50%" stop-color="#1d4ed8"/>
-      <stop offset="100%" stop-color="#60a5fa"/>
-    </linearGradient>
-
-    <!-- Accent Gradients -->
-    <linearGradient id="cyanAccent" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="100%" stop-color="#818cf8"/>
-    </linearGradient>
-
-    <linearGradient id="emeraldAccent" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#34d399"/>
-      <stop offset="100%" stop-color="#38bdf8"/>
-    </linearGradient>
-
-    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#f8fafc"/>
-      <stop offset="60%" stop-color="#e2e8f0"/>
-      <stop offset="100%" stop-color="#93c5fd"/>
-    </linearGradient>
-
-    <!-- Glow Filter -->
-    <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="4" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
-
-    <marker id="arrowHead" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M0,1 L8,5 L0,9 z" fill="#38bdf8"/>
-    </marker>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#07111f"/><stop offset="1" stop-color="#0b1b35"/></linearGradient>
+    <linearGradient id="card" x2="0" y2="1"><stop stop-color="#142b4a"/><stop offset="1" stop-color="#0c1c34"/></linearGradient>
+    <linearGradient id="glow"><stop stop-color="#39d7f0"/><stop offset="1" stop-color="#7796ff"/></linearGradient>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#55c9e9"/></marker>
+    <style>
+      text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif} .title{fill:#f3f8ff;font-size:25px;font-weight:700;letter-spacing:.3px} .sub{fill:#a9bfd6;font-size:14px} .tag{fill:#69d7f1;font-size:11px;font-weight:700;letter-spacing:1.1px} .heading{fill:#f4f8ff;font-size:17px;font-weight:700} .body{fill:#b7c8db;font-size:13px} .small{fill:#9eb3ca;font-size:11px} .ui{fill:#cad9e9;font-size:10px} .card{fill:url(#card);stroke:#294c70;stroke-width:1.2}
+    </style>
   </defs>
+  <rect x="1" y="1" width="1198" height="588" rx="22" fill="url(#bg)" stroke="#244765" stroke-width="2"/>
+  <circle cx="1090" cy="48" r="100" fill="#1f7dab" opacity=".06"/>
+  <path d="M32 33h28v28H32z" fill="none" stroke="#62d9f4" stroke-width="2" transform="rotate(45 46 47)"/>
+  <text class="title" x="78" y="47">From task to evidence</text>
+  <text class="sub" x="78" y="71">A clear route for agents · checks with named outcomes · evidence you can inspect</text>
+  <path d="M32 92H1168" stroke="#264762"/>
 
-  <style>
-    .font-sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-    .header-title { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; fill: url(#headerGrad); }
-    .header-sub { font-size: 13px; font-weight: 400; fill: #94a3b8; }
-    .step-tag { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; fill: #38bdf8; }
-    .node-title { font-size: 16px; font-weight: 700; fill: #f8fafc; }
-    .node-desc { font-size: 12px; font-weight: 400; fill: #94a3b8; line-height: 1.4; }
-    .pill-label { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; fill: #bae6fd; }
-    .verdict-title { font-size: 16px; font-weight: 800; fill: #ffffff; }
-    .verdict-pill-label { font-size: 10px; font-weight: 800; letter-spacing: 0.8px; fill: #ffffff; }
-    .tech-badge { font-size: 10px; font-weight: 500; fill: #64748b; }
-  </style>
-
-  <!-- Container Box -->
-  <rect x="1" y="1" width="1058" height="298" rx="16" fill="url(#bgGrad)" stroke="#1a2d52" stroke-width="1.5"/>
-
-  <!-- Top Decorative Tech Mesh -->
-  <g opacity="0.12" stroke="#38bdf8" stroke-width="0.8">
-    <line x1="28" y1="24" x2="1032" y2="24"/>
-    <line x1="28" y1="84" x2="1032" y2="84"/>
-    <circle cx="28" cy="24" r="2" fill="#38bdf8"/>
-    <circle cx="1032" cy="24" r="2" fill="#38bdf8"/>
-    <circle cx="28" cy="84" r="2" fill="#38bdf8"/>
-    <circle cx="1032" cy="84" r="2" fill="#38bdf8"/>
+  <g transform="translate(32 116)">
+    <text class="tag" x="0" y="0">REASONING AND ROUTING</text>
+    <rect class="card" x="0" y="19" width="210" height="155" rx="14"/>
+    <text class="tag" x="18" y="44">SYSTEM 1</text>
+    <text class="heading" x="18" y="70">Fast route</text>
+    <text class="body" x="18" y="95">Focused work and</text><text class="body" x="18" y="114">bounded context</text>
+    <rect x="18" y="132" width="91" height="23" rx="7" fill="#123d52"/><text class="small" x="28" y="148">Task + scope</text>
+    <rect class="card" x="236" y="19" width="210" height="155" rx="14"/>
+    <text class="tag" x="254" y="44">SHARED FOUNDATION</text>
+    <text class="heading" x="254" y="70">Context + contract</text>
+    <text class="body" x="254" y="95">Relevant routes, rules</text><text class="body" x="254" y="114">and required checks</text>
+    <rect x="254" y="132" width="111" height="23" rx="7" fill="#163b55"/><text class="small" x="264" y="148">Defined boundaries</text>
+    <rect class="card" x="472" y="19" width="210" height="155" rx="14"/>
+    <text class="tag" x="490" y="44">SYSTEM 2</text>
+    <text class="heading" x="490" y="70">Deliberate route</text>
+    <text class="body" x="490" y="95">Broader or higher-risk</text><text class="body" x="490" y="114">work calls for planning</text>
+    <rect x="490" y="132" width="96" height="23" rx="7" fill="#25355c"/><text class="small" x="500" y="148">Risk + plan</text>
+    <path d="M232 96h-22M446 96h22" stroke="#55c9e9" stroke-width="2" marker-end="url(#arrow)"/>
   </g>
 
-  <!-- Header Section -->
-  <g transform="translate(32, 38)">
-    <!-- Shield / Prism Icon -->
-    <path d="M0 6 L12 0 L24 6 V16 C24 23 12 28 12 28 C12 28 0 23 0 16 Z" fill="url(#cyanAccent)" opacity="0.9"/>
-    <path d="M12 4 L20 8 V15 C20 20 12 24 12 24 C12 24 4 20 4 15 V8 Z" fill="#060c18"/>
-    <path d="M8 12 L11 15 L16 9" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-
-    <text class="font-sans header-title" x="36" y="14">HEADRON VERIFICATION ARCHITECTURE</text>
-    <text class="font-sans header-sub" x="36" y="32">Deterministic contract gates, sub-second evidence sharding, and cryptographic landing for autonomous agents</text>
-
-    <!-- Version Badge -->
-    <g transform="translate(900, 2)">
-      <rect x="0" y="0" width="94" height="24" rx="12" fill="#112240" stroke="#1e3a6a" stroke-width="1"/>
-      <circle cx="10" cy="12" r="3.5" fill="#34d399"/>
-      <text class="font-sans pill-label" x="18" y="15" fill="#38bdf8">v3.60.0 LIVE</text>
-    </g>
+  <g transform="translate(32 326)">
+    <text class="tag" x="0" y="0">VERIFICATION AND EVIDENCE</text>
+    <rect class="card" x="0" y="18" width="327" height="152" rx="14"/>
+    <text class="heading" x="18" y="50">Checks</text>
+    <text class="body" x="18" y="75">Focused gates or the full done set</text>
+    <text class="body" x="18" y="96">Run results keep their actual status</text>
+    <text class="small" x="18" y="132" fill="#7edebc">PASS</text><text class="small" x="73" y="132">FAIL</text><text class="small" x="119" y="132">SKIP</text><text class="small" x="170" y="132">NOT RUN</text>
+    <rect class="card" x="355" y="18" width="327" height="152" rx="14"/>
+    <text class="heading" x="373" y="50">Results + receipt</text>
+    <text class="body" x="373" y="75">Inspect outcomes and their limits</text>
+    <text class="body" x="373" y="96">Write a tree-bound receipt when requested</text>
+    <text class="small" x="373" y="132">Evidence supports review and landing</text>
+    <path d="M327 94h24" stroke="#55c9e9" stroke-width="2" marker-end="url(#arrow)"/>
   </g>
+  <path d="M373 293v23" stroke="#55c9e9" stroke-width="2" marker-end="url(#arrow)"/>
 
-  <!-- Flow Connectors (Arrows between nodes) -->
-  <g stroke="#38bdf8" stroke-width="1.8" opacity="0.6">
-    <path d="M260 185 L276 185" marker-end="url(#arrowHead)"/>
-    <path d="M516 185 L532 185" marker-end="url(#arrowHead)"/>
-    <path d="M772 185 L788 185" marker-end="url(#arrowHead)"/>
+  <g transform="translate(750 116)">
+    <text class="tag" x="0" y="0">HARNESS SURFACE · ILLUSTRATIVE</text>
+    <text class="sub" x="0" y="24">A view of tasks, context and evidence</text>
+    <rect x="0" y="46" width="408" height="254" rx="14" fill="#081321" stroke="#477492" stroke-width="2"/>
+    <rect x="1" y="47" width="406" height="28" rx="12" fill="#142b43"/>
+    <circle cx="16" cy="61" r="3" fill="#62a8c8"/><circle cx="28" cy="61" r="3" fill="#62a8c8"/><circle cx="40" cy="61" r="3" fill="#62a8c8"/>
+    <text class="ui" x="58" y="65">HEADRON HARNESS</text>
+    <path d="M102 75v225" stroke="#24415b"/>
+    <text class="ui" x="16" y="101">Overview</text><text class="ui" x="16" y="125">Tasks</text><text class="ui" x="16" y="149">Context</text><text class="ui" x="16" y="173">Evidence</text>
+    <text class="heading" x="120" y="109">Task overview</text>
+    <rect x="120" y="125" width="263" height="48" rx="8" fill="#112a42" stroke="#294e6b"/>
+    <text class="ui" x="134" y="145">Contract + context</text><text class="small" x="134" y="162">Scope · routes · checks</text>
+    <rect x="120" y="185" width="263" height="48" rx="8" fill="#112a42" stroke="#294e6b"/>
+    <text class="ui" x="134" y="205">Verification results</text><text class="small" x="134" y="222">Outcomes · optional receipt</text>
+    <path d="M165 300v13h82v-13M129 313h154" stroke="#477492" stroke-width="3" stroke-linecap="round"/>
+    <rect x="301" y="177" width="94" height="166" rx="15" fill="#081321" stroke="#78a6c1" stroke-width="2"/>
+    <rect x="332" y="183" width="32" height="4" rx="2" fill="#78a6c1"/>
+    <text class="ui" x="314" y="210">TASK</text><rect x="313" y="219" width="69" height="35" rx="6" fill="#14334b"/><text class="small" x="320" y="240">Context</text>
+    <rect x="313" y="263" width="69" height="35" rx="6" fill="#14334b"/><text class="small" x="320" y="284">Results</text>
+    <text class="small" x="0" y="360">Device layouts are a concept, not a live product claim.</text>
   </g>
-
-  <!-- ==================== STAGE 1: INTENT & CONTRACT ==================== -->
-  <g transform="translate(28, 104)">
-    <rect width="232" height="168" rx="12" fill="url(#cardGrad)" stroke="url(#borderGrad)" stroke-width="1.2"/>
-    <!-- Top Glowing Line -->
-    <rect x="16" y="0" width="60" height="2.5" rx="1.25" fill="#38bdf8"/>
-
-    <text class="font-sans step-tag" x="18" y="28">01 · CONTRACT</text>
-    <text class="font-sans node-title" x="18" y="52">Atlas Declarations</text>
-
-    <text class="font-sans node-desc" x="18" y="78">
-      <tspan x="18" dy="0">File-level check obligations</tspan>
-      <tspan x="18" dy="16">declared in atlas.yaml.</tspan>
-      <tspan x="18" dy="16">Strict JSON/TOML boundary.</tspan>
-    </text>
-
-    <!-- Pill Tag -->
-    <rect x="18" y="128" width="92" height="22" rx="6" fill="#082f49" stroke="#0284c7" stroke-width="1"/>
-    <text class="font-sans pill-label" x="64" y="142" text-anchor="middle">ATLAS.YAML</text>
-
-    <!-- Meta indicator -->
-    <text class="font-sans tech-badge" x="120" y="142">Zero Drift</text>
-  </g>
-
-  <!-- ==================== STAGE 2: TARGETED PROOF ==================== -->
-  <g transform="translate(284, 104)">
-    <rect width="232" height="168" rx="12" fill="url(#cardGrad)" stroke="url(#borderGrad)" stroke-width="1.2"/>
-    <rect x="16" y="0" width="60" height="2.5" rx="1.25" fill="#60a5fa"/>
-
-    <text class="font-sans step-tag" x="18" y="28">02 · EVIDENCE</text>
-    <text class="font-sans node-title" x="18" y="52">Targeted Gates</text>
-
-    <text class="font-sans node-desc" x="18" y="78">
-      <tspan x="18" dy="0">Micro-sharded fast loop.</tspan>
-      <tspan x="18" dy="16">Runs only tests &amp; lints</tspan>
-      <tspan x="18" dy="16">owed by modified files.</tspan>
-    </text>
-
-    <rect x="18" y="128" width="94" height="22" rx="6" fill="#1e1b4b" stroke="#4f46e5" stroke-width="1"/>
-    <text class="font-sans pill-label" x="65" y="142" text-anchor="middle">SUB-SECOND</text>
-
-    <text class="font-sans tech-badge" x="122" y="142">Pre-Commit</text>
-  </g>
-
-  <!-- ==================== STAGE 3: ZERO-LEAK AUDIT ==================== -->
-  <g transform="translate(540, 104)">
-    <rect width="232" height="168" rx="12" fill="url(#cardGrad)" stroke="url(#borderGrad)" stroke-width="1.2"/>
-    <rect x="16" y="0" width="60" height="2.5" rx="1.25" fill="#818cf8"/>
-
-    <text class="font-sans step-tag" x="18" y="28">03 · INTEGRITY</text>
-    <text class="font-sans node-title" x="18" y="52">Zero-Leak Memory</text>
-
-    <text class="font-sans node-desc" x="18" y="78">
-      <tspan x="18" dy="0">Local vector cache index.</tspan>
-      <tspan x="18" dy="16">Automated Gitleaks scan.</tspan>
-      <tspan x="18" dy="16">Zero cloud secret egress.</tspan>
-    </text>
-
-    <rect x="18" y="128" width="98" height="22" rx="6" fill="#142b3b" stroke="#0284c7" stroke-width="1"/>
-    <text class="font-sans pill-label" x="67" y="142" text-anchor="middle">LOCAL CACHE</text>
-
-    <text class="font-sans tech-badge" x="126" y="142">Zero Egress</text>
-  </g>
-
-  <!-- ==================== STAGE 4: UNIFIED VERDICT ==================== -->
-  <g transform="translate(796, 104)">
-    <!-- Emphasized Verdict Card with Glowing Border -->
-    <rect width="236" height="168" rx="12" fill="url(#verdictGrad)" stroke="url(#verdictBorder)" stroke-width="1.8"/>
-    <rect x="16" y="0" width="70" height="3" rx="1.5" fill="#38bdf8"/>
-
-    <text class="font-sans step-tag" x="18" y="28" fill="#34d399">04 · VERDICT</text>
-    <text class="font-sans verdict-title" x="18" y="52">Exit Code Verdict</text>
-
-    <text class="font-sans node-desc" x="18" y="78">
-      <tspan x="18" dy="0" fill="#cbd5e1">Single deterministic exit code.</tspan>
-      <tspan x="18" dy="16" fill="#cbd5e1">PASS · FAIL · NOT RUN.</tspan>
-      <tspan x="18" dy="16" fill="#cbd5e1">Fast-forward land merge.</tspan>
-    </text>
-
-    <rect x="18" y="128" width="108" height="22" rx="6" fill="url(#emeraldAccent)"/>
-    <text class="font-sans verdict-pill-label" x="72" y="142" text-anchor="middle" fill="#041527">EXIT 0 · LAND</text>
-
-    <text class="font-sans tech-badge" x="136" y="142" fill="#38bdf8">Receipt Audit</text>
-  </g>
+  <path d="M32 538H1168" stroke="#264762"/>
+  <text class="sub" x="32" y="565">Contracts guide work. Verification reports what ran. Receipts preserve the result.</text>
 </svg>
