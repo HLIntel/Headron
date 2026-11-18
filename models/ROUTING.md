@@ -15,7 +15,7 @@ Pick the smallest model, host, context and isolation that meet the task.
 | polyglot boundary | schemas + two toolchains + integration tests | own worktree                |
 | autonomous run    | narrow tools + sandbox                       | sandbox + budget            |
 
-Parallel writers each take a worktree (`~/Agents/<agent>/worktrees/`).
+Parallel writers each take their own git worktree.
 
 ## By where it runs
 
