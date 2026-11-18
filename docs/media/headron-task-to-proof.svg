@@ -12,14 +12,14 @@
 <text text-anchor="middle" x="352.5" y="-916" font-family="Helvetica,sans-Serif" font-size="20.00" fill="#153b64">HEADRON &#160;| &#160;TASK TO PROOF</text>
 <!-- task -->
 <g id="node1" class="node">
-<a xlink:href=\"https://github.com/HLIntel/Headron/blob/main/docs/HEADRON-LANGUAGE.md\" target=\"_blank\"><title>task</title>
+<a xlink:href="https://github.com/HLIntel/Headron/blob/main/docs/HEADRON-LANGUAGE.md" target="_blank"><title>task</title>
 <path fill="#163f70" stroke="#8bb7df" d="M667.5,-906C667.5,-906 388.5,-906 388.5,-906 382.5,-906 376.5,-900 376.5,-894 376.5,-894 376.5,-876 376.5,-876 376.5,-870 382.5,-864 388.5,-864 388.5,-864 667.5,-864 667.5,-864 673.5,-864 679.5,-870 679.5,-876 679.5,-876 679.5,-894 679.5,-894 679.5,-900 673.5,-906 667.5,-906"/></a>
 <text text-anchor="middle" x="528" y="-888.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">TASK CONTRACT</text>
 <text text-anchor="middle" x="528" y="-876.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="white">Requirements · acceptance checks · base commit</text>
 </g>
 <!-- extract -->
 <g id="node2" class="node">
-<a xlink:href=\"https://github.com/HLIntel/Headron/blob/main/scripts/obligations.py\" target=\"_blank\"><title>extract</title>
+<a xlink:href="https://github.com/HLIntel/Headron/blob/main/scripts/obligations.py" target="_blank"><title>extract</title>
 <path fill="#edf5fc" stroke="#8bb7df" d="M676,-825C676,-825 380,-825 380,-825 374,-825 368,-819 368,-813 368,-813 368,-795 368,-795 368,-789 374,-783 380,-783 380,-783 676,-783 676,-783 682,-783 688,-789 688,-795 688,-795 688,-813 688,-813 688,-819 682,-825 676,-825"/></a>
 <text text-anchor="middle" x="528" y="-807.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#173c67">OBLIGATION EXTRACTION</text>
 <text text-anchor="middle" x="528" y="-795.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#173c67">Changed files × required gates + acceptance checks</text>
@@ -85,7 +85,7 @@
 </g>
 <!-- receipt -->
 <g id="node7" class="node">
-<a xlink:href=\"https://github.com/HLIntel/Headron/blob/main/scripts/receipt.py\" target=\"_blank\"><title>receipt</title>
+<a xlink:href="https://github.com/HLIntel/Headron/blob/main/scripts/receipt.py" target="_blank"><title>receipt</title>
 <path fill="#edf5fc" stroke="#8bb7df" d="M487.5,-441C487.5,-441 236.5,-441 236.5,-441 230.5,-441 224.5,-435 224.5,-429 224.5,-429 224.5,-411 224.5,-411 224.5,-405 230.5,-399 236.5,-399 236.5,-399 487.5,-399 487.5,-399 493.5,-399 499.5,-405 499.5,-411 499.5,-411 499.5,-429 499.5,-429 499.5,-435 493.5,-441 487.5,-441"/></a>
 <text text-anchor="middle" x="362" y="-423.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#173c67">VERIFICATION RECEIPT</text>
 <text text-anchor="middle" x="362" y="-411.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#173c67">Target bytes hash · tree · measured verdicts</text>
@@ -119,7 +119,7 @@
 </g>
 <!-- pack -->
 <g id="node9" class="node">
-<a xlink:href=\"https://github.com/HLIntel/Headron/blob/main/scripts/ronbundle.py\" target=\"_blank\"><title>pack</title>
+<a xlink:href="https://github.com/HLIntel/Headron/blob/main/scripts/ronbundle.py" target="_blank"><title>pack</title>
 <path fill="#edf5fc" stroke="#8bb7df" d="M474.5,-279C474.5,-279 249.5,-279 249.5,-279 243.5,-279 237.5,-273 237.5,-267 237.5,-267 237.5,-249 237.5,-249 237.5,-243 243.5,-237 249.5,-237 249.5,-237 474.5,-237 474.5,-237 480.5,-237 486.5,-243 486.5,-249 486.5,-249 486.5,-267 486.5,-267 486.5,-273 480.5,-279 474.5,-279"/></a>
 <text text-anchor="middle" x="362" y="-261.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#173c67">.ron BUNDLE</text>
 <text text-anchor="middle" x="362" y="-249.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#173c67">Manifest · contract · receipts · evidence</text>
@@ -132,7 +132,7 @@
 </g>
 <!-- check -->
 <g id="node10" class="node">
-<a xlink:href=\"https://github.com/HLIntel/Headron/blob/main/scripts/microprogram.py\" target=\"_blank\"><title>check</title>
+<a xlink:href="https://github.com/HLIntel/Headron/blob/main/scripts/microprogram.py" target="_blank"><title>check</title>
 <path fill="#e1effd" stroke="#8bb7df" d="M204.84,-193.6C204.84,-193.6 90.16,-148.4 90.16,-148.4 84.58,-146.2 84.58,-141.8 90.16,-139.6 90.16,-139.6 204.84,-94.4 204.84,-94.4 210.42,-92.2 221.58,-92.2 227.16,-94.4 227.16,-94.4 341.84,-139.6 341.84,-139.6 347.42,-141.8 347.42,-146.2 341.84,-148.4 341.84,-148.4 227.16,-193.6 227.16,-193.6 221.58,-195.8 210.42,-195.8 204.84,-193.6"/></a>
 <text text-anchor="middle" x="216" y="-153.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#173c67">Bundle valid,</text>
 <text text-anchor="middle" x="216" y="-141.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#173c67">evidence complete,</text>
