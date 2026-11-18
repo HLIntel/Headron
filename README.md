@@ -3,7 +3,7 @@
 <!-- mcp-name: io.github.HLIntel/headron -->
 <div align="center">
   <img src="https://raw.githubusercontent.com/HLIntel/Headron/main/docs/media/headron-banner.jpg"
-       alt="Headron: From Task to Trusted Results — Unified execution and verification system"
+       alt="Headron: From task to evidence — task, route, checks, results, receipt"
        width="992">
   <h1>Headron Software</h1>
   <p><strong>The trust layer for agentic work: contract verification and receipts for autonomous agents</strong></p>
