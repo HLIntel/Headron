@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-77 modules that at most one other module imports: 28 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+78 modules that at most one other module imports: 29 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -82,6 +82,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [seats](../scripts/seats.py) | Attach declared agent, model, chat, and plugin seats on this machine | 0 | atomicfile |  |
 | [staleness](../scripts/staleness.py) | What was edited longest ago, and which worktrees are hung — computed from git, never typed | 0 |  | [atlas_test](../scripts/atlas_test.py), [vanish_test](../scripts/vanish_test.py) |
 | [taskimage](../scripts/taskimage.py) | Task image: one task's contract, gate graph, results, obligations and receipt, kept as a git… | 0 | agentpolicy, agentrun, crosscache, gitobject, headronlang, obligations, privacy_guard | [taskimage_portable_test](../scripts/taskimage_portable_test.py), [taskimage_test](../scripts/taskimage_test.py) |
+| [trustbundle](../scripts/trustbundle.py) | An Agent Trust Bundle: distribution and verification of authorized agent keys and pinned policy | 0 | receiptsign | [receiptsign_test](../scripts/receiptsign_test.py) |
 | [workflow_runner](../scripts/workflow_runner.py) | One task through Connect -> Context -> Gates -> Receipt, with every declared gate's verdict as… | 0 | agentpolicy, agentrun, atlas, obligations, receipt, runtime, verify | [workflow_runner_test](../scripts/workflow_runner_test.py) |
 | [worktree](../scripts/worktree.py) | Worktree-based agent isolation — each session gets its own git worktree | 0 |  |  |
 <!-- END generated: module-leaves -->

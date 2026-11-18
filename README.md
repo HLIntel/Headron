@@ -124,9 +124,9 @@ Entry context: ~1,644 tokens; the rest loads on demand. Each row is its own reco
 $ headron port scripts/doctor.py --line
 ◉ scripts/doctor.py │ ⠟backend │ python │ ⌂scripts │ ✓5 │ ⚠2 │ → headron gate scripts/doctor.py
 $ headron port scripts --line
-◎ scripts │ ⠟228 │ ⌂scripts │ → headron brainstorm
+◎ scripts │ ⠟229 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟254 ⠿3 ⠁1 │ → headron check
+○ . │ ⠟255 ⠿3 ⠁1 │ → headron check
 ```
 
 <!-- END generated: port-example -->
