@@ -171,6 +171,7 @@ def run(module: ModuleType) -> None:
         print(f"  ok    {name}")
     ron_cases(module)
     ron_evidence_cases(module)
+    trust_bundle_cases(module)
 
 
 def _redigest(bundle: Path, edit: object = None) -> None:
@@ -430,3 +431,74 @@ def ron_evidence_cases(module: ModuleType) -> None:
         raise SystemExit(f"FAIL {name}\n  got: {(exits, why)!r}\n  kills: {kills}")
     module.CASES.append((name, kills))
     print(f"  ok    {name}")
+
+
+def trust_bundle_cases(module: ModuleType) -> None:
+    """An Agent Trust Bundle validates within its window, binds base policy digest, and verifies agent signatures."""
+    import hashlib  # noqa: PLC0415
+
+    import receipt as receipt_module  # noqa: PLC0415
+    import receiptsign  # noqa: PLC0415
+    import trustbundle  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as tmp:
+        top = Path(tmp)
+        auth_key = _key(top, "authority")
+        agent_key = _key(top, "agent")
+        auth_pub = auth_key.with_suffix(".pub").read_bytes().decode("utf-8").strip()
+        agent_pub = agent_key.with_suffix(".pub").read_bytes().decode("utf-8").strip()
+        auth_trust = top / "auth-trust"
+        auth_trust.write_bytes(f'authority-signer-1 namespaces="headron-trust" {auth_pub}\n'.encode("utf-8"))
+
+        policy_hash = hashlib.sha256(b"invariants:\n  - no_slop\n").hexdigest()
+        signers = [f'agent-identity-1 namespaces="headron-receipt" {agent_pub}']
+
+        bundle = trustbundle.build_trust_bundle(
+            "authority-signer-1", signers, policy_hash, now=1000.0, expires_seconds=3600, signing_key=auth_key
+        )
+        valid_findings = trustbundle.verify_trust_bundle(
+            bundle,
+            expected_policy_digest=policy_hash,
+            now=1500.0,
+            signed_by="authority-signer-1",
+            authority_trust=auth_trust,
+        )
+
+        expired = trustbundle.verify_trust_bundle(bundle, now=5000.0)
+        premature = trustbundle.verify_trust_bundle(bundle, now=500.0)
+
+        tampered_policy = trustbundle.verify_trust_bundle(bundle, expected_policy_digest="f" * 64, now=1500.0)
+        tampered_id_bundle = dict(bundle)
+        tampered_id_bundle["bundle_id"] = "0" * 64
+        tampered_id = trustbundle.verify_trust_bundle(tampered_id_bundle, now=1500.0)
+
+        bad_signer_bundle = trustbundle.build_trust_bundle("org", ["bad line"], policy_hash, now=1000.0)
+        bad_signers = trustbundle.verify_trust_bundle(bad_signer_bundle, now=1000.0)
+
+        exp_trust = top / "agent-trust"
+        trustbundle.export_trust_files(bundle, exp_trust)
+        r_rows = [{"id": "syntax", "verdict": "PASS"}, {"id": "lint", "verdict": "PASS"}]
+        r_built = receipt_module.build(r_rows, base_commit="a" * 40, policy_digest=policy_hash, input_digest="c" * 64)
+        r_path = top / "agent.receipt.json"
+        r_path.write_bytes(receipt_module.dumps(r_built).encode("utf-8"))
+        sign_errs = receiptsign.sign(r_path, agent_key)
+        v_ok = receiptsign.verify_signed(r_path, "agent-identity-1", exp_trust)
+        v_bad_identity = receiptsign.verify_signed(r_path, "unauthorized-agent", exp_trust)
+
+        all_ok = (
+            valid_findings == []
+            and any("expired" in e for e in expired)
+            and any("not yet valid" in e for e in premature)
+            and any("policy_digest mismatch" in e for e in tampered_policy)
+            and any("bundle_id mismatch" in e for e in tampered_id)
+            and any("invalid SSH allowed signers format" in e for e in bad_signers)
+            and sign_errs == []
+            and v_ok == []
+            and len(v_bad_identity) > 0
+        )
+        name = "an Agent Trust Bundle binds base policy digest and validates agent keys against its allowed signers"
+        kills = "an expired or tampered trust bundle, an unpinned base policy, or an unauthorized agent signature accepted as verified"
+        if not all_ok:
+            raise SystemExit(f"FAIL {name}")
+        module.CASES.append((name, kills))
+        print(f"  ok    {name}")

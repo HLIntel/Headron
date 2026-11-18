@@ -3,7 +3,7 @@
 [HEADRON](HEADRON.md) · [Proofs](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-146 modules and 459 imports between them, read from the source; 80 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 102 modules use it. These 69 rows are the modules at least 2 others use; the other 77, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+147 modules and 460 imports between them, read from the source; 80 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 102 modules use it. These 69 rows are the modules at least 2 others use; the other 78, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -76,6 +76,7 @@ flowchart LR
 | [graph](../scripts/graph.py) | Knowledge graph module — pointers, links,… | 4 | claims, exrun | [decide_test](../scripts/decide_test.py), [microprogram_test](../scripts/microprogram_test.py) |
 | [localtools](../scripts/localtools.py) | The tool a project installed for itself,… | 4 |  | [localtools_test](../scripts/localtools_test.py) |
 | [microprogram](../scripts/microprogram.py) | The one microprogram contract: a named,… | 4 | claims, computation_contract, compute_compose, domain_reconcile, effects, finance, graph, mind, obligations, receipt, ronbundle | [cilocal_test](../scripts/cilocal_test.py), [computation_receipt_test](../scripts/computation_receipt_test.py) +3 |
+| [receiptsign](../scripts/receiptsign.py) | Who wrote a receipt: a detached SSH… | 4 | receipt | [receiptsign_test](../scripts/receiptsign_test.py) |
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind… | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
 | [boundedinput](../scripts/boundedinput.py) | Bounded UTF-8 stdin for hooks and local… | 3 |  | [readiness_test](../scripts/readiness_test.py) |
 | [cidrift](../scripts/cidrift.py) | Drift guard: every script CI runs is a… | 3 | cipipeline | [cilocal_test](../scripts/cilocal_test.py) |
@@ -86,7 +87,6 @@ flowchart LR
 | [gitobject](../scripts/gitobject.py) | Git's object identity, computed in this… | 3 |  | [gitobject_test](../scripts/gitobject_test.py) |
 | [mind](../scripts/mind.py) | Headron Mind API — unified orchestration… | 3 | adaptive, agentpolicy, atlasindex, decide, graph, knowledge, microprogram, mind_diagnostics, port, receipt, reflex, safeedit, slot, sweep, verify | [mcp_test](../scripts/mcp_test.py), [microprogram_test](../scripts/microprogram_test.py) +1 |
 | [providers](../scripts/providers.py) | Where a measurement may send a prompt:… | 3 | atomicfile, resilience | [agent_test](../scripts/agent_test.py), [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
-| [receiptsign](../scripts/receiptsign.py) | Who wrote a receipt: a detached SSH… | 3 | receipt | [receiptsign_test](../scripts/receiptsign_test.py) |
 | [reflex](../scripts/reflex.py) | Command classification primitives —… | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |
 | [roster](../scripts/roster.py) | instrument_roster: which scripts are… | 3 | cidrift, cipipeline, dirscope, importgraph | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [sweep](../scripts/sweep.py) | Fast semantic sweep: repo-wide… | 3 | graph, port | [sweep_test](../scripts/sweep_test.py) |
