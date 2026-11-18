@@ -890,6 +890,14 @@ def ron_cases(module: ModuleType) -> None:
     print("  ok    micro ron.verify binds done to an intact bundle proven on this tree")
 
 
+def computation_receipt_cases(module: ModuleType) -> None:
+    """computation_receipt_test.py has no runner of its own: its cases run here. It adds no CASES row, so the shard
+    pins in testgroups.py do not move."""
+    import computation_receipt_test
+
+    computation_receipt_test.run_cases()
+
+
 def run(module: ModuleType) -> None:
     for cases in (
         result_contract_cases,
@@ -907,5 +915,6 @@ def run(module: ModuleType) -> None:
         extract_cases,
         memory_cases,
         ron_cases,
+        computation_receipt_cases,
     ):
         cases(module)
