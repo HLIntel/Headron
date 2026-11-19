@@ -138,3 +138,8 @@ file or JSON key) and keeps its spelling; the prose around it uses the plain ter
 | ladder / rung | an ordered list of fallbacks / one step on it |
 | guard | a test that enforces one rule |
 | mind (`headron mind`) | the orchestration API: classify a change, plan its gates, diagnose and recover a failure |
+| change class | the kind of change; each class selects its required gates in the atlas |
+| closer (`closed_by`) | what closes an instrument's stated limit: the check, or the owner decision, that would prove the rest |
+| toolchain probe (`packprobe.py`) | runs each pack's real toolchain to show it exists and executes on this machine |
+| example run (`exrun.py`) | the `examples` instrument: runs every example this machine can and says why it skipped the rest |
+| self-check (`own_enforcement`) | the commit-time rule (every file passes its own toolchain's check) run on Headron's own tracked files |
