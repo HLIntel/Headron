@@ -1,0 +1,48 @@
+name: Privacy guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: privacy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  privacy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the proposed merge
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check out the guard from the base commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .privacy-guard
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.13"
+          check-latest: false
+
+      - name: Install guard dependency
+        run: python -m pip install PyYAML==6.0.3
+
+      - name: Check tree, proposed history, and guard fixtures
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEADRON_PRIVACY_DENY: ${{ runner.temp }}/headron-privacy-deny-unconfigured
+        run: |
+          python .privacy-guard/scripts/privacy_guard.py --tree
+          python .privacy-guard/scripts/privacy_guard.py --range "$BASE_SHA"
+          python .privacy-guard/scripts/privacy_guard_test.py
