@@ -13,18 +13,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 import yaml
-from atlascore import (
-    ROOT,
-    blame_ignore_errors,
-    interpreter_named,
-    python_refusal,
-    read_jsonc,
-    rel,
-    strict_yaml,
-    text_of,
-    tracked,
-)
+from atlascore import ROOT, interpreter_named, python_refusal, read_jsonc, rel, strict_yaml, text_of, tracked
 from headronlang import surface_errors
+from treeformat import blame_ignore_errors
 
 _VERDICTS: dict[bytes, list[str]] = {}
 LOAD_FAILURES = (ValueError, SyntaxError, yaml.YAMLError)  # what a reader raises on a file `load_errors` refused

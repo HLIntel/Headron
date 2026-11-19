@@ -1279,10 +1279,10 @@ code_shape:
   # THE IMPORT SHAPE, PINNED EXACTLY (the Core compaction lane). Measured by importgraph.import_shape
   # over non-test modules, lazy imports included. A rise is refused, and so is slack under a pin, so
   # every fall lowers the pin in the change that earned it and names what was removed.
-  import_cycle_modules: 90         # largest set of modules that all import each other; TARGET 6
-  lazy_imports: 295                # sibling imports written inside a function; TARGET under 100
-  core_imports: 4                  # siblings atlascore imports (agentpolicy, atlas, treeformat,
-                                   # verify), each an upward edge; TARGET 0
+  import_cycle_modules: 61         # largest set of modules that all import each other; TARGET 6
+  lazy_imports: 294                # sibling imports written inside a function; TARGET under 100
+  core_imports: 0                  # siblings atlascore imports; 0 since proof_record moved to
+                                   # obligations and the treeformat wrappers left; held at 0
 
 example_runners:
   python:     {steps: [[python3, '{file}']]}

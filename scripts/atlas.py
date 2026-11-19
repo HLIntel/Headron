@@ -53,7 +53,6 @@ from atlascore import (
     label_for,
     operating_card,
     operating_card_ref,
-    proof_record,
     read,
     rel,
     route_for,
@@ -749,6 +748,8 @@ def plan_text(record: dict, language: str, task: str, change: str | None,
 
 
 def proof(path_value: str, task: str, change: str, modifiers: list[str], measure: bool, as_json: bool) -> int:
+    from obligations import proof_record  # noqa: PLC0415 — the proof plan reads atlas, so it sits above it
+
     record, code = proof_record(path_value, task, change, modifiers, measure)
     if record is None:
         return code

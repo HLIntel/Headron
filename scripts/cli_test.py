@@ -853,6 +853,7 @@ def _file_mech_problems(plants: dict[str, bytes], blame: str | None) -> list[str
     import tempfile
 
     import atlascore
+    import treeformat
 
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -860,16 +861,15 @@ def _file_mech_problems(plants: dict[str, bytes], blame: str | None) -> list[str
         for name, raw in plants.items():
             (root / name).write_bytes(raw)
         git = ["git", "-C", tmp, "-c", "user.email=t@t", "-c", "user.name=t"]
-        subprocess.run([*git, "init", "-q"], check=True, timeout=20)
-        subprocess.run([*git, "add", "-A"], check=True, timeout=20)
-        subprocess.run([*git, "commit", "-qm", "base"], check=True, timeout=20)
+        for step in (["init", "-q"], ["add", "-A"], ["commit", "-qm", "base"]):
+            subprocess.run([*git, *step], check=True, timeout=20)
         if blame is not None:
             head = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True, timeout=20)
             (root / ".git-blame-ignore-revs").write_text(blame.replace("HEAD", head.stdout.strip()), encoding="utf-8")
         saved = atlascore.ROOT, atlascore.tracked
         atlascore.ROOT, atlascore.tracked = root, lambda: [root / n for n in (".editorconfig", *plants)]
         try:
-            return atlascore.editorconfig_errors() + atlascore.blame_ignore_errors()
+            return treeformat.editorconfig_errors() + treeformat.blame_ignore_errors()
         finally:
             atlascore.ROOT, atlascore.tracked = saved
 
