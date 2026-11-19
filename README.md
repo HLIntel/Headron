@@ -6,6 +6,10 @@
        alt="Headron: From task to evidence — task, route, checks, results, receipt"
        width="992">
   <h1>Headron Software</h1>
+  <p>
+    <a href="https://glama.ai/mcp/servers/HLIntel/Headron"><img src="https://glama.ai/mcp/servers/HLIntel/Headron/badges/score.svg" alt="Headron MCP server – quality and maintenance score on Glama"></a>
+    <a href="https://pypi.org/project/headron-software/"><img src="https://img.shields.io/pypi/v/headron-software" alt="PyPI: headron-software"></a>
+  </p>
   <p><strong>The trust layer for agentic work: contract verification and receipts for autonomous agents</strong></p>
 </div>
 
@@ -14,8 +18,6 @@
 **Contract 3.64.0** · MIT · verdicts carry receipts: `headron verify --receipt <file>`
 
 <!-- END generated: badges -->
-
-[![Headron MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/HLIntel/Headron/badges/score.svg)](https://glama.ai/mcp/servers/HLIntel/Headron)
 
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
 
