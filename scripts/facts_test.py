@@ -15,13 +15,13 @@ PLANTED = 987654
 def _rows() -> list[tuple[str, str, bool]]:
     import abtest
     import atlasgen
-    import knowledge
+    import knowledgecli
 
-    real_m, real_g = abtest.measured_figures(), knowledge.glance_figures()
+    real_m, real_g = abtest.measured_figures(), knowledgecli.glance_figures()
     with mock.patch.object(abtest, "measured_figures", lambda: {**real_m, "planted": PLANTED}):
         measured = abtest.measured_block()
-    with mock.patch.object(knowledge, "glance_figures", lambda: {**real_g, "failures": PLANTED}):
-        glance = knowledge.glance_block()
+    with mock.patch.object(knowledgecli, "glance_figures", lambda: {**real_g, "failures": PLANTED}):
+        glance = knowledgecli.glance_block()
     facts = json.loads(atlasgen.public_facts())
     return [
         (

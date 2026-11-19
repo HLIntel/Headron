@@ -681,7 +681,7 @@ def public_facts() -> str:
     """.agent/facts.json — every public figure as a key (3.54.0). The site and Headron Desktop read this,
     never a regex over README prose: a block that moved pages broke that silently."""
     from abtest import measured_figures  # noqa: PLC0415
-    from knowledge import glance_figures  # noqa: PLC0415
+    from knowledgecli import glance_figures  # noqa: PLC0415
 
     facts = {"version": text_of(ROOT / "VERSION").strip(), **glance_figures(), **measured_figures(), **repository_figures()}
     return json.dumps({"schema": 1, "facts": facts}, indent=2, sort_keys=True) + "\n"
@@ -732,8 +732,8 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
     "model-details": (("docs/RESULTS.md",), lambda: __import__("abtest").model_details()),
     "headline": (("README.md",), headline_block),
     "badges": (("README.md",), lambda: f"**Contract {read('VERSION').strip()}** · MIT · verdicts carry receipts: `headron verify --receipt <file>`"),
-    **{k: (("README.md",), lambda f=f: f()) for k, f in __import__("knowledge").README_BLOCKS.items()},
-    **{k: ((p,), lambda f=f: f()) for k, (p, f) in __import__("knowledge").ELSEWHERE_BLOCKS.items()},
+    **{k: (("README.md",), lambda f=f: f()) for k, f in __import__("knowledgecli").README_BLOCKS.items()},
+    **{k: ((p,), lambda f=f: f()) for k, (p, f) in __import__("knowledgecli").ELSEWHERE_BLOCKS.items()},
     # NOT README: a roster that grows by a row per pack, on a ratcheted landing page. It
     # belongs on the page whose job is choosing a language.
     "language-roster": (("languages/ATLAS.md",), language_roster_block),

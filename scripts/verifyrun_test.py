@@ -282,7 +282,7 @@ def resume_binding_case(module: ModuleType | SimpleNamespace) -> None:
     from types import SimpleNamespace
     from unittest.mock import patch
 
-    import knowledge
+    import knowledgecli
 
     with tempfile.TemporaryDirectory() as scratch:
         root = Path(scratch)
@@ -302,8 +302,8 @@ def resume_binding_case(module: ModuleType | SimpleNamespace) -> None:
 
             output = io.StringIO()
             with (
-                patch.object(knowledge, "ROOT", root),
-                patch.object(knowledge, "git_run", git),
+                patch.object(knowledgecli, "ROOT", root),
+                patch.object(knowledgecli, "git_run", git),
                 patch("safeedit._git_path", side_effect=lambda name: root / name),
                 patch("safeedit.plant_leftovers", return_value=[]),
                 patch("hostshape.read_journal", return_value=([], [])),
@@ -311,7 +311,7 @@ def resume_binding_case(module: ModuleType | SimpleNamespace) -> None:
                 patch("verify.input_digest", return_value="current"),
                 contextlib.redirect_stdout(output),
             ):
-                knowledge.resume(True)
+                knowledgecli.resume(True)
             if expected not in json.loads(output.getvalue())["next"]:
                 raise SystemExit(f"FAIL resume accepted verification: digest={digest}, exit={code}")
     module.CASES.append(("resume binds verification to the current tree", "stale verification recommends committing"))

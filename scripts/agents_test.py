@@ -144,11 +144,11 @@ def shown_cases(module: ModuleType) -> None:
 # The port hook against a stubbed `port.record`: two lessons, two edits in one session, one edit in another.
 _PORT_HOOK = r"""
 import json, sys
-import port, knowledge
+import port, knowledgecli
 port.record = lambda *a, **k: {"route": "python", "line": "plug", "lessons": [{"failure": "a_shape", "do": "the move"}, {"failure": "b_shape"}]}
 port.lock_drift_note = lambda: ""
 for session in sys.argv[2:]:
-    knowledge.port_hook(json.dumps({"session_id": session, "tool_input": {"file_path": sys.argv[1]}}))
+    knowledgecli.port_hook(json.dumps({"session_id": session, "tool_input": {"file_path": sys.argv[1]}}))
 """
 
 
@@ -524,7 +524,7 @@ def _lifecycle(agents: ModuleType, home: str, now: float) -> dict:
     """End, resume, the field ledger and the unnamed MCP client, each read back from disk."""
     import agentaudit
     import headron_mcp
-    import knowledge
+    import knowledgecli
 
     _clear(home)
     agents.beat("codex", "e1", "hook", "/w/e", now=now)
@@ -538,7 +538,7 @@ def _lifecycle(agents: ModuleType, home: str, now: float) -> dict:
     out["chain"] = agentaudit.verify(stream)
     secret = "git reset --hard # planted-token-0xfeed"
     with contextlib.redirect_stdout(io.StringIO()):
-        knowledge.shell_check(secret, as_json=True)
+        knowledgecli.shell_check(secret, as_json=True)
     tail = agentaudit.read_events(stream)[-1]
     out["refused"] = tail["event"] == "field_refused" and tail["body"]["command"] == agentaudit.digest(secret)
     out["leaked"] = "planted-token" in stream.read_text(encoding="utf-8")

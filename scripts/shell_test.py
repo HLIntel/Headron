@@ -298,9 +298,9 @@ def plugin_cases() -> None:
         )
     )
     mutants = (
-        ("scripts/knowledge.py", 'permissionDecision="deny"', 'permissionDecision="ask"', "not denied", False),
-        ("scripts/knowledge.py", 'if rec["route"] is not None:', "if True:", "unrouted", False),
-        ("scripts/knowledge.py", "        os.chdir(source.resolve().parent)\n", "", "routed file", False),
+        ("scripts/knowledgecli.py", 'permissionDecision="deny"', 'permissionDecision="ask"', "not denied", False),
+        ("scripts/knowledgecli.py", 'if rec["route"] is not None:', "if True:", "unrouted", False),
+        ("scripts/knowledgecli.py", "        os.chdir(source.resolve().parent)\n", "", "routed file", False),
         (".claude-plugin/plugin.json", "shell --hook", "shell", "PreToolUse Bash exited 3", False),
         ("scripts/port.py", 'if rel == "atlas.yaml":', "if False:", "atlas.yaml was not", False),
         (".claude-plugin/plugin.json", "port --guard", "port", "PreToolUse Edit exited", False),
@@ -355,7 +355,7 @@ def edited_links_cases() -> None:
     from io import StringIO  # noqa: PLC0415
     from unittest.mock import patch  # noqa: PLC0415
 
-    import knowledge  # noqa: PLC0415
+    import knowledgecli  # noqa: PLC0415
     import linkcheck  # noqa: PLC0415
 
     old_cwd = Path.cwd()
@@ -375,7 +375,7 @@ def edited_links_cases() -> None:
             result = StringIO()
             try:
                 with redirect_stdout(result):
-                    knowledge.port_hook(payload)
+                    knowledgecli.port_hook(payload)
             finally:
                 os.chdir(old_cwd)
             return result.getvalue()
@@ -424,7 +424,7 @@ def edited_links_cases() -> None:
             os.chdir(tree)
             result = StringIO()
             with redirect_stdout(result):
-                knowledge.port_hook(json.dumps({"tool_input": {"file_path": "nested/draft.md"}}))
+                knowledgecli.port_hook(json.dumps({"tool_input": {"file_path": "nested/draft.md"}}))
         finally:
             os.chdir(old_cwd)
         if "broken local link" not in result.getvalue():

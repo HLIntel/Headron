@@ -371,7 +371,7 @@ instrument_roster:
     atlas_gate_adoption_test.py: 'gate adoption cases loaded by atlas_landing_test'
     slot.py: 'the machine suite slot `headron slot -- <command>` runs, and atlas_test.host_lock and the land wait take; slot_test.py plants a held, a forged and a nested holder'
     upstream.py: 'the upstream count verify.py imports as its upstream_bound row; it reads the last fetch and never fetches, so `branchstate.py --land` closes a stale count by fetching and rebasing'
-    links.py: 'the `headron links` record the site build and Headron Desktop read, served through knowledge.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
+    links.py: 'the `headron links` record the site build and Headron Desktop read, served through knowledgecli.py and validated against the output schema by cli_test.py; its proof and limits are that instrument''s'
     claude_hook.py: 'the Claude Code PreToolUse adapter: it refuses a bare, forced or --no-verify push by running .githooks/pre-push on the ref line, adds no rule of its own; its proof is claude_hook_cases in atlas_guards_test.py'
     requirements.txt: 'a pip input read by the install, not an instrument that proves anything'
     edges.py: 'the case -> enforcer edge that atlas_test.py imports; its proof and limits are that instrument''s, and HEADRON_CASES_FULL=1 is its control route'
@@ -409,7 +409,7 @@ instrument_roster:
     pipeline.py: 'finite state machine pipeline; reached through decide_cli.py and mind.py'
     reflex_test.py: 'a case module for command classification; its proof and limits are that instrument''s'
     pipeline_test.py: 'a case module for the state-to-action pipeline; its proof and limits are that instrument''s'
-    mind.py: 'the Mind API orchestration layer (classify, plan, route, policy, diagnose, recover); dispatched through knowledge.py as `headron mind`; its proof is mind_test.py'
+    mind.py: 'the Mind API orchestration layer (classify, plan, route, policy, diagnose, recover); dispatched through knowledgecli.py as `headron mind`; its proof is mind_test.py'
     mind_diagnostics.py: 'Mind API diagnostics and failure recovery logic split from mind.py to keep code bounded; exercised by mind_test.py'
     mind_test.py: 'a case module for the Mind API; its proof and limits are that instrument''s'
     mind_verifier.py: 'optional key entitlement verification used by the MCP route, and the key activation step action.yml runs; exercised by mcp_test.py and mind_action_test.py'
@@ -436,7 +436,8 @@ instrument_roster:
     microprogram_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     taskimage.py: 'task images on refs/headron/tasks/<id>: the compiled contract, its gate nodes, outcome, receipt and obligation ledger as one git commit, never a tracked file; dispatched as `headron task`; its proof is taskimage_test.py'
     taskimage_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
-    sweep.py: 'the fast semantic sweep engine (tiers, shards, pointers, tunnels); dispatched through knowledge.py as ; its proof is sweep_test.py'
+    knowledgecli.py: 'the `headron` commands, hooks and generated blocks over the knowledge records, dispatched from atlas.py; its proof is agents_test.py and shell_test.py'
+    sweep.py: 'the fast semantic sweep engine (tiers, shards, pointers, tunnels); dispatched through knowledgecli.py as ; its proof is sweep_test.py'
     sweep_test.py: 'a case module for the sweep engine; its proof and limits are that instrument''s'
     timeout_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
     slot_test.py: 'a case module that atlas_guards_test.py imports; its proof and limits are that instrument''s'
@@ -1279,7 +1280,7 @@ code_shape:
   # THE IMPORT SHAPE, PINNED EXACTLY (the Core compaction lane). Measured by importgraph.import_shape
   # over non-test modules, lazy imports included. A rise is refused, and so is slack under a pin, so
   # every fall lowers the pin in the change that earned it and names what was removed.
-  import_cycle_modules: 61         # largest set of modules that all import each other; TARGET 6
+  import_cycle_modules: 46         # largest set of modules that all import each other; TARGET 6
   lazy_imports: 294                # sibling imports written inside a function; TARGET under 100
   core_imports: 0                  # siblings atlascore imports; 0 since proof_record moved to
                                    # obligations and the treeformat wrappers left; held at 0
@@ -3308,7 +3309,7 @@ agent_failure_modes:
     tell: 'a step was begun and nothing records it verified; the resume started from the task list, not from the journal'
     sightings: 1
     prevented_by: 'each worker journals begin and verified per step (`hostshape.py step`); `headron resume` names the last unverified step and re-verifies it before anything else, and `hostshape.py resume` fails while one is open'
-    enforced_by: [hostshape.resume_errors, knowledge.resume, schedtargets_test.host_shape_cases]
+    enforced_by: [hostshape.resume_errors, knowledgecli.resume, schedtargets_test.host_shape_cases]
   an_autosnapshot_sweeps_in_flight_edits:
     shape: 'a scheduled snapshot commits a shared checkout while other writers are mid-edit, so their half-done work lands in history under the snapshot''s name, before their own verified commit'
     looks_like: 'a tidy auto-commit that later turns out to contain a broken, unfinished change'
