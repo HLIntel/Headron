@@ -676,7 +676,7 @@ INVARIANT_CHECKS = {
     "parsers_refuse_rather_than_guess": _inv_parsers_refuse_rather_than_guess,
     "readings_name_their_cache": _inv_readings_name_their_cache,
     "failure_modes_name_their_refusal": _inv_failure_modes_name_their_refusal,
-    "successes_answer_recurring_failures": _from_errors(lambda: __import__("knowledge").success_wiring_errors(), "success-wiring"),
+    "successes_answer_recurring_failures": _from_errors(lambda: __import__("knowledgecli").success_wiring_errors(), "success-wiring"),
     "markdown_is_bounded_and_preserved": _from_errors(lambda: __import__("mdshape").tree_errors(resolved_once(ROOT)), "markdown"),
     "every_command_has_a_socket": _from_errors(
         lambda: __import__("port").port_menu_errors() + __import__("links").companion_errors(), "port-menu"

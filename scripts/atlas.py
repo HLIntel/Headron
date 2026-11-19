@@ -956,7 +956,7 @@ def main(argv: list[str] | None=None) -> int:
     if args.command == "pipeline":
         from decide_cli import run_pipeline_cmd  # noqa: PLC0415
         return run_pipeline_cmd(args.path, args.change, args.json)
-    from knowledge import COMMANDS  # noqa: PLC0415
+    from knowledgecli import COMMANDS  # noqa: PLC0415
     if args.command in COMMANDS:
         return COMMANDS[args.command](args)
     if args.command == "process":
