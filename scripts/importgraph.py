@@ -91,6 +91,69 @@ def _is_test(name: str) -> bool:
     return name.endswith("_test")
 
 
+def _largest_cycle(graph: dict[str, set[str]]) -> set[str]:
+    """The largest set of modules that all reach each other (Tarjan), lazy imports included."""
+    index: dict[str, int] = {}
+    low: dict[str, int] = {}
+    stack: list[str] = []
+    best: set[str] = set()
+
+    def visit(name: str) -> None:
+        nonlocal best
+        index[name] = low[name] = len(index)
+        stack.append(name)
+        for target in sorted(graph.get(name, set())):
+            if target not in index:
+                visit(target)
+                low[name] = min(low[name], low[target])
+            elif target in stack:
+                low[name] = min(low[name], index[target])
+        if low[name] == index[name]:
+            group = set(stack[stack.index(name) :])
+            del stack[stack.index(name) :]
+            best = group if len(group) > len(best) else best
+
+    for name in sorted(graph):
+        if name not in index:
+            visit(name)
+    return best if len(best) > 1 else set()
+
+
+def import_shape(root: Path = ROOT) -> dict[str, int]:
+    """The import shape of the non-test modules under scripts/, the numbers code_shape pins as ceilings.
+
+    import_cycle_modules counts lazy edges, so moving an import into a function cannot break a cycle on
+    paper; lazy_imports counts those moves, so the two together cannot be traded against each other.
+    """
+    graph = {
+        name: {t for t in edges if not _is_test(t)} for name, edges in sibling_graph(root).items() if not _is_test(name)
+    }
+    lazy = 0
+    for name in graph:
+        tree = parsed_python(text_of(root / "scripts" / f"{name}.py"), name)
+        functions = [n for n in walked(tree) if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)] if tree else []
+        nested = {id(n): n for f in functions for n in import_nodes(f)}
+        lazy += sum(1 for n in nested.values() if {s.split(".")[0] for s in statement_imports(n)} & set(graph))
+    return {
+        "import_cycle_modules": len(_largest_cycle(graph)),
+        "lazy_imports": lazy,
+        "core_imports": len(graph.get(UNIVERSAL, set())),
+    }
+
+
+def import_shape_errors(caps: dict, measured: dict[str, int]) -> list[str]:
+    """Each pin held EXACTLY: a rise is refused, and so is slack under the pin, so a fall is written down."""
+    errors = []
+    for key, have in measured.items():
+        if key not in caps:
+            errors.append(f"code_shape/{key} is not declared; pin it at the measured {have}")
+        elif have > int(caps[key]):
+            errors.append(f"{key} rose to {have} over its ceiling {caps[key]}: remove the import, never raise the pin")
+        elif have < int(caps[key]):
+            errors.append(f"{key} fell to {have} under its pin {caps[key]}: lower code_shape/{key} to {have}")
+    return errors
+
+
 def _purpose(path: Path, limit: int = PURPOSE_CHARS) -> str:
     """The first sentence of a module's docstring, cut to fit one table cell."""
     tree = parsed_python(text_of(path), str(path))

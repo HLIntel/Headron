@@ -8,12 +8,14 @@ because the shape is what it learned. So this parses each function, ERASES every
 and literal value, and hashes what is left: control flow, nesting, and the order of operations.
 Identical hashes are the same function written twice.
 
-WHAT IT MEASURES, all three declared in atlas.yaml/code_shape so the numbers are not buried here:
+WHAT IT MEASURES, all four declared in atlas.yaml/code_shape so the numbers are not buried here:
   - DUPLICATE STRUCTURES — two functions with one canonical hash, above a minimum size so that
     two three-line guards are not reported as a finding. A cap of 0 means: import it, do not
     rewrite it.
   - BLOBS — a function longer than the declared line cap. The cap is a ratchet: it may only fall.
   - NESTING — depth beyond the declared maximum, which is where a reader loses the invariant.
+  - IMPORT SHAPE — the largest import cycle, the lazy sibling imports and atlascore's own sibling
+    imports, each pinned exactly (importgraph.import_shape): a rise is refused, and so is slack.
 
 SCOPE, AND IT IS NARROW ON PURPOSE: Python only, because the harness is the only code this
 repository owns. The language packs declare their own authority — `ruff` here, `clippy` there —
@@ -37,6 +39,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from atlascore import atlas, parsed_python, rel, text_of, walked  # noqa: E402
+from importgraph import import_shape, import_shape_errors  # noqa: E402
 
 
 def canonical(node: ast.AST) -> str:
@@ -126,7 +129,15 @@ def main(argv: list[str]) -> int:
         if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
     ]
 
-    findings = {"duplicate_structures": duplicates, "blobs": blobs, "over_nested": deep, "late_defs": late}
+    imports = import_shape()
+    pinned = import_shape_errors(shape, imports)
+    findings = {
+        "duplicate_structures": duplicates,
+        "blobs": blobs,
+        "over_nested": deep,
+        "late_defs": late,
+        "import_shape": pinned,
+    }
     if args.json:
         print(
             json.dumps(
@@ -136,12 +147,13 @@ def main(argv: list[str]) -> int:
                     "scanned_files": len(scanned),
                     "functions": len(every),
                     "caps": shape,
+                    "imports": imports,
                     "findings": findings,
                 },
                 indent=2,
             )
         )
-        return 1 if len(duplicates) > allowed or blobs or deep or late else 0
+        return 1 if len(duplicates) > allowed or blobs or deep or late or pinned else 0
 
     print(f"astshape — {len(every)} functions in {len(scanned)} Python files\n")
     for group in duplicates:
@@ -155,6 +167,8 @@ def main(argv: list[str]) -> int:
 
     for where in late:
         print(f"LATE DEF   {where} sits below the __main__ call — main() runs before it exists; move the guard last")
+    for error in pinned:
+        print(f"IMPORTS    {error}")
     largest = max(every, key=lambda f: f["lines"])
     deepest = max(every, key=lambda f: f["depth"])
     print(
@@ -169,9 +183,13 @@ def main(argv: list[str]) -> int:
     print(
         f"{len(duplicates)} duplicate structure(s), {len(blobs)} blob(s), {len(deep)} over-nested, {len(late)} late def(s)"
     )
+    print(
+        f"imports: cycle {imports['import_cycle_modules']} modules, {imports['lazy_imports']} lazy, "
+        f"atlascore imports {imports['core_imports']} sibling(s)"
+    )
     print("SCOPE: Python only — the harness is the code this repository owns. Each language pack")
     print("       declares its own formatter and linter, and this instrument does not judge them.")
-    return 1 if len(duplicates) > allowed or blobs or deep or late else 0
+    return 1 if len(duplicates) > allowed or blobs or deep or late or pinned else 0
 
 
 if __name__ == "__main__":

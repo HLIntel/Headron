@@ -3,7 +3,7 @@
 [HEADRON](HEADRON.md) · [Proofs](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-147 modules and 460 imports between them, read from the source; 80 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 102 modules use it. These 69 rows are the modules at least 2 others use; the other 78, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+147 modules and 461 imports between them, read from the source; 80 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 102 modules use it. These 69 rows are the modules at least 2 others use; the other 78, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -58,8 +58,8 @@ flowchart LR
 | [dirscope](../scripts/dirscope.py) | Directory scopes: what a PLACE in this… | 8 | knowledge | [atlas_rules_test](../scripts/atlas_rules_test.py), [cli_test](../scripts/cli_test.py) +1 |
 | [headronlang](../scripts/headronlang.py) | The surface notation: a `.headron` program… | 8 | agenteffects, agentpolicy, dirscope, knowledge | [agent_test](../scripts/agent_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) +1 |
 | [receipt](../scripts/receipt.py) | Headron receipt v1: one verify run as a… | 8 | receiptsign, safeedit | [computation_receipt_test](../scripts/computation_receipt_test.py), [compute_compose_test](../scripts/compute_compose_test.py) +6 |
+| [importgraph](../scripts/importgraph.py) | One reading of what a Python module imports,… | 7 |  | [importgraph_test](../scripts/importgraph_test.py) |
 | [packmanifest](../scripts/packmanifest.py) | The language tool manifest contract — ONE… | 7 | agentpolicy | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
-| [importgraph](../scripts/importgraph.py) | One reading of what a Python module imports,… | 6 |  | [importgraph_test](../scripts/importgraph_test.py) |
 | [resilience](../scripts/resilience.py) | Retry what can succeed, refuse what cannot,… | 6 |  | [agent_test](../scripts/agent_test.py), [atlas_test](../scripts/atlas_test.py) +5 |
 | [runtime](../scripts/runtime.py) | Which agent runtime produced a change —… | 6 |  | [runtime_test](../scripts/runtime_test.py) |
 | [abtest](../scripts/abtest.py) | Does the atlas actually help a model? Three… | 5 | agentpolicy, atlasinv, contextcost, providers, resilience | [agent_test](../scripts/agent_test.py), [bounds_test](../scripts/bounds_test.py) +1 |
