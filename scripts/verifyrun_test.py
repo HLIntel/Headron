@@ -416,6 +416,17 @@ def key_names_running_interpreter_case(module: ModuleType | SimpleNamespace) -> 
         verify._program_identity, verify.sys.prefix = real_identity, real_prefix
     if set(asked) != {verify.sys.executable} or here == there:
         raise SystemExit(f"FAIL gate_key asked about {asked}, venv told apart={here != there}")
+    with tempfile.TemporaryDirectory() as scratch:
+        root = Path(scratch)
+        k0 = verify._dependency_digest(root)
+        for lock in ("pnpm-lock.yaml", "Cargo.lock", "go.sum", "package-lock.json"):
+            (root / lock).write_bytes(b"locked-1")
+            k1 = verify._dependency_digest(root)
+            (root / lock).write_bytes(b"locked-2")
+            k2 = verify._dependency_digest(root)
+            if k1 in (k0, k2) or k2 == k0:
+                raise SystemExit(f"FAIL lock {lock} was not included in dependency digest: {k0}, {k1}, {k2}")
+            (root / lock).unlink()
     module.CASES.append(("the key names the interpreter that runs the gate", "a PASS from another venv reused here"))
     print("  ok    the evidence key names the running interpreter and its venv")
 
