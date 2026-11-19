@@ -29,6 +29,14 @@ jobs:
           path: .privacy-guard
           persist-credentials: false
 
+      - name: Check out the pull request head for history scanning
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: .privacy-head
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
@@ -38,11 +46,17 @@ jobs:
       - name: Install guard dependency
         run: python -m pip install PyYAML==6.0.3
 
-      - name: Check tree, proposed history, and guard fixtures
+      - name: Check the proposed merge tree
+        env:
+          HEADRON_PRIVACY_DENY: ${{ runner.temp }}/headron-privacy-deny-unconfigured
+        run: python .privacy-guard/scripts/privacy_guard.py --tree
+
+      - name: Check pull request history
+        working-directory: .privacy-head
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEADRON_PRIVACY_DENY: ${{ runner.temp }}/headron-privacy-deny-unconfigured
-        run: |
-          python .privacy-guard/scripts/privacy_guard.py --tree
-          python .privacy-guard/scripts/privacy_guard.py --range "$BASE_SHA"
-          python .privacy-guard/scripts/privacy_guard_test.py
+        run: python ../.privacy-guard/scripts/privacy_guard.py --range "$BASE_SHA"
+
+      - name: Check guard fixtures
+        run: python .privacy-guard/scripts/privacy_guard_test.py
