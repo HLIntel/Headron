@@ -53,6 +53,7 @@ PLACEHOLDER_EMAIL_DOMAINS = {
     "example.test",
     "localhost",
 }
+PUBLIC_CONTACT_EMAILS = {local + "@" + "headron.tech" for local in ("support", "enterprise")}
 PLACEHOLDER_HOMES = {"u", "user", "you", "example", "runner", "home", "name"}
 ESCAPE = "privacy: allow"
 
@@ -113,6 +114,7 @@ def email_ok(email: str) -> bool:
     local, _, domain = email.lower().partition("@")
     return (
         is_noreply(email)
+        or email.lower() in PUBLIC_CONTACT_EMAILS
         or domain in PLACEHOLDER_EMAIL_DOMAINS
         or domain.endswith(".invalid")
         or domain.endswith(".test")
