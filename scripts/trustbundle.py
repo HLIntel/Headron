@@ -33,6 +33,7 @@ import hashlib
 import json
 import re
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -90,15 +91,12 @@ def build_trust_bundle(
 
     if signing_key is not None:
         raw_bytes = _canonical_bytes(bundle)
-        tmp_sig = signing_key.with_suffix(".bundle.sig")
-        try:
+        with tempfile.TemporaryDirectory(prefix="headron-trust-") as directory:
+            tmp_sig = Path(directory) / "signature"
             findings = sign_detached(raw_bytes, signing_key, tmp_sig, NAMESPACE)
             if findings:
                 raise RuntimeError(f"failed to sign trust bundle: {'; '.join(findings)}")
             bundle["signature"] = tmp_sig.read_bytes().decode("utf-8")
-        finally:
-            if tmp_sig.exists():
-                tmp_sig.unlink()
 
     return bundle
 
@@ -170,15 +168,12 @@ def verify_trust_bundle(
         if authority_trust is None or not authority_trust.is_file():
             return [f"authority trust list {authority_trust} is missing"]
         raw_bytes = _canonical_bytes(bundle)
-        tmp_sig = Path(f"/tmp/headron_bundle_{expected_id[:16]}.sig")
-        try:
+        with tempfile.TemporaryDirectory(prefix="headron-trust-") as directory:
+            tmp_sig = Path(directory) / "signature"
             tmp_sig.write_text(sig_text, encoding="utf-8")
             sig_findings = verify_detached(raw_bytes, tmp_sig, signed_by, authority_trust, authority_revoked, NAMESPACE)
             if sig_findings:
                 return [f"authority signature refused: {'; '.join(sig_findings)}"]
-        finally:
-            if tmp_sig.exists():
-                tmp_sig.unlink()
 
     return []
 

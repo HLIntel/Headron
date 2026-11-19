@@ -19,6 +19,7 @@ import tempfile
 from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, cast
+from unittest import mock
 
 if TYPE_CHECKING:
     import githubapp
@@ -32,12 +33,57 @@ WANT_CASES = 19
 TIMEOUT = 60
 
 
+def receipt_signature_case(tmp_path: Path) -> None:
+    import githubapp
+    import githubreceipt
+    import receipt
+    import receiptsign
+
+    (tmp_path / "receipt.json").write_text(json.dumps({"base_commit": "base"}), encoding="utf-8")
+    with mock.patch.object(receipt, "verify_bytes", return_value=[]), mock.patch.dict(os.environ, {}, clear=True):
+        assert githubreceipt.load_receipt(tmp_path, "head", "base") == (None, None)
+        os.environ["HEADRON_REQUIRE_SIGNED_RECEIPT"] = "1"
+        error = githubreceipt.load_receipt(tmp_path, "head", "base")[1]
+        assert error and "cannot be bound to head" in error
+        os.environ["HEADRON_TRUST_FILE"] = str(tmp_path / "trust")
+        error = githubreceipt.load_receipt(tmp_path, "head", "base")[1]
+        assert error and "requires both" in error
+        os.environ["HEADRON_SIGNER"] = "agent"
+        error = githubreceipt.load_receipt(tmp_path, "head", "base")[1]
+        assert error and "signature is missing" in error
+        (tmp_path / "receipt.json.sig").write_text("invalid", encoding="utf-8")
+        assert githubreceipt.load_receipt(tmp_path, "head", "base")[0] is None
+        with mock.patch.object(receiptsign, "verify_detached", return_value=[]) as verify:
+            error = githubreceipt.load_receipt(tmp_path, "head", "base")[1]
+            assert error and "cannot be bound to head" in error
+            verify.assert_called_once()
+    with (
+        mock.patch.object(githubapp, "_git", return_value=subprocess.CompletedProcess([], 0, stdout="head")),
+        mock.patch.object(githubapp, "_assemble", side_effect=lambda _base, _head, _sha, _files, result: result),
+        mock.patch.object(githubapp, "run_verify", return_value={"marker": "verified"}) as run_verify,
+        mock.patch.dict(os.environ, {}, clear=True),
+    ):
+        assert githubapp.build_report(None, "head", tree=tmp_path) == {"marker": "verified"}
+        run_verify.assert_called_once_with(None, tmp_path)
+        run_verify.reset_mock()
+        (tmp_path / "receipt.json").unlink()
+        for key in ("HEADRON_REQUIRE_SIGNED_RECEIPT", "HEADRON_TRUST_FILE", "HEADRON_SIGNER"):
+            os.environ[key] = "1"
+            result = githubapp.build_report(None, "head", tree=tmp_path)
+            assert result["verify"]["verdict"] == "FAIL"
+            del os.environ[key]
+        run_verify.assert_not_called()
+
+
 def run(module: ModuleType) -> None:
     global ROOT, CASES
     ROOT, CASES = module.ROOT, module.CASES
     before = len(CASES)
     with tempfile.TemporaryDirectory(prefix="headron-app-test-") as scratch:
         work = Path(scratch)
+        receipt_dir = work / "receipt-case"
+        receipt_dir.mkdir()
+        receipt_signature_case(receipt_dir)
         signature_cases(module)
         conclusion_cases(module)
         event_case()

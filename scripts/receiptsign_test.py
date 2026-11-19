@@ -436,6 +436,7 @@ def ron_evidence_cases(module: ModuleType) -> None:
 def trust_bundle_cases(module: ModuleType) -> None:
     """An Agent Trust Bundle validates within its window, binds base policy digest, and verifies agent signatures."""
     import hashlib  # noqa: PLC0415
+    from unittest.mock import patch  # noqa: PLC0415
 
     import receipt as receipt_module  # noqa: PLC0415
     import receiptsign  # noqa: PLC0415
@@ -453,16 +454,23 @@ def trust_bundle_cases(module: ModuleType) -> None:
         policy_hash = hashlib.sha256(b"invariants:\n  - no_slop\n").hexdigest()
         signers = [f'agent-identity-1 namespaces="headron-receipt" {agent_pub}']
 
+        sibling = auth_key.with_suffix(".bundle.sig")
+        sibling.write_text("preserve", encoding="utf-8")
         bundle = trustbundle.build_trust_bundle(
             "authority-signer-1", signers, policy_hash, now=1000.0, expires_seconds=3600, signing_key=auth_key
         )
-        valid_findings = trustbundle.verify_trust_bundle(
-            bundle,
-            expected_policy_digest=policy_hash,
-            now=1500.0,
-            signed_by="authority-signer-1",
-            authority_trust=auth_trust,
-        )
+        assert sibling.read_text(encoding="utf-8") == "preserve"
+        with patch.object(trustbundle, "verify_detached", wraps=trustbundle.verify_detached) as verify_signature:
+            valid_findings = trustbundle.verify_trust_bundle(
+                bundle,
+                expected_policy_digest=policy_hash,
+                now=1500.0,
+                signed_by="authority-signer-1",
+                authority_trust=auth_trust,
+            )
+            signature_path = verify_signature.call_args.args[1]
+            assert signature_path != Path(f"/tmp/headron_bundle_{bundle['bundle_id'][:16]}.sig")
+            assert not signature_path.exists()
 
         expired = trustbundle.verify_trust_bundle(bundle, now=5000.0)
         premature = trustbundle.verify_trust_bundle(bundle, now=500.0)
