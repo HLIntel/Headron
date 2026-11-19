@@ -56,7 +56,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [verifyinputs](../scripts/verifyinputs.py) | Content identities for verification evidence | 1 |  |  |
 | [workflowbench](../scripts/workflowbench.py) | Does Headron change what agents DO — alone, and when one hands work to another? Measured, per… | 1 | abtest, agentpolicy, dirscope | [atlas_test](../scripts/atlas_test.py) |
 | [yamlshape](../scripts/yamlshape.py) | yaml_prose_is_quoted: prose inside a YAML flow collection is quoted, so a comma cannot… | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [edge_cases_test](../scripts/edge_cases_test.py) |
-| [astshape](../scripts/astshape.py) | astshape — structural duplicates and code blobs, by AST rather than by text | 0 |  |  |
+| [astshape](../scripts/astshape.py) | astshape — structural duplicates and code blobs, by AST rather than by text | 0 | importgraph |  |
 | [atlasci](../scripts/atlasci.py) | What a consuming repository's pull request requires, resolved against a pinned atlas | 0 | agentpolicy |  |
 | [bench](../scripts/bench.py) | Does using the atlas actually help? Measured where it can be, and REFUSED where it cannot | 0 | agentpolicy | [atlas_test](../scripts/atlas_test.py) |
 | [brainstorm](../scripts/brainstorm.py) | brainstorm — a strategic brainstorm as a record a program can refuse: diverge, pre-mortem,… | 0 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |

@@ -111,11 +111,40 @@ def drift_case() -> None:
     print("  ok    a map page that no longer matches the source is refused")
 
 
+def shape_case(directory: Path) -> None:
+    root = _tree(
+        directory,
+        a="import b\n",
+        b="def f():\n    import a\n    import os\n",
+        c="def g():\n    def h():\n        from a import x\n",
+        atlascore="import c\nimport a_test\n",
+        a_test="import c\nimport a\n",
+    )
+    measured = importgraph.import_shape(root)
+    if measured != {"import_cycle_modules": 2, "lazy_imports": 2, "core_imports": 1}:
+        raise SystemExit(f"FAIL the import shape was measured wrong: {measured}")
+    (directory / "acyclic").mkdir()
+    acyclic = importgraph.import_shape(_tree(directory / "acyclic", a="import b\n", b=""))
+    if acyclic["import_cycle_modules"] != 0:
+        raise SystemExit(f"FAIL a tree with no cycle measured a cycle: {acyclic}")
+    if importgraph.import_shape_errors(dict(measured), measured):
+        raise SystemExit("FAIL a shape held exactly at its pins was refused")
+    for key, cap, word in (
+        ("lazy_imports", 1, "rose"),
+        ("lazy_imports", 3, "fell"),
+        ("core_imports", None, "not declared"),
+    ):
+        caps = {**measured, key: cap} if cap is not None else {k: v for k, v in measured.items() if k != key}
+        if not any(word in error for error in importgraph.import_shape_errors(caps, measured)):
+            raise SystemExit(f"FAIL {key} at {cap} against {measured[key]} was not refused as {word!r}")
+    print("  ok    the import cycle, lazy imports and atlascore's imports are pinned exactly, both ways")
+
+
 def run(module: ModuleType | None) -> None:
     statement_case()
     lazy_case()
     network_case()
-    for scratch_case in (edges_case, map_case):
+    for scratch_case in (edges_case, map_case, shape_case):
         with tempfile.TemporaryDirectory(prefix="importgraph-") as directory:
             scratch_case(Path(directory))
     drift_case()
