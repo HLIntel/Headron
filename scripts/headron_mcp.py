@@ -182,12 +182,7 @@ def tools() -> list[dict]:
     and the Mind API orchestration tools for classification, planning, and routing."""
     granted = offered()
     typed = [
-        {
-            "name": n,
-            "description": f"{s['about']} Successful structured results include the command record and exit code.",
-            "inputSchema": _featured_schema(n),
-            "annotations": ANNOTATIONS,
-        }
+        {"name": n, "description": f"{s['about']} Returns command record and exit code.", "inputSchema": _featured_schema(n), "annotations": ANNOTATIONS}
         for n, s in FEATURED.items()
         if s["verb"] in granted
     ]
@@ -199,10 +194,9 @@ def tools() -> list[dict]:
     return [
         {
             "name": TOOL,
-            "description": "Fallback only: run a read-only Headron CLI command as argv when no dedicated tool covers the task. "
-            "The dedicated tools are the primary surface and return typed, validated results; do not use this tool for their jobs "
-            "(port, steps, proof, gate, route, failures, successes, or the mind_* tools). "
-            f'{"Programs: mind --micro list. " if "mind" in granted else ""}["commands", "--json"] lists the arguments for each verb; exit code is the verdict.',
+            "description": "Fallback: run read-only Headron CLI command argv when no dedicated typed tool covers the task "
+            "(port, steps, proof, gate, route, failures, successes, mind_*). "
+            f'{"Programs: mind --micro list. " if "mind" in granted else ""}["commands", "--json"] lists arguments; exit code is the verdict.',
             "inputSchema": _generic_schema(),
             "annotations": ANNOTATIONS,
         },
@@ -269,40 +263,35 @@ def _argv(command: str, arguments: dict) -> list[str]:
 FEATURED: dict[str, dict] = {
     "port": {
         "verb": "port",
-        "about": "START HERE before editing ONE file: the pre-edit brief for that file only — its route, tier, the gates it owes, "
-        "the lessons that apply, and the next commands. A brief, not a sequence (use steps for the ordered plan) and not a change scope (use proof).",
+        "about": "Pre-edit brief for ONE file: route, tier, owed gates, and relevant lessons. (Use steps for plan; proof for change scope).",
         "args": {"target": "target", "runtime": "runtime"},
         "required": ["target"],
         "paths": {"target": False},
     },
     "route": {
         "verb": "route",
-        "about": "Explain ONE thing: how a file path resolves to a language pack — the rule, evidence, guide, manifest and precedence. "
-        "Not a pre-edit brief (use port) and not an agent choice (use mind_route).",
+        "about": "Resolve ONE file path to its language pack, rules, guide, and precedence. (Use port for full brief; mind_route for agent choice).",
         "args": {"path": "path"},
         "required": ["path"],
         "paths": {"path": True},
     },
     "gate": {
         "verb": "gate",
-        "about": "Look up ONE named gate of one file: its command and current state. It executes nothing and plans nothing. "
-        "Use steps for the file's ordered plan; use proof for the gates a change owes.",
+        "about": "Look up command and verification state for ONE named gate of a file without executing. (Use steps for plan; proof for owed gates).",
         "args": {"path": "path", "gate": "gate", "change": "change"},
         "required": ["path"],
         "paths": {"path": True},
     },
     "steps": {
         "verb": "steps",
-        "about": "Build the ordered work plan for ONE file: the sequence of steps, including its route and checks. Nothing is executed. "
-        "Tier, change class and runtime shape the plan. Use port for the brief before planning; use mind_plan for a SET of changed files.",
+        "about": "Build ordered work plan of edit and check steps for ONE file without executing. (Use mind_plan for multiple changed files).",
         "args": {"path": "path", "runtime": "runtime", "change": "change", "tier": "tier"},
         "required": ["path"],
         "paths": {"path": True},
     },
     "failures": {
         "verb": "failures",
-        "about": "Look up recorded MISTAKES agents made with a file (`for`) or with an error text (`match`), each with the guard that stops it. "
-        "Scope is required (`for`, `match` or one shape's `id`); the whole ledger is not offered. Use successes for the practices that answer them.",
+        "about": "Look up recurring failure patterns and anti-drift rules matching a file (`for`) or error (`match`). Scope required.",
         "args": {"id": "id", "for": "for_", "match": "match", "limit": "limit"},
         "required": [],
         "scope": ["id", "for", "match"],
@@ -310,7 +299,7 @@ FEATURED: dict[str, dict] = {
     },
     "successes": {
         "verb": "successes",
-        "about": "Look up recorded practices that address recurring failures, including when to use them, evidence and proving instruments. Scope by file or task with `for`, or by pattern `id`; `limit` applies to `for`. Use failures for the corresponding mistake patterns.",
+        "about": "Look up proven practices addressing recurring failure patterns. Scope with `id` or `for`.",
         "args": {"id": "id", "for": "for_", "limit": "limit"},
         "required": [],
         "scope": ["id", "for"],
@@ -318,9 +307,7 @@ FEATURED: dict[str, dict] = {
     },
     "proof": {
         "verb": "proof",
-        "about": "Scope ONE file's change deterministically: its change class, the planned gates and the tools it owes. "
-        "The pre-edit 'what does this change owe' answer — not a sequence (use steps) and not a brief (use port). "
-        "Measured verification (`--verify`) runs gates and stays on the CLI.",
+        "about": "Scope ONE file's change deterministically: resolves change class, required verification gates, and test tools. CLI runs verification.",
         "args": {"path": "path", "task": "task", "change": "change", "modifier": "modifier"},
         "required": ["path"],
         "paths": {"path": True},
@@ -332,8 +319,7 @@ FEATURED: dict[str, dict] = {
 MIND_API: dict[str, dict] = {
     "mind_classify": {
         "verb": "mind",
-        "about": "Classify a SET of changed files by category and risk. Set-level only: it runs no verification and plans no gates. "
-        "Use proof for ONE file's change scope; use mind_plan to also get the set's planned gates.",
+        "about": "Classify a set of changed files by category and risk without running verification. (Use proof for single file scope).",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -341,8 +327,7 @@ MIND_API: dict[str, dict] = {
     },
     "mind_plan": {
         "verb": "mind",
-        "about": "For a SET of changed files: classify them and return Mind's planned gates and isolation needs. Nothing runs. "
-        "Use steps for the ordered plan for ONE file.",
+        "about": "Classify changed files and return planned gates and isolation needs. (Use steps for single file plan).",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -350,8 +335,7 @@ MIND_API: dict[str, dict] = {
     },
     "mind_route": {
         "verb": "mind",
-        "about": "Choose an agent and model tier for a SET of classified changes, from capabilities and policy. It authorizes and executes nothing. "
-        "Use route to explain ONE file's language-pack resolution.",
+        "about": "Select recommended agent and model tier for a set of changed files from policy. (Use route for language-pack resolution).",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -367,7 +351,7 @@ MIND_API: dict[str, dict] = {
     },
     "mind_receipts": {
         "verb": "mind",
-        "about": "Retrieve verification receipts and their validity and verdicts. Locally this reads the last verification receipt, if present; a configured hosted service supplies its own results. Validity does not rerun checks. Use proof to plan verification.",
+        "about": "Retrieve verification receipts and validation verdicts. (Use proof to plan verification).",
         "args": {"limit": "limit"},
         "required": [],
         "paths": {},
