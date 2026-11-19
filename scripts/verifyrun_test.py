@@ -208,8 +208,8 @@ def proof_scope_case(module: ModuleType | SimpleNamespace) -> None:
 
     import agentpolicy
     import atlas
-    import atlascore
     import declcheck
+    import obligations
     import verify
 
     path = "scripts/doctor.py"
@@ -217,7 +217,7 @@ def proof_scope_case(module: ModuleType | SimpleNamespace) -> None:
         {"change_class": "security_sensitive", "risk_modifiers": [], "task_profile": "implementation"}
     )
     security = atlas.plan_record(path, "python", "security", "source_change", [])
-    security_proof, _ = atlascore.proof_record(path, "security", "source_change", [], False)
+    security_proof, _ = obligations.proof_record(path, "security", "source_change", [], False)
     required = {"codeql", "authorization_tests", "no_plaintext_at_rest_check"}
     if security["tools"] != ["security"] or not required <= set(security["required_gates"]):
         raise SystemExit(f"FAIL security plan omitted task tools or gates: {security}")
@@ -232,7 +232,7 @@ def proof_scope_case(module: ModuleType | SimpleNamespace) -> None:
             raise SystemExit("FAIL malformed task profile gates were not refused")
     finally:
         declcheck.atlas = original
-    planned_record, planned_code = atlascore.proof_record(path, "implementation", "security_sensitive", [], False)
+    planned_record, planned_code = obligations.proof_record(path, "implementation", "security_sensitive", [], False)
     if (
         planned_code != 2
         or planned_record is None
@@ -254,7 +254,7 @@ def proof_scope_case(module: ModuleType | SimpleNamespace) -> None:
 
     verify.run_declared_gates = planted
     try:
-        measured, code = atlascore.proof_record(path, "implementation", "security_sensitive", [], True)
+        measured, code = obligations.proof_record(path, "implementation", "security_sensitive", [], True)
     finally:
         verify.run_declared_gates = real
     if measured is None:

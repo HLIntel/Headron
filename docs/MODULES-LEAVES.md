@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-78 modules that at most one other module imports: 29 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+77 modules that at most one other module imports: 29 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -42,7 +42,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [modelpack](../scripts/modelpack.py) | modelpack — the student rung's loader: read a verified micro-pack bundle and answer from it | 1 |  | [model_test](../scripts/model_test.py) |
 | [nativetools](../scripts/nativetools.py) | native_agent_tools_are_kept: Headron is ADDED to an agent runtime's layer and never removes a… | 1 |  | [atlas_guards_test](../scripts/atlas_guards_test.py) |
 | [orphans](../scripts/orphans.py) | Dead harness code: a top-level function or class that nothing in the tree names but its own… | 1 | importgraph | [atlas_guards_test](../scripts/atlas_guards_test.py) |
-| [parsegate](../scripts/parsegate.py) | Every tracked artifact parses: the first thing the contract asks, since nothing after it means… | 1 | headronlang |  |
+| [parsegate](../scripts/parsegate.py) | Every tracked artifact parses: the first thing the contract asks, since nothing after it means… | 1 | headronlang, treeformat |  |
 | [pipeline](../scripts/pipeline.py) | State-to-action pipeline — finite state machine: INGEST → CLASSIFY → VERIFY → EXIT | 1 | decide, reflex | [pipeline_test](../scripts/pipeline_test.py) |
 | [plantcheck](../scripts/plantcheck.py) | plants_can_still_apply: every mutation anchor in the planted suites still matches the file it… | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [privacy_guard](../scripts/privacy_guard.py) | Refuse personal data and secrets before they reach a commit, a push, or the shared history | 1 |  | [privacy_guard_test](../scripts/privacy_guard_test.py) |
@@ -52,7 +52,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [shellsplit](../scripts/shellsplit.py) | The shell-string helpers shell_verdict reads: top-level statements, pipeline stages, heredoc… | 1 |  |  |
 | [taskbench](../scripts/taskbench.py) | Does Headron make a model better at work OTHER than routing? Blind against with-Headron, per… | 1 | abtest, agentpolicy, providers |  |
 | [textguard](../scripts/textguard.py) | Characters in tracked text that a reader cannot see, or cannot tell apart | 1 |  |  |
-| [treeformat](../scripts/treeformat.py) | Working-tree formatting and blame-history checks | 1 | gitobject |  |
 | [verifyinputs](../scripts/verifyinputs.py) | Content identities for verification evidence | 1 |  |  |
 | [workflowbench](../scripts/workflowbench.py) | Does Headron change what agents DO — alone, and when one hands work to another? Measured, per… | 1 | abtest, agentpolicy, dirscope | [atlas_test](../scripts/atlas_test.py) |
 | [yamlshape](../scripts/yamlshape.py) | yaml_prose_is_quoted: prose inside a YAML flow collection is quoted, so a comma cannot… | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [edge_cases_test](../scripts/edge_cases_test.py) |

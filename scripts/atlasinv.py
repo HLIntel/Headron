@@ -34,7 +34,6 @@ from atlascore import (
     ORPHAN_ROOTS,
     ROOT,
     atlas,
-    editorconfig_errors,
     nodes_of,
     parsed_python,
     read,
@@ -59,6 +58,7 @@ from packmanifest import MANIFEST_SCHEMA
 from plantcheck import plant_anchor_errors
 from roster import instrument_reach_errors
 from scoreboard import floor_errors
+from treeformat import editorconfig_errors
 from yamlshape import yaml_shape_errors
 
 
