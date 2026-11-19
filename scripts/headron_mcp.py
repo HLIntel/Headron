@@ -181,8 +181,14 @@ def tools() -> list[dict]:
     which takes the CLI's own argv as a fallback, the `FEATURED` tools an agent reaches for first,
     and the Mind API orchestration tools for classification, planning, and routing."""
     granted = offered()
+    verbs = ", ".join(granted)
     typed = [
-        {"name": n, "description": f"{s['about']} Returns command record and exit code.", "inputSchema": _featured_schema(n), "annotations": ANNOTATIONS}
+        {
+            "name": n,
+            "description": f"{s['about']} Returns command record and exit code.",
+            "inputSchema": _featured_schema(n),
+            "annotations": ANNOTATIONS,
+        }
         for n, s in FEATURED.items()
         if s["verb"] in granted
     ]
@@ -194,8 +200,7 @@ def tools() -> list[dict]:
     return [
         {
             "name": TOOL,
-            "description": "Fallback: run read-only Headron CLI command argv when no dedicated typed tool covers the task "
-            "(port, steps, proof, gate, route, failures, successes, mind_*). "
+            "description": f"Fallback: run read-only Headron CLI command argv when no dedicated typed tool covers the task; verbs: {verbs}. "
             f'{"Programs: mind --micro list. " if "mind" in granted else ""}["commands", "--json"] lists arguments; exit code is the verdict.',
             "inputSchema": _generic_schema(),
             "annotations": ANNOTATIONS,
