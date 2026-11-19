@@ -134,6 +134,13 @@ def main() -> int:
     # email: a real-looking address is refused, a placeholder domain is not
     expect("email refused", 1, "--staged", {"a.txt": b"reach jane" + BAT + b"acme.io now\n"}, "email")
     expect("placeholder email clean", 0, "--staged", {"a.txt": b"reach jane" + BAT + b"example.com now\n"})
+    for local in (b"support", b"enterprise", b"SUPPORT"):
+        expect("public product contact clean", 0, "--staged", {"a.txt": local + BAT + b"headron.tech\n"})
+    for local in (b"person", b"support+private", b"enterprises"):
+        expect("other product email refused", 1, "--staged", {"a.txt": local + BAT + b"headron.tech\n"}, "email")
+    expect(
+        "contact lookalike refused", 1, "--staged", {"a.txt": b"support" + BAT + b"headron.tech.evil.com\n"}, "email"
+    )
     # home path: a personal home is refused, the placeholder /home/u is not
     expect("home refused", 1, "--staged", {"a.txt": b"open /Us" + b"ers/alice/x\n"}, "home path")
     expect("placeholder home clean", 0, "--staged", {"a.txt": b"open /home/u/x\n"})
