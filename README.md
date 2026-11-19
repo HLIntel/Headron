@@ -15,6 +15,8 @@
 
 <!-- END generated: badges -->
 
+[![Headron MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/HLIntel/Headron/badges/score.svg)](https://glama.ai/mcp/servers/HLIntel/Headron)
+
 <!-- BEGIN generated: headline (python scripts/atlas.py index --write) -->
 
 - **Is:** a rule contract and CLI mapping changed files to checks. Hooks are optional; `headron verify` runs done gates.
