@@ -27,7 +27,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [formula](../scripts/formula.py) | Spreadsheet formulas for the data kit: parsed and evaluated, never executed | 1 |  | [formula_test](../scripts/formula_test.py) |
 | [ghaudit](../scripts/ghaudit.py) | ghaudit — does the LIVE GitHub configuration match config/github-controls.json? | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [githubjob](../scripts/githubjob.py) | The GitHub App's wire and queue shapes, as types only: nothing imports this at run time | 1 |  | [githubapp_test](../scripts/githubapp_test.py) |
-| [githubreceipt](../scripts/githubreceipt.py) | Receipt loading, validation, and PR comment rendering for the Headron GitHub App | 1 | githubapp, receipt, receiptsign |  |
+| [githubreceipt](../scripts/githubreceipt.py) | Receipt loading, validation, and PR comment rendering for the Headron GitHub App | 1 | githubapp, receipt, receiptsign | [githubapp_test](../scripts/githubapp_test.py) |
 | [hostshape](../scripts/hostshape.py) | Shapes that break on the operator's HOST, checked from the records the host hands in | 1 |  | [schedtargets_test](../scripts/schedtargets_test.py) |
 | [i18n](../scripts/i18n.py) | Localized entry points with canonical, generated command references | 1 |  |  |
 | [identity](../scripts/identity.py) | Who owns this tree, compared against the declaration — and the rename, as one operation | 1 |  | [identity_test](../scripts/identity_test.py) |

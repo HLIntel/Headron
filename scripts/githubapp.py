@@ -242,7 +242,9 @@ def build_report(base: str | None, head: str = "HEAD", tree: Path | None = None,
             },
             "stderr_tail": "",
         }
-    elif receipt_err or (os.environ.get("HEADRON_REQUIRE_SIGNED_RECEIPT") and base):
+    elif receipt_err or any(
+        os.environ.get(key) for key in ("HEADRON_REQUIRE_SIGNED_RECEIPT", "HEADRON_TRUST_FILE", "HEADRON_SIGNER")
+    ):
         gates = required_gates(files)
         why = receipt_err or f"no valid signed receipt for head {head_sha[:12]} bound to base {str(base)[:12]}"
         rows = [{"id": g, "verdict": "FAIL", "why": why} for g in gates] or [

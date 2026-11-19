@@ -6110,9 +6110,9 @@ declared_inputs:
   HEADRON_PROVIDERS_LIVE: {why: 'set to 1 to let providers.py call the live vendor; unset replays the recorded fixtures, so CI and reruns need no key and stay deterministic', set_by: 'the operator, for a deliberate live run', absent: 'replay: recorded responses only, no network'}
   HEADRON_APP_RUN_OWNERS: {why: 'the owners whose repositories and PR heads the GitHub App executes verify on; a head is code the host runs', set_by: 'the App host operator', absent: 'nobody: every head is a neutral NOT RUN that says why'}
   HEADRON_POST_PR_COMMENT: {why: 'set to 1 to post or update the HEADRON REPORT receipt summary comment on the PR', set_by: 'the App host operator', absent: 'no PR comments are posted, only check runs'}
-  HEADRON_REQUIRE_SIGNED_RECEIPT: {why: 'set to 1 to require PRs to carry a valid receipt signed and bound to base_commit', set_by: 'the App host operator', absent: 'headron verify runs directly on the checkout'}
-  HEADRON_TRUST_FILE: {why: 'path to the SSH allowed signers trust list for receipt verification', set_by: 'the App host operator', absent: 'receipt detached signature check is skipped'}
-  HEADRON_SIGNER: {why: 'the expected signer identity in the trust list for receipt verification', set_by: 'the App host operator', absent: 'any trusted signer in HEADRON_TRUST_FILE'}
+  HEADRON_REQUIRE_SIGNED_RECEIPT: {why: 'require receipt evidence; receipt acceptance is unavailable until it can be bound to the reported head', set_by: 'the App host operator', absent: 'headron verify runs directly on the checkout unless signer settings require receipt validation'}
+  HEADRON_TRUST_FILE: {why: 'path to the SSH allowed signers trust list for receipt verification', set_by: 'the App host operator', absent: 'signature verification is skipped only when HEADRON_SIGNER is also absent'}
+  HEADRON_SIGNER: {why: 'the expected signer identity in the trust list for receipt verification', set_by: 'the App host operator', absent: 'signature verification is skipped only when HEADRON_TRUST_FILE is also absent'}
   HEADRON_GITHUB_APP_STATE: {why: 'the GitHub App queue, done records and timeline.jsonl directory', set_by: 'the App host operator', absent: '$XDG_STATE_HOME/headron-github-app'}
   XDG_STATE_HOME: {why: 'the base of the GitHub App default state directory', set_by: 'the host session', absent: '~/.local/state'}
   HEADRON_GITHUB_API: {why: 'the GitHub API base, for Enterprise Server', set_by: 'the App host operator', absent: 'https://api.github.com'}
@@ -6252,6 +6252,7 @@ pointers:
 
 # A symbol named only by its own definition is deleted or declared here WITH its reason (orphans.py).
 orphan_exemptions:
+  scripts/trustbundle.py: 'Agent Trust Bundle creation, verification, and signer export; run on demand or via tests'
   scripts/economic_benchmark.py: 'analytical economic benchmark engine comparing assisted vs unassisted agents; run on demand'
   scripts/workflow_runner.py: 'declared gates run or reported NOT RUN, with a receipt binding the target bytes and tree; run on demand'
   scripts/multimodel_bench.py: 'multi-model cross-evaluation benchmark comparing Headron lift, tokens, and multi-model collaboration across providers; run on demand'

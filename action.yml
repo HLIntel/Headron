@@ -30,15 +30,15 @@ inputs:
     required: false
     default: ''
   trust-file:
-    description: 'Path to SSH allowed signers trust list for receipt verification. Empty skips signature check.'
+    description: 'Reserved; receipt signature verification is not supported by this Action.'
     required: false
     default: ''
   signer:
-    description: 'Expected signer identity in the trust list for receipt verification.'
+    description: 'Reserved; receipt signature verification is not supported by this Action.'
     required: false
     default: ''
   trust-bundle:
-    description: 'Path to an Agent Trust Bundle JSON file to export and verify against.'
+    description: 'Reserved; Trust Bundle verification is not supported by this Action.'
     required: false
     default: ''
 outputs:
@@ -84,14 +84,8 @@ runs:
         INPUT_TRUST_BUNDLE: ${{ inputs.trust-bundle }}
       run: |
         export HEADRON_ROOT="$GITHUB_ACTION_PATH"
-        if [ -n "$INPUT_TRUST_BUNDLE" ] && [ -f "$INPUT_TRUST_BUNDLE" ]; then
-          TB_OUT="${RUNNER_TEMP:-/tmp}/headron_trust_signers"
-          python3 "$GITHUB_ACTION_PATH/scripts/trustbundle.py" export "$INPUT_TRUST_BUNDLE" --trust-out "$TB_OUT"
-          export HEADRON_TRUST_FILE="$TB_OUT"
-        elif [ -n "$INPUT_TRUST_FILE" ]; then
-          export HEADRON_TRUST_FILE="$INPUT_TRUST_FILE"
-        fi
-        if [ -n "$INPUT_SIGNER" ]; then
-          export HEADRON_SIGNER="$INPUT_SIGNER"
+        if [ -n "$INPUT_TRUST_BUNDLE$INPUT_TRUST_FILE$INPUT_SIGNER" ]; then
+          echo '::error::Receipt signature and Trust Bundle verification are not supported by this Action.'
+          exit 1
         fi
         python3 -c "import os, shlex, subprocess, sys; cmd = [os.environ.get('HEADRON_CMD', 'verify')]; args = os.environ.get('HEADRON_ARGS', '').strip(); sys.exit(subprocess.run(['headron'] + cmd + (shlex.split(args) if args else [])).returncode)"

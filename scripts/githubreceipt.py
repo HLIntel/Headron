@@ -21,9 +21,13 @@ REPORT_HEADING = "## HEADRON REPORT"
 
 
 def load_receipt(tree: Path, head_sha: str, base_sha: str | None) -> tuple[dict | None, str | None]:
-    """Look for an intact receipt in `tree` bound to base_sha. Returns (receipt_dict, error_message)."""
+    """Reject receipts until their evidence can be bound to the reported head."""
     import receipt
 
+    if not any(
+        os.environ.get(key) for key in ("HEADRON_REQUIRE_SIGNED_RECEIPT", "HEADRON_TRUST_FILE", "HEADRON_SIGNER")
+    ):
+        return None, None  # Verify the actual checkout rather than accepting unbound evidence.
     for rel in RECEIPT_CANDIDATES:
         path = tree / rel
         if not path.is_file():
@@ -44,7 +48,11 @@ def load_receipt(tree: Path, head_sha: str, base_sha: str | None) -> tuple[dict 
         sig_path = path.with_name(path.name + ".sig")
         trust_file = os.environ.get("HEADRON_TRUST_FILE")
         signer = os.environ.get("HEADRON_SIGNER")
-        if sig_path.is_file() and trust_file and signer:
+        if trust_file or signer:
+            if not trust_file or not signer:
+                return None, "receipt signature verification requires both a trust file and signer"
+            if not sig_path.is_file():
+                return None, f"receipt {rel} signature is missing"
             import receiptsign
 
             sig_findings = receiptsign.verify_detached(
@@ -52,7 +60,9 @@ def load_receipt(tree: Path, head_sha: str, base_sha: str | None) -> tuple[dict 
             )
             if sig_findings:
                 return None, "; ".join(sig_findings)
-        return rec, None
+        # This receipt format has no head identity. A valid signature and base do
+        # not establish that its checks ran on the commit being reported.
+        return None, f"receipt {rel} cannot be bound to head {head_sha}: head identity is not supported"
     return None, None
 
 
