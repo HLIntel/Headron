@@ -178,14 +178,14 @@ def _generic_schema() -> dict:
 def tools() -> list[dict]:
     """THE GENERIC TOOL, TYPED FEATURED TOOLS, AND MIND API (3.60.0). A tool per command listed 30-odd schemas on every request,
     and a client that budgets its tool list dropped the server whole (3.54.0). So the list is the one `headron` tool,
-    which takes the CLI's own argv and names every verb, the `FEATURED` tools an agent reaches for first,
+    which takes the CLI's own argv as a fallback, the `FEATURED` tools an agent reaches for first,
     and the Mind API orchestration tools for classification, planning, and routing."""
     granted = offered()
     verbs = ", ".join(granted)
     typed = [
         {
             "name": n,
-            "description": f"{s['about']} Successful structured results include the command record and exit code.",
+            "description": f"{s['about']} Returns command record and exit code.",
             "inputSchema": _featured_schema(n),
             "annotations": ANNOTATIONS,
         }
@@ -200,7 +200,7 @@ def tools() -> list[dict]:
     return [
         {
             "name": TOOL,
-            "description": f"Run a read-only Headron CLI command as argv when no dedicated tool fits; verbs: {verbs}. "
+            "description": f"Fallback: run read-only Headron CLI command argv when no dedicated typed tool covers the task; verbs: {verbs}. "
             f'{"Programs: mind --micro list. " if "mind" in granted else ""}["commands", "--json"] lists arguments; exit code is the verdict.',
             "inputSchema": _generic_schema(),
             "annotations": ANNOTATIONS,
@@ -268,36 +268,35 @@ def _argv(command: str, arguments: dict) -> list[str]:
 FEATURED: dict[str, dict] = {
     "port": {
         "verb": "port",
-        "about": "START HERE before editing a file: its route, tier, the gates to run, the lessons that apply, and the next commands.",
+        "about": "Pre-edit brief for ONE file: route, tier, owed gates, and relevant lessons. (Use steps for plan; proof for change scope).",
         "args": {"target": "target", "runtime": "runtime"},
         "required": ["target"],
         "paths": {"target": False},
     },
     "route": {
         "verb": "route",
-        "about": "Explain how a file path resolves to a language pack: returns the rule, evidence, guide, manifest and precedence. Use port for the full pre-edit brief; mind_route selects an agent instead.",
+        "about": "Resolve ONE file path to its language pack, rules, guide, and precedence. (Use port for full brief; mind_route for agent choice).",
         "args": {"path": "path"},
         "required": ["path"],
         "paths": {"path": True},
     },
     "gate": {
         "verb": "gate",
-        "about": "Show the command and state for a file's named verification gate; it does not execute the command. Use steps for an ordered work plan.",
+        "about": "Look up command and verification state for ONE named gate of a file without executing. (Use steps for plan; proof for owed gates).",
         "args": {"path": "path", "gate": "gate", "change": "change"},
         "required": ["path"],
         "paths": {"path": True},
     },
     "steps": {
         "verb": "steps",
-        "about": "Build an ordered work plan for one file, including its route and checks; no steps are executed. Tier, change class and runtime shape the plan. Use mind_plan for change classification and isolation guidance.",
+        "about": "Build ordered work plan of edit and check steps for ONE file without executing. (Use mind_plan for multiple changed files).",
         "args": {"path": "path", "runtime": "runtime", "change": "change", "tier": "tier"},
         "required": ["path"],
         "paths": {"path": True},
     },
     "failures": {
         "verb": "failures",
-        "about": "Mistakes agents made with a file (`for`) or with an error text (`match`), each with the guard that stops it. "
-        "The whole ledger is not offered: scope it with `for`, `match` or one shape's `id`.",
+        "about": "Look up recurring failure patterns and anti-drift rules matching a file (`for`) or error (`match`). Scope required.",
         "args": {"id": "id", "for": "for_", "match": "match", "limit": "limit"},
         "required": [],
         "scope": ["id", "for", "match"],
@@ -305,7 +304,7 @@ FEATURED: dict[str, dict] = {
     },
     "successes": {
         "verb": "successes",
-        "about": "Look up recorded practices that address recurring failures, including when to use them, evidence and proving instruments. Scope by file or task with `for`, or by pattern `id`; `limit` applies to `for`. Use failures for the corresponding mistake patterns.",
+        "about": "Look up proven practices addressing recurring failure patterns. Scope with `id` or `for`.",
         "args": {"id": "id", "for": "for_", "limit": "limit"},
         "required": [],
         "scope": ["id", "for"],
@@ -313,8 +312,7 @@ FEATURED: dict[str, dict] = {
     },
     "proof": {
         "verb": "proof",
-        "about": "Deterministic scope of a change to one file: its change class, planned gates and tools. "
-        "Measured verification (`--verify`) runs gates and stays on the CLI.",
+        "about": "Scope ONE file's change deterministically: resolves change class, required verification gates, and test tools. CLI runs verification.",
         "args": {"path": "path", "task": "task", "change": "change", "modifier": "modifier"},
         "required": ["path"],
         "paths": {"path": True},
@@ -326,7 +324,7 @@ FEATURED: dict[str, dict] = {
 MIND_API: dict[str, dict] = {
     "mind_classify": {
         "verb": "mind",
-        "about": "Classify a set of changed files by category and risk. Use proof for a single file's planned gates; this does not run verification.",
+        "about": "Classify a set of changed files by category and risk without running verification. (Use proof for single file scope).",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -334,7 +332,7 @@ MIND_API: dict[str, dict] = {
     },
     "mind_plan": {
         "verb": "mind",
-        "about": "Classify changed files and return Mind's planned gates and isolation needs. Use steps for an ordered file-specific work plan; neither runs checks.",
+        "about": "Classify changed files and return planned gates and isolation needs. (Use steps for single file plan).",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -342,7 +340,7 @@ MIND_API: dict[str, dict] = {
     },
     "mind_route": {
         "verb": "mind",
-        "about": "Select an agent and model tier for classified changes using capabilities and policy. Use route to explain a file's language pack; this does not authorize or execute an action.",
+        "about": "Select recommended agent and model tier for a set of changed files from policy. (Use route for language-pack resolution).",
         "args": {"files": "files"},
         "required": [],
         "paths": {"files": True},
@@ -358,7 +356,7 @@ MIND_API: dict[str, dict] = {
     },
     "mind_receipts": {
         "verb": "mind",
-        "about": "Retrieve verification receipts and their validity and verdicts. Locally this reads the last verification receipt, if present; a configured hosted service supplies its own results. Validity does not rerun checks. Use proof to plan verification.",
+        "about": "Retrieve verification receipts and validation verdicts. (Use proof to plan verification).",
         "args": {"limit": "limit"},
         "required": [],
         "paths": {},
