@@ -29,18 +29,6 @@ inputs:
     description: 'Risk modifiers to declare with the plan, comma separated'
     required: false
     default: ''
-  trust-file:
-    description: 'Reserved; receipt signature verification is not supported by this Action.'
-    required: false
-    default: ''
-  signer:
-    description: 'Reserved; receipt signature verification is not supported by this Action.'
-    required: false
-    default: ''
-  trust-bundle:
-    description: 'Reserved; Trust Bundle verification is not supported by this Action.'
-    required: false
-    default: ''
 outputs:
   mind-status:
     description: 'inactive when no key is set, otherwise active, invalid key, no active plan, or unavailable'
@@ -79,12 +67,9 @@ runs:
       env:
         HEADRON_CMD: ${{ inputs.command }}
         HEADRON_ARGS: ${{ inputs.args }}
-        INPUT_TRUST_FILE: ${{ inputs.trust-file }}
-        INPUT_SIGNER: ${{ inputs.signer }}
-        INPUT_TRUST_BUNDLE: ${{ inputs.trust-bundle }}
       run: |
         export HEADRON_ROOT="$GITHUB_ACTION_PATH"
-        if [ -n "$INPUT_TRUST_BUNDLE$INPUT_TRUST_FILE$INPUT_SIGNER" ]; then
+        if [ -n "${INPUT_TRUST_BUNDLE:-}${INPUT_TRUST_FILE:-}${INPUT_SIGNER:-}" ]; then
           echo '::error::Receipt signature and Trust Bundle verification are not supported by this Action.'
           exit 1
         fi

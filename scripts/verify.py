@@ -112,21 +112,28 @@ def proof_scope(gate: dict, tree: str, root: Path = ROOT, scoped: bool = True) -
     return f"inputs:{_digest(root, names)}"
 
 
-def _dependency_digest(root: Path = ROOT) -> str:
-    """Digest of the dependency lock file and toolchain config for cache invalidation.
+DEPENDENCY_LOCK_FILES = (
+    "scripts/requirements.lock.txt",
+    "uv.lock",
+    "pyproject.toml",
+    "poetry.lock",
+    "Pipfile.lock",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "bun.lock",
+    "Cargo.lock",
+    "go.sum",
+)
 
-    WHY (3.60.0). Byte-identical inputs with different dependencies can produce different results:
-    a gate that passes with ruff 0.16.8 may fail with ruff 0.17.0. The lock file and config files
-    that shape toolchain behavior are included in the cache key so evidence from one environment
-    is never REUSED in another after a dependency change."""
+
+def _dependency_digest(root: Path = ROOT) -> str:
+    """Digest of the dependency lock file and toolchain config for cache invalidation across polyglot ecosystems."""
     digest = hashlib.sha256()
-    # Lock files that pin dependency versions
-    for lock_name in ("scripts/requirements.lock.txt", "uv.lock", "pyproject.toml"):
+    for lock_name in DEPENDENCY_LOCK_FILES:
         lock_path = root / lock_name
         if lock_path.is_file():
-            digest.update(lock_name.encode() + b"\0")
-            digest.update(lock_path.read_bytes())
-            digest.update(b"\0")
+            digest.update(lock_name.encode() + b"\0" + lock_path.read_bytes() + b"\0")
     return digest.hexdigest()
 
 
