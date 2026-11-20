@@ -128,7 +128,7 @@ $ headron port scripts/doctor.py --line
 $ headron port scripts --line
 ◎ scripts │ ⠟231 │ ⌂scripts │ → headron brainstorm
 $ headron port . --line
-○ . │ ⠟257 ⠿3 ⠁1 │ → headron check
+○ . │ ⠟257 ⠿3 │ → headron check
 ```
 
 <!-- END generated: port-example -->
