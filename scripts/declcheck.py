@@ -452,6 +452,22 @@ def unpinned_uvx(argv: list) -> list[str]:
     return [s for s in specs if not re.search(r"==|@\d", s)]
 
 
+def gate_timeout_errors(gate: dict) -> list[str]:
+    """A done_set gate's optional `timeout_ms` is a positive integer of milliseconds, or absent.
+
+    verify.gate_timeout falls back to its 900 s default on any other value, so a typo ("900", 0, true) would
+    run under a budget nobody declared; the declaration is refused instead of read past."""
+    if "timeout_ms" not in gate:
+        return []
+    raw = gate["timeout_ms"]
+    if isinstance(raw, int) and not isinstance(raw, bool) and raw > 0:
+        return []
+    return [
+        f"done_set/{gate.get('id') or '<unnamed>'} timeout_ms must be a positive integer of milliseconds, "
+        f"got {raw!r} — verify would run it under its default budget, not the declared one"
+    ]
+
+
 def machine_dependence_errors() -> list[str]:
     """Every done_set gate declares whether its verdict can depend on the machine, and says why if it can.
 
@@ -483,6 +499,7 @@ def machine_dependence_errors() -> list[str]:
                 f"done_set/{name} env must list variable names, got {declared_env!r} — a bad entry "
                 f"reads as unset, so the evidence key would never see that variable change"
             )
+        errors.extend(gate_timeout_errors(gate or {}))
         if "machine_dependent" not in (gate or {}):
             errors.append(
                 f"done_set/{name} does not declare machine_dependent — a gate whose verdict can "

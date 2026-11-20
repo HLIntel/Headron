@@ -1873,6 +1873,9 @@ verification_policy:
   # time, and the coverage line the gate prints about itself; the entry files render the same list.
   # `mutates` marks a gate that plants and restores tracked files: under HEADRON_READ_ONLY it is NOT RUN,
   # and a NOT RUN is never counted as a pass — the run exits 2, incomplete, not 0.
+  # `timeout_ms` (optional, a positive integer) is that gate's own budget; a gate that omits it runs under
+  # verify's 900 s default, and one that overruns either is NOT RUN, never FAIL. declcheck refuses any other value.
+  # MEASURED at 3.64.0: `format` ran 0.1 s and planted_suite 384.1 s under that one budget.
   # THE FAST LOOP HOLDS THE REPOSITORY TO ITS OWN DONE SET, per changed file (3.20.0). Its first run applied
   # the pack's formatter to this harness, which had not adopted one then — every file "failed" a gate
   # the done set did not contain. Only these gates run per file; the rest wait for verify.
