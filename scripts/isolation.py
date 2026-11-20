@@ -14,8 +14,13 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-SENSITIVE_PREFIXES = ("AWS_", "GITHUB_TOKEN", "GH_TOKEN", "NVIDIA_", "GROQ_", "OPENAI_")
-SENSITIVE_SUFFIXES = ("_KEY", "_TOKEN", "_SECRET", "_PASSWORD")
+SENSITIVE_PREFIXES = ("AWS_", "GITHUB_TOKEN", "GH_TOKEN", "NVIDIA_", "GROQ_", "OPENAI_", "ANTHROPIC_")
+SENSITIVE_SUFFIXES = ("_KEY", "_TOKEN", "_SECRET", "_PASSWORD", "_PAT", "_APIKEY", "_CREDENTIALS", "_AUTH")
+# Every spelling a tool reads for its proxy. With network denied all point at a dead port, and the
+# exemption lists are dropped: an inherited NO_PROXY=* would route around the dead proxy.
+PROXY_VARS = ("http_proxy", "https_proxy", "all_proxy", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY")
+PROXY_EXEMPT = frozenset({"no_proxy", "NO_PROXY"})
+DEAD_PROXY = "http://127.0.0.1:0"
 SAFE_ENV_VARS = frozenset(
     {
         "PATH",
@@ -48,8 +53,18 @@ class CapabilityViolation(PermissionError):
 
 
 def is_sensitive_var(k: str) -> bool:
-    """Check if an environment variable name matches sensitive token prefixes or suffixes."""
-    return any(k.startswith(p) for p in SENSITIVE_PREFIXES) or any(k.endswith(s) for s in SENSITIVE_SUFFIXES)
+    """Check if an environment variable name matches sensitive token prefixes or suffixes, in any case."""
+    name = k.upper()
+    return name.startswith(SENSITIVE_PREFIXES) or name.endswith(SENSITIVE_SUFFIXES)
+
+
+def deny_network(env: dict[str, str]) -> dict[str, str]:
+    """Point every proxy spelling at a dead port, drop proxy exemptions, and mark the network off."""
+    for k in [k for k in env if k.lower() in PROXY_EXEMPT or k.lower() in {v.lower() for v in PROXY_VARS}]:
+        del env[k]
+    env.update(dict.fromkeys(PROXY_VARS, DEAD_PROXY))
+    env["NO_NETWORK"] = "1"
+    return env
 
 
 def isolated_environment(
@@ -66,12 +81,7 @@ def isolated_environment(
         elif not is_sensitive_var(k):
             cleaned[k] = v
 
-    if not allow_network:
-        cleaned["http_proxy"] = "http://127.0.0.1:0"
-        cleaned["https_proxy"] = "http://127.0.0.1:0"
-        cleaned["NO_NETWORK"] = "1"
-
-    return cleaned
+    return cleaned if allow_network else deny_network(cleaned)
 
 
 def verify_command_capabilities(argv: list[str], capabilities: WorkerCapabilities) -> str | None:
@@ -99,8 +109,6 @@ def run_isolated(
             if not is_sensitive_var(k):
                 env[k] = v
         if not caps.allow_network:
-            env["http_proxy"] = "http://127.0.0.1:0"
-            env["https_proxy"] = "http://127.0.0.1:0"
-            env["NO_NETWORK"] = "1"
+            deny_network(env)
 
     return subprocess.run(argv, cwd=str(cwd), capture_output=True, check=False, timeout=caps.timeout_s, env=env)
