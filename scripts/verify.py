@@ -37,7 +37,7 @@ from atlascore import ROOT, atlas, changed_paths, diff_names, resolved_once, str
 from localtools import find_tool
 from verifyinputs import _digest, _input_names, input_digest
 
-TIMEOUT = 900
+TIMEOUT = 900  # seconds; a gate record's `timeout_ms` overrides it for that gate alone
 # A cap leaves capacity for the gates themselves: more Python launchers than this only contend.
 DEFAULT_JOBS = min(multiprocessing.cpu_count() or 4, 8)
 SELF_REPORT = ("COVERAGE", "SCOPE", "tests:", "caps:", "install footprint", "passed,", "Headron Software contract")
@@ -72,14 +72,14 @@ def _bounded_read(stream: IO[bytes]) -> tuple[str, int]:
     return head + cut + stream.read().decode(errors="replace"), size
 
 
-def _bounded_run(argv: list[str], cwd: Path, env: dict | None = None) -> tuple[int, str, int]:
+def _bounded_run(argv: list[str], cwd: Path, env: dict | None = None, timeout: float = 0) -> tuple[int, str, int]:
     """Run one gate with its output in files: (exit code, stdout then stderr bounded, bytes written).
 
     TWO FILES, NOT ONE: merged, a buffered stdout flushed at exit AFTER the traceback, and the cause stopped
     being the last line. stdout then stderr keeps the order the verdict reader was proven on."""
     with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
         fds = {"stdin": subprocess.DEVNULL, "stdout": out, "stderr": err}  # no stdin: a gate reading it would hang
-        done = subprocess.run(argv, cwd=cwd, timeout=TIMEOUT, check=False, env=env or _gate_env(), **fds)  # noqa: S603
+        done = subprocess.run(argv, cwd=cwd, timeout=timeout or TIMEOUT, check=False, env=env or _gate_env(), **fds)  # noqa: S603
         (said, said_bytes), (cried, cried_bytes) = _bounded_read(out), _bounded_read(err)
         return done.returncode, said + cried, said_bytes + cried_bytes
 
@@ -238,13 +238,15 @@ def run_gate(gate: dict, cwd: Path = ROOT, env: dict | None = None) -> dict:
                 env["HEADRON_SLOT_HELD"] = os.environ["HEADRON_SLOT_HELD"]
         except SystemExit:
             return row | {"verdict": "NOT RUN", "why": "queue wait ran out for the machine slot"}
+    raw = gate.get("timeout_ms")  # the record's own budget, else TIMEOUT; declcheck refuses any bad value
+    budget = raw / 1000 if isinstance(raw, int) and not isinstance(raw, bool) and raw > 0 else TIMEOUT
     start = time.monotonic()
     try:
-        returncode, text, size = _bounded_run([tool, *argv[1:]], cwd, env)
+        returncode, text, size = _bounded_run([tool, *argv[1:]], cwd, env, budget)
     except subprocess.TimeoutExpired:
         # NO VERDICT, NOT A FAIL: an overrun under load says nothing about the change. branchstate already
         # read it NOT RUN; FAIL here blamed the change and fed learn() a cause that was the machine's.
-        return row | {"verdict": "NOT RUN", "why": f"timed out after {TIMEOUT}s", "seconds": TIMEOUT}
+        return row | {"verdict": "NOT RUN", "why": f"timed out after {budget:g}s", "seconds": budget}
     lines = [ln for ln in text.splitlines() if ln.strip()]
     if returncode == 75:  # atlas_test.BUSY: the machine holds another suite — not run, holder named
         return row | {"verdict": "NOT RUN", "why": (lines[-1] if lines else "busy")[:200]}

@@ -94,7 +94,7 @@ flowchart LR
 | [computation_contract](../scripts/computation_contract.py) | Machine-readable and enforced outer… | 2 | calculation, compute_compose | [computation_contract_test](../scripts/computation_contract_test.py) |
 | [compute_compose](../scripts/compute_compose.py) | Bounded computation graph for variance… | 2 | calculation, domain_reconcile, finance | [compute_compose_test](../scripts/compute_compose_test.py) |
 | [crosscache](../scripts/crosscache.py) | Cross-session execution cache and task DAG… | 2 | agentpolicy, atomicfile, safeedit | [crosscache_test](../scripts/crosscache_test.py) |
-| [declcheck](../scripts/declcheck.py) | declarations_are_read: a block in atlas.yaml… | 2 | abtest, agentpolicy, commands, delegate, knowledge, workflowbench | [agent_test](../scripts/agent_test.py), [vanish_test](../scripts/vanish_test.py) +1 |
+| [declcheck](../scripts/declcheck.py) | declarations_are_read: a block in atlas.yaml… | 2 | abtest, agentpolicy, commands, delegate, knowledge, workflowbench | [agent_test](../scripts/agent_test.py), [timeout_test](../scripts/timeout_test.py) +2 |
 | [doctor](../scripts/doctor.py) | doctor — can THIS machine run each… | 2 | agentpolicy, agreement, atlas_cli, githubapp | [atlas_test](../scripts/atlas_test.py), [bounds_test](../scripts/bounds_test.py) |
 | [domain_reconcile](../scripts/domain_reconcile.py) | Compare caller-supplied records by declared… | 2 | calculation |  |
 | [effects](../scripts/effects.py) | What a microprogram may do besides compute:… | 2 |  | [effects_test](../scripts/effects_test.py), [microcache_test](../scripts/microcache_test.py) |
