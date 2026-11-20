@@ -36,6 +36,31 @@ def test_isolated_environment_stripping() -> None:
     assert cleaned.get("http_proxy") == "http://127.0.0.1:0"
 
 
+def test_sensitive_names_in_any_case_and_common_shapes() -> None:
+    # Lowercase spellings and the PAT / APIKEY / CREDENTIALS / AUTH shapes used to pass straight through.
+    leaked = ["github_token", "openai_api_key", "GITLAB_PAT", "STRIPE_APIKEY", "GCP_CREDENTIALS", "NPM_AUTH"]
+    leaked += ["ANTHROPIC_BASE_URL"]
+    cleaned = isolation.isolated_environment({**dict.fromkeys(leaked, "v"), "EDITOR": "vi"}, allow_network=True)
+    assert [k for k in leaked if k in cleaned] == []
+    assert cleaned["EDITOR"] == "vi"
+
+
+def test_denied_network_overrides_every_proxy_spelling() -> None:
+    # An inherited upper-case proxy or a NO_PROXY exemption used to survive allow_network=False.
+    ambient = {"HTTPS_PROXY": "http://real:8080", "ALL_PROXY": "socks5://real", "NO_PROXY": "*", "no_proxy": "*"}
+    cleaned = isolation.isolated_environment(ambient, allow_network=False)
+    assert {k: cleaned.get(k) for k in isolation.PROXY_VARS} == dict.fromkeys(
+        isolation.PROXY_VARS, "http://127.0.0.1:0"
+    )
+    assert "NO_PROXY" not in cleaned and "no_proxy" not in cleaned
+
+    caps = isolation.WorkerCapabilities(allow_network=False)
+    probe = "import os, sys; print(*(os.environ.get(name) for name in sys.argv[1:]))"
+    argv = [sys.executable, "-c", probe, "HTTPS_PROXY", "NO_PROXY"]
+    done = isolation.run_isolated(argv, Path("."), caps, extra_env={"NO_PROXY": "*"})
+    assert done.stdout.decode().split() == ["http://127.0.0.1:0", "None"]
+
+
 def test_verify_command_capabilities() -> None:
     caps_no_net = isolation.WorkerCapabilities(allow_network=False)
     assert isolation.verify_command_capabilities(["curl", "https://example.com"], caps_no_net) is not None
@@ -74,6 +99,8 @@ def test_run_isolated_execution() -> None:
 
 if __name__ == "__main__":
     test_isolated_environment_stripping()
+    test_sensitive_names_in_any_case_and_common_shapes()
+    test_denied_network_overrides_every_proxy_spelling()
     test_verify_command_capabilities()
     test_run_isolated_execution()
     print("isolation_test: PASS")
