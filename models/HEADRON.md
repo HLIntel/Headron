@@ -42,6 +42,7 @@ one adapter per runtime — how each one loads this atlas and what it loads firs
 - [junie/README.md](junie/README.md)
 - [kilo/README.md](kilo/README.md)
 - [llm/README.md](llm/README.md)
+- [muse/README.md](muse/README.md)
 - [openai/README.md](openai/README.md)
 - [opencode/README.md](opencode/README.md)
 - [prompts/README.md](prompts/README.md)

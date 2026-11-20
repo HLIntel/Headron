@@ -23,7 +23,7 @@ Derived from `atlas.yaml/model_routes`, `runtime_roles` and `runtime_entry`.
 | `opencode` | `deterministic_repo_edit` · `terminal_parallelism` | `terminal_agent_workspace` | [opencode](models/opencode/README.md) |
 | `vscode` | `interactive_edit` | `interactive_ide_agent_host` | [vscode](models/vscode/README.md) |
 
-Entry only: [aider](models/aider/README.md) · [antigravity](models/antigravity/README.md) · [cline](models/cline/README.md) · [devin](models/devin/README.md) · [gemini](models/gemini/README.md) · [goose](models/goose/README.md) · [headron-desktop](models/headron-desktop/README.md) · [junie](models/junie/README.md) · [windsurf](models/windsurf/README.md) · [zed](models/zed/README.md).
+Entry only: [aider](models/aider/README.md) · [antigravity](models/antigravity/README.md) · [cline](models/cline/README.md) · [devin](models/devin/README.md) · [gemini](models/gemini/README.md) · [goose](models/goose/README.md) · [headron-desktop](models/headron-desktop/README.md) · [junie](models/junie/README.md) · [muse](models/muse/README.md) · [windsurf](models/windsurf/README.md) · [zed](models/zed/README.md).
 <!-- END generated: runtimes -->
 
 > **Agent/model directive:** Ask before reading: `headron gate <file> <gate>` for one command,
