@@ -94,6 +94,7 @@ from knowledge import decide, knowledge_errors, pick, why
 from linkcheck import link_errors
 from packmanifest import manifest_errors
 from parsegate import LOAD_FAILURES, load_errors, parse_errors
+from toolpins import pin_errors
 
 # THE SELF-MAINTENANCE MODULES ARE IMPORTED LAZILY, AND THAT IS A PACKAGING DECISION, NOT A STYLE
 # ONE. atlasgen generates THIS repository's documents and atlasinv checks THIS repository's 26
@@ -120,6 +121,11 @@ def _selfcheck():
 def _identity_errors() -> list[str]:
     from identity import identity_errors
     return identity_errors()
+
+
+def _pin_errors() -> list[str]:
+    """A gate tool pinned by version names that one version in every hand-typed copy and in uv.lock."""
+    return pin_errors((atlas().get("verification_policy") or {}).get("done_set") or [])
 
 
 def declaration_errors() -> tuple[list[str], list[str]]:
@@ -381,7 +387,7 @@ def composed() -> tuple:
             gate_tool_errors, entry_cost_errors, footprint_errors, process_errors, dirscope.declaration_errors,
             declcheck.mechanism_errors, declcheck.enforced_reference_errors, declcheck.return_label_errors,
             agreement.agreement_errors, output_schema_errors, example_coverage_errors, wheel_import_errors,
-            _identity_errors, cli_errors, argparse_reader_errors, generated_attribute_errors, knowledge_errors,
+            _identity_errors, _pin_errors, cli_errors, argparse_reader_errors, generated_attribute_errors, knowledge_errors,
             action_errors, claim_errors, runner_errors, version_errors, route_label_errors,
             decision_table_errors)
 

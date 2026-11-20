@@ -327,6 +327,7 @@ instrument_roster:
     entryglance.py: 'renders the atlas.yaml glance block into README, llms.txt, CHAT.md and bootstrap; a hand edit is refused by generated_errors, planted in atlas_test.py'
     adaptive.py: 'typed second-stage process selection imported by mind.py; its behavior is covered by mind_test.py'
     cacheinv.py: 'repository cache invariant called by atlasinv and planted by edge_cases_test'
+    toolpins.py: 'the gate-tool pin drift guard: every hand-typed ruff==/zizmor@ copy and uv.lock name one version; run by atlas check (_pin_errors), planted in atlas_rules_test.py; not an instrument, because the instrument ratchet only falls'
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
     artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `headron inspect`; its proof is artifacts_test.py, run by the artifacts_tests gate'
     datakit.py: 'standard-library data kit behind `headron data read|check|trace|calc`: tables with cell locations, schema checks, number tracing, formula recompute; its proof is datakit_test.py, run by the artifacts_tests gate'
@@ -1917,11 +1918,11 @@ verification_policy:
      why_machine_dependent: 'the runner is fetched by pinned version on first run, so a machine with no uv or no network reports NOT RUN where another one runs it'}
 # INPUTS (per-gate proof): ruff reads only Python sources and the config that shapes them. A pattern
   # matches with fnmatch, so *.py reaches every directory; .gitignore decides which files ruff sees.
-  - {id: lint, argv: [uvx, --from, ruff==0.16.8, ruff, check, .], mutates: false, machine_dependent: true, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract],
+  - {id: lint, argv: [uvx, --from, ruff==0.17.3, ruff, check, .], mutates: false, machine_dependent: true, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract],
      why_machine_dependent: 'the pinned tool requires uv and an available package cache or network'}
   # THE PACK'S FORMATTER, ADOPTED ON ITS OWN TREE: one reformat commit (in .git-blame-ignore-revs);
   # files the cap forbids reformatting are listed in pyproject.toml [tool.ruff.format] exclude.
-  - {id: format, argv: [uvx, --from, ruff==0.16.8, ruff, format, --check, .], mutates: false, machine_dependent: true, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract],
+  - {id: format, argv: [uvx, --from, ruff==0.17.3, ruff, format, --check, .], mutates: false, machine_dependent: true, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract],
      why_machine_dependent: 'the pinned tool requires uv and an available package cache or network'}
   # THE PACK'S DECLARED TYPE CHECKER, ON ITS OWN TREE (3.54.0), pinned, at zero errors. No findings
   # baseline: new_violations_cannot_hide_in_baseline refuses one, so every error was fixed first.

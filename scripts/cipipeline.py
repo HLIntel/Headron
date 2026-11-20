@@ -179,16 +179,16 @@ JOBS: tuple[Job, ...] = (
             UV,
             Step(
                 "Check the pinned linter",
-                "uvx --from ruff==0.16.8 ruff --version",
+                "uvx --from ruff==0.17.3 ruff --version",
                 timeout_s=480,
                 why=("Use the same pinned executable in CI and in local replay."),
             ),
-            Step("Lint the harness", "uvx --from ruff==0.16.8 ruff check .", timeout_s=480),
+            Step("Lint the harness", "uvx --from ruff==0.17.3 ruff check .", timeout_s=480),
             Step(
                 "Check the harness is formatted",
                 (
-                    "uvx --from ruff==0.16.8 ruff format --check . || {\n"
-                    "  uvx --from ruff==0.16.8 ruff format --diff .\n"
+                    "uvx --from ruff==0.17.3 ruff format --check . || {\n"
+                    "  uvx --from ruff==0.17.3 ruff format --diff .\n"
                     "  exit 1\n"
                     "}\n"
                 ),

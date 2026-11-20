@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-77 modules that at most one other module imports: 29 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+78 modules that at most one other module imports: 29 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -52,6 +52,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [shellsplit](../scripts/shellsplit.py) | The shell-string helpers shell_verdict reads: top-level statements, pipeline stages, heredoc… | 1 |  |  |
 | [taskbench](../scripts/taskbench.py) | Does Headron make a model better at work OTHER than routing? Blind against with-Headron, per… | 1 | abtest, agentpolicy, providers |  |
 | [textguard](../scripts/textguard.py) | Characters in tracked text that a reader cannot see, or cannot tell apart | 1 |  |  |
+| [toolpins](../scripts/toolpins.py) | Drift guard: a tool the done set pins by version is pinned to that one version everywhere | 1 |  |  |
 | [verifyinputs](../scripts/verifyinputs.py) | Content identities for verification evidence | 1 |  |  |
 | [workflowbench](../scripts/workflowbench.py) | Does Headron change what agents DO — alone, and when one hands work to another? Measured, per… | 1 | abtest, agentpolicy, dirscope | [atlas_test](../scripts/atlas_test.py) |
 | [yamlshape](../scripts/yamlshape.py) | yaml_prose_is_quoted: prose inside a YAML flow collection is quoted, so a comma cannot… | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py), [edge_cases_test](../scripts/edge_cases_test.py) |
