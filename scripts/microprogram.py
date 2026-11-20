@@ -19,13 +19,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pickle
+import signal
+import subprocess
 import threading
 import time
 from collections import OrderedDict
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from threading import local
 from typing import Any, Protocol
 
 import effects
@@ -522,28 +526,73 @@ def cache_clear() -> None:
         _CACHE_COUNTS.update(dict.fromkeys(_CACHE_COUNTS, 0))
 
 
+class _ProcessTracker(local):
+    def __init__(self) -> None:
+        self.procs: list[subprocess.Popen[Any]] | None = None
+
+
+_PROCESS_TRACKER = _ProcessTracker()
+_POPEN_ORIG_INIT = subprocess.Popen.__init__
+
+
+def _tracked_popen_init(self: subprocess.Popen[Any], *args: Any, **kwargs: Any) -> None:
+    _POPEN_ORIG_INIT(self, *args, **kwargs)
+    procs = getattr(_PROCESS_TRACKER, "procs", None)
+    if procs is not None:
+        procs.append(self)
+
+
+subprocess.Popen.__init__ = _tracked_popen_init  # type: ignore[method-assign]
+
+
+def _kill_proc(proc: subprocess.Popen[Any]) -> None:
+    try:
+        if proc.poll() is not None:
+            return
+        if os.name == "posix":
+            try:
+                pgid = os.getpgid(proc.pid)
+                if pgid != os.getpgrp():
+                    os.killpg(pgid, signal.SIGKILL)
+                else:
+                    proc.kill()
+            except (ProcessLookupError, PermissionError, OSError):
+                proc.kill()
+        else:
+            proc.kill()
+    except (ProcessLookupError, OSError):
+        pass
+
+
 def _bounded(program: MicroProgram, context: Mapping[str, Any]) -> MicroResult:
     """Run the program on a daemon thread and wait at most its timeout_s.
 
     A Python thread cannot be killed, so an overrun step is abandoned, not stopped: it is a daemon, so it
-    cannot hold the process open, and it writes only to its own holder, never to the counters. The worker
-    is held to the program's declared effects (effects.scope): an undeclared write, spawn or connection is
-    refused before it happens and ends the run as status "error".
+    cannot hold the process open, and it writes only to its own holder, never to the counters. Any child
+    processes spawned by the worker are terminated on timeout. The worker is held to the program's declared
+    effects (effects.scope): an undeclared write, spawn or connection is refused before it happens and ends
+    the run as status "error".
     """
     timeout_s = float(getattr(program, "timeout_s", DEFAULT_TIMEOUT_S))
     holder: dict[str, Any] = {}
+    spawned_procs: list[subprocess.Popen[Any]] = []
 
     def target() -> None:
+        _PROCESS_TRACKER.procs = spawned_procs
         try:
             with effects.scope(program):
                 holder["result"] = program.run(context)
         except BaseException as exc:  # noqa: BLE001 - carried back to the caller, raised nowhere
             holder["error"] = exc
+        finally:
+            _PROCESS_TRACKER.procs = None
 
     worker = threading.Thread(target=target, name=f"micro:{program.name}", daemon=True)
     worker.start()
     worker.join(timeout_s)
     if worker.is_alive():
+        for proc in spawned_procs:
+            _kill_proc(proc)
         return MicroResult(
             program.name,
             program.version,

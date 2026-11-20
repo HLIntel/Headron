@@ -37,7 +37,8 @@ def install_lines(owner: str, repository: str) -> list[str]:
         f"2. **You cannot**: give the user https://github.com/{owner}/{repository}/releases/latest/download/"
         f"{CHAT_SKILL_ASSET}",
         "3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, "
-        "then start a new chat. Another runtime that loads skill folders takes the same `headron/` folder.",
+        "then start a new chat. For Google agents (Antigravity, Gemini, Google AI Studio) or Muse, "
+        "import or load the same `headron/` folder.",
         "4. Until it is installed, work from this file for the rest of the session.",
         "",
         "- " + " · ".join(f"`{p}`" for p in files),

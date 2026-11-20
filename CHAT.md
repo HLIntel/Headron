@@ -19,7 +19,7 @@ If the user asks to install it, the skill makes guidance available to compatible
 
 1. **You can create files** (code execution, an artifact or file tool): fetch each path below from `R` and return ONE zip whose root folder is `headron/`, each file at its path under `models/chat/headron/`. Hand the user the zip.
 2. **You cannot**: give the user https://github.com/HLIntel/Headron/releases/latest/download/headron-chat-skill.zip
-3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, then start a new chat. Another runtime that loads skill folders takes the same `headron/` folder.
+3. Tell the user: claude.ai → Settings → Capabilities → Skills → Upload skill, choose the zip, then start a new chat. For Google agents (Antigravity, Gemini, Google AI Studio) or Muse, import or load the same `headron/` folder.
 4. Until it is installed, work from this file for the rest of the session.
 
 - `models/chat/headron/SKILL.md` · `models/chat/headron/references/failures.md` · `models/chat/headron/references/moves.md` · `models/chat/headron/references/routes.md` · `models/chat/headron/references/shapes.md`
