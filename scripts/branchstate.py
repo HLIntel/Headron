@@ -412,8 +412,8 @@ def _unreported(rollup: list[dict], rules: list[dict]) -> list[str]:
 # atlas_test.py removed from local gates (3.58.0): the planted suite takes ~14 minutes and is already
 # enforced by CI required checks; the local land should be fast so a writer does not queue behind it.
 CLEAN_GATES = (
-    ("uvx", "--from", "ruff==0.16.8", "ruff", "format", "--check", "."),
-    ("uvx", "--from", "ruff==0.16.8", "ruff", "check", "."),
+    ("uvx", "--from", "ruff==0.17.3", "ruff", "format", "--check", "."),
+    ("uvx", "--from", "ruff==0.17.3", "ruff", "check", "."),
     ("{python}", "scripts/atlas.py", "check"),
 )
 # One gate's wall-clock budget: the 600s every git call uses killed a GREEN 795s suite mid-run (3.49.0).

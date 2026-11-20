@@ -451,15 +451,15 @@ def machine_dependence_cases() -> None:
                   "a caveat that lives only in the declaration, where a consumer reading the record "
                   "cannot see it"))
     print("  ok    a gate's machine dependence reaches its record")
-    declared = ("  - {id: lint, argv: [uvx, --from, ruff==0.16.8, ruff, check, .], mutates: false, machine_dependent: true, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract],\n"
+    declared = ("  - {id: lint, argv: [uvx, --from, ruff==0.17.3, ruff, check, .], mutates: false, machine_dependent: true, inputs: ['*.py', '*.pyi', '*.ipynb', pyproject.toml, .gitignore], depends_on: [contract],\n"
                 "     why_machine_dependent: 'the pinned tool requires uv and an available package cache or network'}")
     with mutated("atlas.yaml", lambda s, d=declared: s.replace(
-            d, "  - {id: lint, argv: [uvx, --from, ruff==0.16.8, ruff, check, .], mutates: false}", 1)):
+            d, "  - {id: lint, argv: [uvx, --from, ruff==0.17.3, ruff, check, .], mutates: false}", 1)):
         case("a done_set gate that does not declare machine_dependent FAILS",
              "a new gate silently assumed universal, which is the assumption that caused the sighting",
              True, "does not declare machine_dependent", by='inv:declarations_are_read')
     with mutated("atlas.yaml", lambda s, d=declared: s.replace(
-            d, "  - {id: lint, argv: [uvx, --from, ruff==0.16.8, ruff, check, .], mutates: false, machine_dependent: true}", 1)):
+            d, "  - {id: lint, argv: [uvx, --from, ruff==0.17.3, ruff, check, .], mutates: false, machine_dependent: true}", 1)):
         case("a machine-dependent gate with no stated reason FAILS",
              "a local-only verdict carrying a caveat nobody can act on",
              True, "states no why_machine_dependent", by='inv:declarations_are_read')
@@ -683,16 +683,14 @@ DECLARATION_PLANTS: list[tuple[str, str, str, str, str, str, str | tuple[str, st
      "a build order whose gate no policy defines", "which verification_policy does not declare", 'cross_reference_errors'),
     ("atlas.yaml", "  owner: HLIntel\n", "  owner: ''\n", "an identity with no owner FAILS",
      "a URL segment every badge and checkout resolves, left blank", "identity declares no owner", '_identity_errors'),
+    ("scripts/cipipeline.py", "ruff==0.17.3", "ruff==0.16.8", "a CI step pinning another ruff than the done set FAILS",
+     "CI lint and the gate judging one tree with two rulers", "tool pin drift: ruff", '_pin_errors'),
 ]
 
 
 def declaration_plant_cases() -> None:
-    """Every declared roster this contract reads, one planted defect per way it stops resolving.
-
-    Scopes and mechanisms are the same KIND of thing — a row whose every field must point at
-    something that exists — so they are one table rather than two functions that differ only in
-    their strings.
-    """
+    """Every declared roster this contract reads, one planted defect per way it stops resolving: scopes,
+    mechanisms and tool pins are one KIND of row, every field pointing at something that exists, so one table."""
     for where, find, replace, name, kills, needle, by in DECLARATION_PLANTS:
         with mutated(where, lambda s, f=find, r=replace: s.replace(f, r, 1)):
             case(name, kills, True, needle, by=by)

@@ -55,7 +55,7 @@
     "host_shapes": "7f67347de672e978",
     "identity": "d877c2f2f0093123",
     "install_commands": "a165d7b3c78cc831",
-    "instrument_roster": "f4039f8fe1b27245",
+    "instrument_roster": "e2d355ed20674b04",
     "instruments": "edb804bc45bceaf5",
     "intents": "bdc178b851e1ea46",
     "issue_route_terms": "1eb7ea6cabea5e64",
@@ -93,7 +93,7 @@
     "tool_claims": "7b517c578bca9fcf",
     "tool_profiles": "04870283b3c355ed",
     "topologies": "91fdccb3f35e1f72",
-    "verification_policy": "6b43650e9f785467",
+    "verification_policy": "9b8551ade43b3978",
     "version": "1e335e469a0dcd12",
     "version_sites": "946cbb758f92d46a",
     "worktree_policy": "4189b7544a992b94"
