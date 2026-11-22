@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HLIntel/Headron/tools/capabilities.schema.json",
+  "title": "Headron capability catalog v1",
+  "description": "Stable numerical capability IDs for language-independent verification and Help dispatch. Operations retain permanent semantic identity across tool releases.",
+  "type": "object",
+  "required": ["schema", "kind", "capability", "name", "contract_version", "requires", "result"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": 1},
+    "kind": {"const": "headron.capability"},
+    "capability": {
+      "type": "integer",
+      "enum": [100, 110, 120, 200, 210, 220, 230, 240, 300, 310, 400, 410, 500],
+      "description": "Permanent numerical capability ID"
+    },
+    "name": {
+      "type": "string",
+      "enum": [
+        "language.identify",
+        "project.boundary",
+        "dialect.identify",
+        "code.compile_or_typecheck",
+        "code.format",
+        "tests.execute",
+        "security.analyze",
+        "fuzz.execute",
+        "deps.resolve",
+        "boundary.trace",
+        "evidence.produce",
+        "proof.validate",
+        "result.explain"
+      ]
+    },
+    "contract_version": {"type": "integer", "minimum": 1},
+    "description": {"type": "string"},
+    "requires": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "result": {
+      "type": "object",
+      "required": ["schema"],
+      "properties": {
+        "schema": {"type": "string"}
+      }
+    }
+  }
+}

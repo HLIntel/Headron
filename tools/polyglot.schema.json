@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HLIntel/Headron/tools/polyglot.schema.json",
+  "title": "Headron polyglot fingerprint v1",
+  "description": "Computed structural language fingerprint and cross-language contract links for a project repository.",
+  "type": "object",
+  "required": [
+    "schema",
+    "kind",
+    "project_id",
+    "revision",
+    "languages",
+    "primary_build_system",
+    "boundaries",
+    "capabilities_available",
+    "capabilities_unavailable",
+    "cross_language_contracts",
+    "status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": 1},
+    "kind": {"const": "headron.polyglot"},
+    "project_id": {"type": "string"},
+    "revision": {"type": "string"},
+    "languages": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "primary_build_system": {"type": "string"},
+    "boundaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["root", "route", "manifest"],
+        "properties": {
+          "root": {"type": "string"},
+          "route": {"type": "string"},
+          "manifest": {"type": "string"}
+        }
+      }
+    },
+    "capabilities_available": {
+      "type": "array",
+      "items": {"type": "integer"}
+    },
+    "capabilities_unavailable": {
+      "type": "array",
+      "items": {"type": "integer"}
+    },
+    "cross_language_contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_route", "target_route", "contract_type", "evidence_path"],
+        "properties": {
+          "source_route": {"type": "string"},
+          "target_route": {"type": "string"},
+          "contract_type": {
+            "type": "string",
+            "enum": ["api_schema", "database_migration", "protobuf", "graphql", "binding"]
+          },
+          "evidence_path": {"type": "string"}
+        }
+      }
+    },
+    "status": {"enum": ["resolved", "partial", "unresolved"]}
+  }
+}
