@@ -460,6 +460,13 @@ instrument_roster:
     taskimage_portable_test.py: 'a case module that verifies portable task images and cross-checkout execution'
     multimodel_bench.py: 'multi-model cross-evaluation benchmark comparing Headron lift, tokens, and multi-model collaboration across providers; proven by multimodel_bench_test.py'
     multimodel_bench_test.py: 'a case module that verifies multi-model matrix computation and collaborative evaluation'
+    capability_catalog.py: 'permanent numerical capability registry (contract v1) mapping operations 100..500; its proof is polyglot_test.py'
+    polyglot.py: 'polyglot capability resolver facade for project inspection and capability states; its proof is polyglot_test.py'
+    polyglot_boundary.py: 'cross-language contract boundary detector for API schemas, protobuf, and migrations; its proof is polyglot_test.py'
+    polyglot_test.py: 'a case module verifying polyglot inspection, boundaries, and capability resolution; run by test suite'
+    help_intent.py: 'deterministic model-free intent compiler, slot resolver, and page-aware question ranker; its proof is help_intent_test.py'
+    help_redact.py: 'sensitive-result redactor scrubbing API keys, tokens, and private credentials; its proof is help_intent_test.py'
+    help_intent_test.py: 'a case module verifying model-free intent compilation, slot resolution, and credential redaction'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -1442,7 +1449,7 @@ markdown_policy:
     - '(^|/)(archives?|ARCHIVE|_archive|DAILY NOTES|[Dd]aily)/'
     - '(^|/)[^/]*\d{4}-\d{2}[^/]*\.md$'
     - '(^|/)(DECISIONS|PROBLEMS|CHANGELOG|VERSIONING)\.md$'
-  generated: ['^docs/INSTRUMENTS\.md$']
+  generated: ['^docs/INSTRUMENTS\.md$', '^docs/MODULES\.md$']
   entries: [README.md, AGENTS.md, MODEL.md, docs/INDEX.md]
   loaded_by_harness: [.github/, .gemini/]
   oversize: {}
@@ -6278,6 +6285,13 @@ orphan_exemptions:
   testgroups.run_counted: the case harness a test module runs its cases under; a test is its only caller by design
   testgroups.micro_shreds: the case harness that splits a test module's cases; a test is its only caller by design
   testgroups.run_guard_halves: the case harness that runs both guards halves in one process; a test is its only caller by design
+  scripts/help_intent.py: 'deterministic model-free intent compiler and slot resolver behind Headron Help; run on demand or via tests'
+  scripts/help_redact.py: 'sensitive-result credential redactor scrubbing secrets prior to Help rendering; run on demand or via tests'
+  capability_catalog.is_valid_capability: 'validation helper for permanent capability IDs (100..500); called on demand or via tests'
+  help_intent.compile_intent: 'deterministic model-free intent compiler mapping user queries to capability IDs; called by Help dispatcher or tests'
+  help_intent.rank_questions: 'page-aware question ranking engine for Help interface; called by Help UI or tests'
+  help_intent.render_explanation: 'deterministic explanation generator from structured state; called by Help or tests'
+  help_redact.redact_record: 'nested credential redaction for structured objects; called by Help or tests'
 
 issue_route_terms: [atlas, binary_artifact, compatibility, context7, database, dbhub, dependencies, dependency_scan, environment, extension, fuzz, generated_artifact, github, http, integration_test, issue_labels, language_debugger, language_lane, links, manifest, merge, migration, module_size, mutation_test, orphans, ownership, payload_size, playwright, polyglot, property_test, query_plan, regression, routes, runtime_debugger, schema, semgrep, serena, task_profile, topic_branch, transaction, versions, webhook, worktree]
 
