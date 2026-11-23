@@ -205,7 +205,7 @@ def _emit_plan(root: Path, plan_id: int, as_json: bool) -> int:
 def _emit_capabilities(root: Path, as_json: bool) -> int:
     c_map = capabilities(root)
     if as_json:
-        print(json.dumps(c_map, indent=2))
+        print(json.dumps({"command": "polyglot", "capabilities": c_map}, indent=2))
         return 0
     for cid, data in sorted(c_map.items()):
         print(f"[{data['status'].upper():11}] {cid} {data['name']}")

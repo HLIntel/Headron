@@ -744,8 +744,7 @@ def cli_record_cases() -> None:
         "init": [["init", "--json"]],
         "intake": [
             ["intake", f"fix a bug in {here}", "--brief", "--json"],
-            ["intake", "add a cache", "--json"],
-            ["intake", "--brief", "--json"],  # the desktop's per-turn call carries no prompt (3.60.0)
+            ["intake", "add a cache", "--json"], ["intake", "--brief", "--json"],
         ],
         "shell": [["shell", "--json", "ls -la"]],
         "inspect": [["inspect", str(tmp / "book.xlsx"), "--json"]],
@@ -759,10 +758,8 @@ def cli_record_cases() -> None:
         "resume": [["resume", "--json"]],
         "steps": [["steps", here, "--runtime", "cursor", "--json"]],
         "failures": [
-            ["failures", "--json"],
-            ["failures", "--for", here, "--json"],
-            ["failures", "--match", "substring not found", "--json"],
-            ["failures", "a_draft_probe_shape", "--draft", "x", "--json"],
+            ["failures", "--json"], ["failures", "--for", here, "--json"],
+            ["failures", "--match", "substring not found", "--json"], ["failures", "a_draft_probe_shape", "--draft", "x", "--json"],
         ],
         "successes": [["successes", "--json"], ["successes", "--for", here, "--json"]],
         "brainstorm": [["brainstorm", str(tmp / "pick.yaml"), "--json"]],
@@ -778,6 +775,8 @@ def cli_record_cases() -> None:
         + [["revise", "--on", "symbol:gateplace.unadopted", "--json"]],
         "process": [["process", "--json"]],
         "propose": [["propose", "--json"], ["propose", "--check", "no-such-draft.json", "--json"]],
+        "polyglot": [["polyglot", "--json"], ["polyglot", "--capabilities", "--json"]],
+        "ask": [["ask", "what does this repo do", "--json"]],
     }  # swept above, by producer
     takes_json = {
         n for n, c in commands.command_table().items() if any("--json" in a.option_strings for a in c["arguments"])
