@@ -62,6 +62,7 @@ def dispatch_help(
     location = select_execution_location(intent.capability, [runtime, "offline"])
 
     result_payload: dict[str, Any] = {
+        "command": "ask",
         "query": scrubbed_query,
         "redactions_applied": redacts_count,
         "capability": intent.capability,

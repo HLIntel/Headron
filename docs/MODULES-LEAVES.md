@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-84 modules that at most one other module imports: 30 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+83 modules that at most one other module imports: 30 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -49,7 +49,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [parsegate](../scripts/parsegate.py) | Every tracked artifact parses: the first thing the contract asks, since nothing after it means… | 1 | headronlang, treeformat |  |
 | [pipeline](../scripts/pipeline.py) | State-to-action pipeline — finite state machine: INGEST → CLASSIFY → VERIFY → EXIT | 1 | decide, reflex | [pipeline_test](../scripts/pipeline_test.py) |
 | [plantcheck](../scripts/plantcheck.py) | plants_can_still_apply: every mutation anchor in the planted suites still matches the file it… | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
-| [polyglot_plan](../scripts/polyglot_plan.py) | Headron polyglot capability negotiation and verification planning engine (contract v1) | 1 | capability_catalog, polyglot, polyglot_boundary | [polyglot_plan_test](../scripts/polyglot_plan_test.py) |
 | [privacy_guard](../scripts/privacy_guard.py) | Refuse personal data and secrets before they reach a commit, a push, or the shared history | 1 |  | [privacy_guard_test](../scripts/privacy_guard_test.py) |
 | [processpolicy](../scripts/processpolicy.py) | Declared workflow records and their stopping conditions | 1 | agentpolicy |  |
 | [ronbundle](../scripts/ronbundle.py) | A `.ron` bundle: one task's contract, receipts and evidence as a directory that verifies from… | 1 | atomicfile, obligations, receipt, receiptsign | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |

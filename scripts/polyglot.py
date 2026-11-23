@@ -6,6 +6,8 @@ without requiring LLMs or updates on tool release cycles.
 
 from __future__ import annotations
 
+import argparse
+import json
 import shutil
 from pathlib import Path
 from typing import Any
@@ -27,7 +29,8 @@ from capability_catalog import (
     get_capability,
     list_capabilities,
 )
-from polyglot_boundary import detect_cross_language_contracts
+from polyglot_boundary import detect_cross_language_contracts, discover_boundaries
+from polyglot_plan import negotiate_capability
 
 # Manifest to route and build system mapping
 MANIFEST_ROUTES: tuple[tuple[str, str, str], ...] = (
@@ -102,6 +105,7 @@ def inspect(project_root: Path) -> dict[str, Any]:
     contracts = [c.to_dict() for c in detect_cross_language_contracts(project_root)]
 
     return {
+        "command": "polyglot",
         "schema": 1,
         "kind": "headron.polyglot",
         "project_id": project_root.name or "project",
@@ -168,13 +172,12 @@ def explain(fingerprint: dict[str, Any], capability_id: int) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     """CLI dispatcher for polyglot inspection and capability querying."""
-    import argparse
-    import json
-
     parser = argparse.ArgumentParser(description="Headron polyglot capability resolver")
     parser.add_argument("path", nargs="?", default=".", help="Project path to inspect")
     parser.add_argument("--json", action="store_true", help="Print fingerprint as JSON")
     parser.add_argument("--capabilities", action="store_true", help="Print all capabilities status")
+    parser.add_argument("--boundaries", action="store_true", help="Print discovered cross-language boundaries")
+    parser.add_argument("--plan", type=int, help="Plan cross-language verification for capability ID")
     parser.add_argument("--explain", type=int, help="Explain specific capability ID")
     args = parser.parse_args(argv)
 
@@ -183,7 +186,33 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.explain:
         res = explain(fp, args.explain)
+        res["command"] = "polyglot"
         print(json.dumps(res, indent=2) if args.json else f"[{res['status'].upper()}] {res['explanation']}")
+        return 0
+
+    if args.boundaries:
+        bounds = discover_boundaries(root)
+        if args.json:
+            print(json.dumps({"command": "polyglot", "boundaries": [b.to_dict() for b in bounds]}, indent=2))
+        else:
+            print(f"Discovered {len(bounds)} cross-language boundary contract(s):")
+            for b in bounds:
+                print(f"  [{b.contract_type}] {b.source_route} -> {b.target_route} ({b.evidence_path})")
+        return 0
+
+    if args.plan is not None:
+        res = negotiate_capability(args.plan, root)
+        res["command"] = "polyglot"
+        if args.json:
+            print(json.dumps(res, indent=2))
+        else:
+            print(f"Negotiation for capability {args.plan}: {res['status']}")
+            print(f"  Route: {res['route']} | Selected tool: {res.get('selected_tool') or 'none'}")
+            print(f"  Command: {res.get('command') or 'none'}")
+            if res.get("fallback_chain"):
+                print("  Fallback options:")
+                for fb in res["fallback_chain"]:
+                    print(f"    - {fb}")
         return 0
 
     if args.capabilities:

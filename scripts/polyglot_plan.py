@@ -11,8 +11,15 @@ from pathlib import Path
 from typing import Any
 
 from capability_catalog import ANALYZE_SECURITY, COMPILE_OR_TYPECHECK, EXECUTE_TESTS, FORMAT_CODE, TRACE_BOUNDARY
-from polyglot import inspect
 from polyglot_boundary import detect_cross_language_contracts
+
+# Manifest candidate mapping for fallback route detection
+_MANIFEST_ROUTES: tuple[tuple[str, str], ...] = (
+    ("pyproject.toml", "python"),
+    ("Cargo.toml", "rust"),
+    ("package.json", "typescript"),
+    ("go.mod", "go"),
+)
 
 # Tool candidate matrix by route and capability
 # Structure: (route, capability_id): tuple[tuple[tool_binary, command_template], ...]
@@ -46,8 +53,11 @@ def negotiate_capability(capability_id: int, project_root: Path, route: str | No
     root = project_root.resolve()
     target_route = route
     if not target_route:
-        fp = inspect(root)
-        target_route = fp["languages"][0] if fp["languages"] else "python"
+        for manifest_name, candidate_route in _MANIFEST_ROUTES:
+            if (root / manifest_name).is_file():
+                target_route = candidate_route
+                break
+        target_route = target_route or "python"
 
     candidates = _CANDIDATE_MATRIX.get((target_route, capability_id), ())
     if not candidates:

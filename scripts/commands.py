@@ -533,6 +533,29 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
         ),
     ),
     (
+        "polyglot",
+        "project language fingerprint, cross-boundary contracts and capability plans",
+        "emit the polyglot record as JSON",
+        (
+            _arg("path", nargs="?", default=".", help="project root or file to inspect"),
+            _arg("--capabilities", **_ON, help="list available native verification capabilities"),
+            _arg("--boundaries", **_ON, help="list discovered cross-language contract boundaries"),
+            _arg("--plan", type=int, default=None, help="plan verification for a capability ID (e.g. 200, 220)"),
+            _arg("--explain", type=int, default=None, help="explain a capability ID and why it is available or missing"),
+        ),
+    ),
+    (
+        "ask",
+        "answer a plain question deterministically from policy, evidence and capabilities",
+        "emit the help dispatch record as JSON",
+        (
+            _arg("query", nargs="?", default="", help="the plain question or Help inquiry to answer"),
+            _arg("--root", default=".", help="project root path"),
+            _arg("--plan", default="trust", help="plan tier: trust, standard, team, enterprise"),
+            _arg("--runtime", default="offline", help="runtime mode: offline, browser, local_driver"),
+        ),
+    ),
+    (
         "sweep",
         "fast semantic sweep of repository tiers, shards, pointers and tunnels",
         "emit the sweep record as JSON",

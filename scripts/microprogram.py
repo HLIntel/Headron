@@ -386,10 +386,61 @@ class RonVerify:
         return MicroResult(self.name, self.version, status, evidence_refs=(*refs, f"open {first_open}"), next=next_step)
 
 
+class PolyglotMicro:
+    """Project language fingerprint, capability catalog, and boundary discovery."""
+
+    name = "polyglot"
+    version = "1"
+    declared = effects.Declared({"read", "write"})
+    timeout_s = 15.0
+
+    def run(self, context: Mapping[str, Any]) -> MicroResult:
+        root_str = str(context.get("root") or ".").strip()
+        path = Path(root_str).resolve()
+        if not path.exists():
+            return MicroResult(
+                self.name,
+                self.version,
+                "refused",
+                evidence_refs=(f"path does not exist: {root_str}",),
+                next="pass an existing repository path as context.root",
+            )
+        mode = str(context.get("mode") or "fingerprint").strip()
+        if mode == "capabilities":
+            res = polyglot_mod.capabilities(path)
+            return MicroResult(self.name, self.version, "ok", res, evidence_refs=tuple(str(k) for k in sorted(res)))
+        if mode == "boundaries":
+            res = discover_boundaries(path)
+            refs = tuple(b.evidence_path if hasattr(b, "evidence_path") else str(b) for b in res)
+            return MicroResult(self.name, self.version, "ok", [b.to_dict() if hasattr(b, "to_dict") else b for b in res], evidence_refs=refs)
+        if mode == "plan":
+            cid = int(context.get("capability") or 220)
+            res = negotiate_capability(cid, path)
+            return MicroResult(
+                self.name,
+                self.version,
+                "ok" if res.get("status") in ("ready", "resolved") else "unknown",
+                res,
+                evidence_refs=(str(res.get("capability")), res.get("route", "")),
+                next=res.get("reason"),
+            )
+        fp = polyglot_mod.inspect(path)
+        return MicroResult(
+            self.name,
+            self.version,
+            "ok",
+            fp,
+            evidence_refs=tuple(fp.get("languages", [])),
+        )
+
+
+import polyglot as polyglot_mod  # noqa: E402
 from computation_contract import ComputationContract  # noqa: E402
 from compute_compose import Compose  # noqa: E402
 from domain_reconcile import Reconcile  # noqa: E402
 from finance import Finance  # noqa: E402
+from polyglot_boundary import discover_boundaries  # noqa: E402
+from polyglot_plan import negotiate_capability  # noqa: E402
 
 REGISTRY: dict[str, MicroProgram] = {
     program.name: program
@@ -405,6 +456,7 @@ REGISTRY: dict[str, MicroProgram] = {
         Reconcile(),
         Compose(),
         ComputationContract(),
+        PolyglotMicro(),
     )
 }
 

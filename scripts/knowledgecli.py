@@ -409,6 +409,25 @@ COMMANDS = {
     "sweep": lambda a: __import__("sweep").main(
         [*(["--line"] if a.line else []), *(["--json"] if a.json else []), *([a.target] if a.target else [])]
     ),
+    "polyglot": lambda a: __import__("polyglot").main(
+        [
+            *([a.path] if getattr(a, "path", None) else []),
+            *(["--capabilities"] if getattr(a, "capabilities", False) else []),
+            *(["--boundaries"] if getattr(a, "boundaries", False) else []),
+            *(["--plan", str(a.plan)] if getattr(a, "plan", None) is not None else []),
+            *(["--explain", str(a.explain)] if getattr(a, "explain", None) is not None else []),
+            *(["--json"] if getattr(a, "json", False) else []),
+        ]
+    ),
+    "ask": lambda a: __import__("help_dispatch").main(
+        [
+            *([a.query] if getattr(a, "query", None) else []),
+            *(["--root", a.root] if getattr(a, "root", None) else []),
+            *(["--plan", a.plan] if getattr(a, "plan", None) else []),
+            *(["--runtime", a.runtime] if getattr(a, "runtime", None) else []),
+            *(["--json"] if getattr(a, "json", False) else []),
+        ]
+    ),
 }
 
 

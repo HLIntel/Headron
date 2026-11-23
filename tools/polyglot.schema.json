@@ -5,6 +5,7 @@
   "description": "Computed structural language fingerprint and cross-language contract links for a project repository.",
   "type": "object",
   "required": [
+    "command",
     "schema",
     "kind",
     "project_id",
@@ -19,6 +20,7 @@
   ],
   "additionalProperties": false,
   "properties": {
+    "command": {"const": "polyglot"},
     "schema": {"const": 1},
     "kind": {"const": "headron.polyglot"},
     "project_id": {"type": "string"},

@@ -117,6 +117,12 @@ def wrapper_cases(module: ModuleType) -> None:
     clean = microprogram.run("graph.edges", {"graph": graph.Graph()})
     if refused.status != "refused" or len(refused.evidence_refs) != 2 or clean.status != "ok":
         raise SystemExit(f"FAIL micro graph.edges: planted {refused.to_dict()}, empty {clean.status}")
+
+    bad_pg = microprogram.run("polyglot", {"root": "/nonexistent/path/for/test"})
+    good_pg = microprogram.run("polyglot", {"root": "."})
+    if bad_pg.status != "refused" or good_pg.status != "ok" or not good_pg.output.get("languages"):
+        raise SystemExit(f"FAIL micro polyglot: bad {bad_pg.to_dict()}, good {good_pg.to_dict()}")
+
     if set(microprogram.REGISTRY) != {
         "classify",
         "search",
@@ -129,6 +135,7 @@ def wrapper_cases(module: ModuleType) -> None:
         "data.reconcile",
         "compute.compose",
         "compute.contract",
+        "polyglot",
     }:
         raise SystemExit(f"FAIL micro registry: {sorted(microprogram.REGISTRY)} has a program no case here plants")
     module.CASES.append(
