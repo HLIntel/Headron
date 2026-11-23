@@ -108,6 +108,12 @@
     },
     {
       "$ref": "#/$defs/task"
+    },
+    {
+      "$ref": "#/$defs/polyglot"
+    },
+    {
+      "$ref": "#/$defs/ask"
     }
   ],
   "$defs": {
@@ -3081,6 +3087,30 @@
         },
         "errors": {
           "$ref": "#/$defs/string_list"
+        }
+      }
+    },
+    "polyglot": {
+      "type": "object",
+      "description": "`headron polyglot --json`: project language fingerprint, cross-boundary contracts and capability plans.",
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "command": {
+          "const": "polyglot"
+        }
+      }
+    },
+    "ask": {
+      "type": "object",
+      "description": "`headron ask --json`: answer a plain question deterministically from policy, evidence and capabilities.",
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "command": {
+          "const": "ask"
         }
       }
     }

@@ -3,7 +3,7 @@
 [HEADRON](HEADRON.md) · [Proofs](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-158 modules and 481 imports between them, read from the source; 86 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 104 modules use it. These 74 rows are the modules at least 2 others use; the other 84, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+158 modules and 484 imports between them, read from the source; 86 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 104 modules use it. These 75 rows are the modules at least 2 others use; the other 83, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -71,7 +71,8 @@ flowchart LR
 | [calculation](../scripts/calculation.py) | Shared result and refusal contract for… | 4 | computation_contract, effects, microprogram, receipt | [computation_receipt_test](../scripts/computation_receipt_test.py) |
 | [graph](../scripts/graph.py) | Knowledge graph module — pointers, links,… | 4 | claims, exrun | [decide_test](../scripts/decide_test.py), [microprogram_test](../scripts/microprogram_test.py) |
 | [localtools](../scripts/localtools.py) | The tool a project installed for itself,… | 4 |  | [localtools_test](../scripts/localtools_test.py) |
-| [microprogram](../scripts/microprogram.py) | The one microprogram contract: a named,… | 4 | claims, computation_contract, compute_compose, domain_reconcile, effects, finance, graph, mind, obligations, receipt, ronbundle | [cilocal_test](../scripts/cilocal_test.py), [computation_receipt_test](../scripts/computation_receipt_test.py) +3 |
+| [microprogram](../scripts/microprogram.py) | The one microprogram contract: a named,… | 4 | claims, computation_contract, compute_compose, domain_reconcile, effects, finance, graph, mind, obligations, polyglot, polyglot_boundary, polyglot_plan, receipt, ronbundle | [cilocal_test](../scripts/cilocal_test.py), [computation_receipt_test](../scripts/computation_receipt_test.py) +3 |
+| [polyglot_boundary](../scripts/polyglot_boundary.py) | Headron cross-language boundary detector… | 4 |  | [polyglot_test](../scripts/polyglot_test.py) |
 | [receiptsign](../scripts/receiptsign.py) | Who wrote a receipt: a detached SSH… | 4 | receipt | [githubapp_test](../scripts/githubapp_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind… | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
 | [boundedinput](../scripts/boundedinput.py) | Bounded UTF-8 stdin for hooks and local… | 3 |  | [readiness_test](../scripts/readiness_test.py) |
@@ -82,7 +83,7 @@ flowchart LR
 | [gaterunner](../scripts/gaterunner.py) | Bounded process capture shared by… | 3 |  | [gaterunner_test](../scripts/gaterunner_test.py), [readiness_test](../scripts/readiness_test.py) |
 | [gitobject](../scripts/gitobject.py) | Git's object identity, computed in this… | 3 |  | [gitobject_test](../scripts/gitobject_test.py) |
 | [mind](../scripts/mind.py) | Headron Mind API — unified orchestration… | 3 | adaptive, agentpolicy, atlasindex, decide, graph, knowledge, microprogram, mind_diagnostics, port, receipt, reflex, safeedit, slot, sweep, verify | [mcp_test](../scripts/mcp_test.py), [microprogram_test](../scripts/microprogram_test.py) +1 |
-| [polyglot_boundary](../scripts/polyglot_boundary.py) | Headron cross-language boundary detector… | 3 |  | [polyglot_test](../scripts/polyglot_test.py) |
+| [polyglot_plan](../scripts/polyglot_plan.py) | Headron polyglot capability negotiation and… | 3 | capability_catalog, polyglot_boundary | [polyglot_plan_test](../scripts/polyglot_plan_test.py) |
 | [providers](../scripts/providers.py) | Where a measurement may send a prompt:… | 3 | atomicfile, resilience | [agent_test](../scripts/agent_test.py), [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
 | [reflex](../scripts/reflex.py) | Command classification primitives —… | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |
 | [roster](../scripts/roster.py) | instrument_roster: which scripts are… | 3 | cidrift, cipipeline, dirscope, importgraph | [atlas_rules_test](../scripts/atlas_rules_test.py) |
@@ -111,7 +112,7 @@ flowchart LR
 | [micrograph](../scripts/micrograph.py) | A DAG of microprogram steps: run each node… | 2 | microprogram | [cilocal_test](../scripts/cilocal_test.py) |
 | [mind_diagnostics](../scripts/mind_diagnostics.py) | Headron Mind API Diagnostics & Recovery —… | 2 | adaptive, knowledge, mind |  |
 | [onboard](../scripts/onboard.py) | `headron init`: the first five minutes in a… | 2 | branchstate, consumergates, enforce, localtools, verify |  |
-| [polyglot](../scripts/polyglot.py) | Headron polyglot capability resolver facade… | 2 | capability_catalog, polyglot_boundary | [polyglot_test](../scripts/polyglot_test.py) |
+| [polyglot](../scripts/polyglot.py) | Headron polyglot capability resolver facade… | 2 | capability_catalog, polyglot_boundary, polyglot_plan | [polyglot_test](../scripts/polyglot_test.py) |
 | [slot](../scripts/slot.py) | A few heavy suites per MACHINE, across every… | 2 | resilience | [slot_test](../scripts/slot_test.py) |
 | [treeformat](../scripts/treeformat.py) | Working-tree formatting and blame-history… | 2 | gitobject | [cli_test](../scripts/cli_test.py) |
 | [upstream](../scripts/upstream.py) | THE UPSTREAM COUNT (3.53.0): commits on the… | 2 |  | [upstream_test](../scripts/upstream_test.py) |

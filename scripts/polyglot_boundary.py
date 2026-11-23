@@ -98,3 +98,6 @@ def detect_cross_language_contracts(root: Path) -> list[CrossLanguageContract]:
             deduped.append(c)
 
     return deduped
+
+
+discover_boundaries = detect_cross_language_contracts
