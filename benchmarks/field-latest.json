@@ -1,5 +1,5 @@
 {
-  "events": 3666,
+  "events": 4519,
   "broken_chains": 1,
   "broken_chain_details": [
     {
@@ -7,59 +7,68 @@
       "first_problem": "event 696: sequence says 695 \u2014 an event was removed"
     }
   ],
-  "refusals": 1133,
-  "gate_refusals": 94,
-  "refusal_shapes": 37,
-  "refires": 656,
+  "refusals": 1193,
+  "gate_refusals": 148,
+  "refusal_shapes": 38,
+  "refires": 682,
   "refusals_by_control": {
-    "audit": 20,
+    "audit": 80,
     "unattributed": 1113
   },
   "refires_by_control": {
-    "unattributed": 656
+    "unattributed": 656,
+    "audit": 26
   },
-  "refusals_without_session": 113,
-  "verify_runs": 940,
-  "verify_pass": 136,
-  "verify_fail": 804,
+  "refusals_without_session": 141,
+  "verify_runs": 1144,
+  "verify_pass": 207,
+  "verify_fail": 937,
   "verify_exit_codes": {
-    "0": 136,
-    "1": 533,
-    "2": 271
+    "0": 207,
+    "1": 652,
+    "2": 285
   },
-  "verify_other_nonzero": 271,
+  "verify_other_nonzero": 285,
   "verify_check_verdicts": {
-    "PASS": 7357,
-    "REUSED": 1097,
-    "FAIL": 1278,
-    "NOT RUN": 7665
+    "PASS": 10595,
+    "REUSED": 1268,
+    "FAIL": 1494,
+    "NOT RUN": 8545
   },
-  "verify_gaps_held": 271,
+  "verify_gaps_held": 285,
   "verify_clean_with_gap": 0,
-  "sessions_failed": 38,
-  "sessions_recovered": 13,
-  "lessons_served": 711,
-  "lessons_shown": 1060,
-  "lesson_shapes": 95,
-  "lands": 394,
-  "lands_armed": 295,
-  "lands_not_armed": 99,
-  "landing_retries": 37,
-  "sessions_ended": 394,
-  "events_without_session": 1055,
-  "events_without_task": 3666,
+  "sessions_failed": 49,
+  "sessions_recovered": 19,
+  "lessons_served": 923,
+  "lessons_shown": 1363,
+  "lesson_shapes": 101,
+  "lands": 598,
+  "lands_armed": 429,
+  "lands_not_armed": 169,
+  "landing_retries": 62,
+  "lands_refused_by_reason": {
+    "unrecorded": 59,
+    "replay": 27,
+    "rebase": 2,
+    "gate": 14,
+    "merge": 1,
+    "diverged": 1
+  },
+  "sessions_ended": 513,
+  "events_without_session": 1529,
+  "events_without_task": 4519,
   "months": 3,
   "current_months": 2,
   "archived_months": 1,
   "reporting_window": "all readable field streams (current and archived)",
-  "measured_at": "3.62.0",
+  "measured_at": "3.64.0",
   "headline": {
-    "verifications": 940,
-    "clean_verifications": 136,
-    "refusals": 1133,
-    "landings": 394,
-    "lessons": 711,
-    "sessions": 394
+    "verifications": 1144,
+    "clean_verifications": 207,
+    "refusals": 1193,
+    "landings": 598,
+    "lessons": 923,
+    "sessions": 513
   },
   "headline_dropped": {},
   "accepted_broken_chains": 1,
