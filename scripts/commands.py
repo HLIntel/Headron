@@ -541,7 +541,9 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg("--capabilities", **_ON, help="list available native verification capabilities"),
             _arg("--boundaries", **_ON, help="list discovered cross-language contract boundaries"),
             _arg("--plan", type=int, default=None, help="plan verification for a capability ID (e.g. 200, 220)"),
-            _arg("--explain", type=int, default=None, help="explain a capability ID and why it is available or missing"),
+            _arg(
+                "--explain", type=int, default=None, help="explain a capability ID and why it is available or missing"
+            ),
         ),
     ),
     (
