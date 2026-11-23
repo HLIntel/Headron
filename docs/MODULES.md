@@ -3,7 +3,7 @@
 [HEADRON](HEADRON.md) · [Proofs](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-156 modules and 470 imports between them, read from the source; 84 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 104 modules use it. These 72 rows are the modules at least 2 others use; the other 84, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+158 modules and 481 imports between them, read from the source; 86 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 104 modules use it. These 74 rows are the modules at least 2 others use; the other 84, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -60,6 +60,7 @@ flowchart LR
 | [runtime](../scripts/runtime.py) | Which agent runtime produced a change —… | 6 |  | [runtime_test](../scripts/runtime_test.py) |
 | [abtest](../scripts/abtest.py) | Does the atlas actually help a model? Three… | 5 | agentpolicy, atlasinv, contextcost, providers, resilience | [agent_test](../scripts/agent_test.py), [bounds_test](../scripts/bounds_test.py) +1 |
 | [branchstate](../scripts/branchstate.py) | Unpushed work, bounded by what actually… | 5 | cilocal, consumergates, doctor, gaterunner, ghaudit, verify | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +7 |
+| [capability_catalog](../scripts/capability_catalog.py) | Headron permanent numerical capability… | 5 |  | [help_cap_auth_test](../scripts/help_cap_auth_test.py), [help_intent_test](../scripts/help_intent_test.py) +2 |
 | [decide](../scripts/decide.py) | Compiled decision table engine — the System… | 5 |  | [decide_test](../scripts/decide_test.py), [reflex_test](../scripts/reflex_test.py) |
 | [port](../scripts/port.py) | port — plug any agent into everything… | 5 | agreement, atlas, commands, dirscope, knowledge, localtools, sweep, upstream | [atlas_rules_test](../scripts/atlas_rules_test.py), [sweep_test](../scripts/sweep_test.py) +1 |
 | [agentaudit](../scripts/agentaudit.py) | The audit stream: a hash chain, not a log | 4 |  | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +2 |
@@ -74,7 +75,6 @@ flowchart LR
 | [receiptsign](../scripts/receiptsign.py) | Who wrote a receipt: a detached SSH… | 4 | receipt | [githubapp_test](../scripts/githubapp_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind… | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
 | [boundedinput](../scripts/boundedinput.py) | Bounded UTF-8 stdin for hooks and local… | 3 |  | [readiness_test](../scripts/readiness_test.py) |
-| [capability_catalog](../scripts/capability_catalog.py) | Headron permanent numerical capability… | 3 |  | [help_cap_auth_test](../scripts/help_cap_auth_test.py), [help_intent_test](../scripts/help_intent_test.py) +1 |
 | [cidrift](../scripts/cidrift.py) | Drift guard: every script CI runs is a… | 3 | cipipeline | [cilocal_test](../scripts/cilocal_test.py) |
 | [cipipeline](../scripts/cipipeline.py) | Headron's CI, declared in Python: every job,… | 3 | micrograph | [cilocal_test](../scripts/cilocal_test.py) |
 | [claims](../scripts/claims.py) | Claims: what Headron believes, the evidence… | 3 |  | [claims_test](../scripts/claims_test.py) |
@@ -82,6 +82,7 @@ flowchart LR
 | [gaterunner](../scripts/gaterunner.py) | Bounded process capture shared by… | 3 |  | [gaterunner_test](../scripts/gaterunner_test.py), [readiness_test](../scripts/readiness_test.py) |
 | [gitobject](../scripts/gitobject.py) | Git's object identity, computed in this… | 3 |  | [gitobject_test](../scripts/gitobject_test.py) |
 | [mind](../scripts/mind.py) | Headron Mind API — unified orchestration… | 3 | adaptive, agentpolicy, atlasindex, decide, graph, knowledge, microprogram, mind_diagnostics, port, receipt, reflex, safeedit, slot, sweep, verify | [mcp_test](../scripts/mcp_test.py), [microprogram_test](../scripts/microprogram_test.py) +1 |
+| [polyglot_boundary](../scripts/polyglot_boundary.py) | Headron cross-language boundary detector… | 3 |  | [polyglot_test](../scripts/polyglot_test.py) |
 | [providers](../scripts/providers.py) | Where a measurement may send a prompt:… | 3 | atomicfile, resilience | [agent_test](../scripts/agent_test.py), [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
 | [reflex](../scripts/reflex.py) | Command classification primitives —… | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |
 | [roster](../scripts/roster.py) | instrument_roster: which scripts are… | 3 | cidrift, cipipeline, dirscope, importgraph | [atlas_rules_test](../scripts/atlas_rules_test.py) |
@@ -110,6 +111,7 @@ flowchart LR
 | [micrograph](../scripts/micrograph.py) | A DAG of microprogram steps: run each node… | 2 | microprogram | [cilocal_test](../scripts/cilocal_test.py) |
 | [mind_diagnostics](../scripts/mind_diagnostics.py) | Headron Mind API Diagnostics & Recovery —… | 2 | adaptive, knowledge, mind |  |
 | [onboard](../scripts/onboard.py) | `headron init`: the first five minutes in a… | 2 | branchstate, consumergates, enforce, localtools, verify |  |
+| [polyglot](../scripts/polyglot.py) | Headron polyglot capability resolver facade… | 2 | capability_catalog, polyglot_boundary | [polyglot_test](../scripts/polyglot_test.py) |
 | [slot](../scripts/slot.py) | A few heavy suites per MACHINE, across every… | 2 | resilience | [slot_test](../scripts/slot_test.py) |
 | [treeformat](../scripts/treeformat.py) | Working-tree formatting and blame-history… | 2 | gitobject | [cli_test](../scripts/cli_test.py) |
 | [upstream](../scripts/upstream.py) | THE UPSTREAM COUNT (3.53.0): commits on the… | 2 |  | [upstream_test](../scripts/upstream_test.py) |

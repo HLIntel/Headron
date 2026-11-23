@@ -471,6 +471,10 @@ instrument_roster:
     help_provenance_test.py: 'a case module verifying factual provenance compilation and freshness state evaluation'
     help_cap_auth.py: 'capability authorization matrix, idempotency key generator, and execution location selector; its proof is help_cap_auth_test.py'
     help_cap_auth_test.py: 'a case module verifying capability authorization matrices, idempotency hashing, and runtime selection'
+    polyglot_plan.py: 'polyglot capability negotiator and cross-language contract verification planner; its proof is polyglot_plan_test.py'
+    polyglot_plan_test.py: 'a case module verifying native capability negotiation, fallback chains, and cross-boundary plans'
+    help_dispatch.py: 'unified Headron Help query dispatcher combining intent, auth, polyglot, and provenance; its proof is help_dispatch_test.py'
+    help_dispatch_test.py: 'a case module verifying unified Help query execution, authorization, and redaction'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -6292,11 +6296,12 @@ orphan_exemptions:
   scripts/help_intent.py: 'deterministic model-free intent compiler and slot resolver behind Headron Help; run on demand or via tests'
   scripts/help_redact.py: 'sensitive-result credential redactor scrubbing secrets prior to Help rendering; run on demand or via tests'
   capability_catalog.is_valid_capability: 'validation helper for permanent capability IDs (100..500); called on demand or via tests'
-  help_intent.render_explanation: 'deterministic explanation generator from structured state; called by Help or tests'
   help_redact.redact_record: 'nested credential redaction for structured objects; called by Help or tests'
   scripts/help_provenance.py: 'answer provenance compiler and freshness evaluator behind Headron Help; run on demand or via tests'
   scripts/help_cap_auth.py: 'capability authorization matrix, idempotency key generator, and location selector behind Headron Help; run on demand or via tests'
   help_provenance.verify_provenance: 'verification helper for cached provenance records; called by Help verification or tests'
+  scripts/help_dispatch.py: 'unified Headron Help query dispatcher combining intent, auth, polyglot, and provenance; run on demand or via tests'
+  scripts/polyglot_plan.py: 'polyglot capability negotiator and verification planner; run on demand or via tests'
 
 issue_route_terms: [atlas, binary_artifact, compatibility, context7, database, dbhub, dependencies, dependency_scan, environment, extension, fuzz, generated_artifact, github, http, integration_test, issue_labels, language_debugger, language_lane, links, manifest, merge, migration, module_size, mutation_test, orphans, ownership, payload_size, playwright, polyglot, property_test, query_plan, regression, routes, runtime_debugger, schema, semgrep, serena, task_profile, topic_branch, transaction, versions, webhook, worktree]
 
