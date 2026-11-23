@@ -170,6 +170,60 @@ def explain(fingerprint: dict[str, Any], capability_id: int) -> dict[str, Any]:
     }
 
 
+def _emit_explain(fp: dict[str, Any], cid: int, as_json: bool) -> int:
+    res = explain(fp, cid)
+    res["command"] = "polyglot"
+    print(json.dumps(res, indent=2) if as_json else f"[{res['status'].upper()}] {res['explanation']}")
+    return 0
+
+
+def _emit_boundaries(root: Path, as_json: bool) -> int:
+    bounds = discover_boundaries(root)
+    if as_json:
+        print(json.dumps({"command": "polyglot", "boundaries": [b.to_dict() for b in bounds]}, indent=2))
+        return 0
+    print(f"Discovered {len(bounds)} cross-language boundary contract(s):")
+    for b in bounds:
+        print(f"  [{b.contract_type}] {b.source_route} -> {b.target_route} ({b.evidence_path})")
+    return 0
+
+
+def _emit_plan(root: Path, plan_id: int, as_json: bool) -> int:
+    res = negotiate_capability(plan_id, root)
+    res["command"] = "polyglot"
+    if as_json:
+        print(json.dumps(res, indent=2))
+        return 0
+    print(f"Negotiation for capability {plan_id}: {res['status']}")
+    print(f"  Route: {res['route']} | Selected tool: {res.get('selected_tool') or 'none'}")
+    print(f"  Command: {res.get('command') or 'none'}")
+    for fb in res.get("fallback_chain", []):
+        print(f"    - {fb}")
+    return 0
+
+
+def _emit_capabilities(root: Path, as_json: bool) -> int:
+    c_map = capabilities(root)
+    if as_json:
+        print(json.dumps(c_map, indent=2))
+        return 0
+    for cid, data in sorted(c_map.items()):
+        print(f"[{data['status'].upper():11}] {cid} {data['name']}")
+    return 0
+
+
+def _emit_fingerprint(fp: dict[str, Any], as_json: bool) -> int:
+    if as_json:
+        print(json.dumps(fp, indent=2))
+        return 0
+    print(f"Project: {fp['project_id']} (build: {fp['primary_build_system']})")
+    print(f"Languages: {', '.join(fp['languages'])} | Boundaries: {len(fp['boundaries'])}")
+    print(
+        f"Capabilities available: {len(fp['capabilities_available'])} | Contracts: {len(fp['cross_language_contracts'])}"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI dispatcher for polyglot inspection and capability querying."""
     parser = argparse.ArgumentParser(description="Headron polyglot capability resolver")
@@ -185,54 +239,14 @@ def main(argv: list[str] | None = None) -> int:
     fp = inspect(root)
 
     if args.explain:
-        res = explain(fp, args.explain)
-        res["command"] = "polyglot"
-        print(json.dumps(res, indent=2) if args.json else f"[{res['status'].upper()}] {res['explanation']}")
-        return 0
-
+        return _emit_explain(fp, args.explain, args.json)
     if args.boundaries:
-        bounds = discover_boundaries(root)
-        if args.json:
-            print(json.dumps({"command": "polyglot", "boundaries": [b.to_dict() for b in bounds]}, indent=2))
-        else:
-            print(f"Discovered {len(bounds)} cross-language boundary contract(s):")
-            for b in bounds:
-                print(f"  [{b.contract_type}] {b.source_route} -> {b.target_route} ({b.evidence_path})")
-        return 0
-
+        return _emit_boundaries(root, args.json)
     if args.plan is not None:
-        res = negotiate_capability(args.plan, root)
-        res["command"] = "polyglot"
-        if args.json:
-            print(json.dumps(res, indent=2))
-        else:
-            print(f"Negotiation for capability {args.plan}: {res['status']}")
-            print(f"  Route: {res['route']} | Selected tool: {res.get('selected_tool') or 'none'}")
-            print(f"  Command: {res.get('command') or 'none'}")
-            if res.get("fallback_chain"):
-                print("  Fallback options:")
-                for fb in res["fallback_chain"]:
-                    print(f"    - {fb}")
-        return 0
-
+        return _emit_plan(root, args.plan, args.json)
     if args.capabilities:
-        c_map = capabilities(root)
-        if args.json:
-            print(json.dumps(c_map, indent=2))
-        else:
-            for cid, data in sorted(c_map.items()):
-                print(f"[{data['status'].upper():11}] {cid} {data['name']}")
-        return 0
-
-    if args.json:
-        print(json.dumps(fp, indent=2))
-    else:
-        print(f"Project: {fp['project_id']} (build: {fp['primary_build_system']})")
-        print(f"Languages: {', '.join(fp['languages'])} | Boundaries: {len(fp['boundaries'])}")
-        print(
-            f"Capabilities available: {len(fp['capabilities_available'])} | Contracts: {len(fp['cross_language_contracts'])}"
-        )
-    return 0
+        return _emit_capabilities(root, args.json)
+    return _emit_fingerprint(fp, args.json)
 
 
 if __name__ == "__main__":
