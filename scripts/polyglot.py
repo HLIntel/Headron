@@ -164,3 +164,47 @@ def explain(fingerprint: dict[str, Any], capability_id: int) -> dict[str, Any]:
         "prerequisites_needed": list(cap.requires),
         "next_action": "Install required toolchain or configure project manifest",
     }
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI dispatcher for polyglot inspection and capability querying."""
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(description="Headron polyglot capability resolver")
+    parser.add_argument("path", nargs="?", default=".", help="Project path to inspect")
+    parser.add_argument("--json", action="store_true", help="Print fingerprint as JSON")
+    parser.add_argument("--capabilities", action="store_true", help="Print all capabilities status")
+    parser.add_argument("--explain", type=int, help="Explain specific capability ID")
+    args = parser.parse_args(argv)
+
+    root = Path(args.path).resolve()
+    fp = inspect(root)
+
+    if args.explain:
+        res = explain(fp, args.explain)
+        print(json.dumps(res, indent=2) if args.json else f"[{res['status'].upper()}] {res['explanation']}")
+        return 0
+
+    if args.capabilities:
+        c_map = capabilities(root)
+        if args.json:
+            print(json.dumps(c_map, indent=2))
+        else:
+            for cid, data in sorted(c_map.items()):
+                print(f"[{data['status'].upper():11}] {cid} {data['name']}")
+        return 0
+
+    if args.json:
+        print(json.dumps(fp, indent=2))
+    else:
+        print(f"Project: {fp['project_id']} (build: {fp['primary_build_system']})")
+        print(f"Languages: {', '.join(fp['languages'])} | Boundaries: {len(fp['boundaries'])}")
+        print(
+            f"Capabilities available: {len(fp['capabilities_available'])} | Contracts: {len(fp['cross_language_contracts'])}"
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

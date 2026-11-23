@@ -3,7 +3,7 @@
 [HEADRON](HEADRON.md) · [Proofs](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-154 modules and 469 imports between them, read from the source; 82 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 104 modules use it. These 72 rows are the modules at least 2 others use; the other 82, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+156 modules and 470 imports between them, read from the source; 84 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 104 modules use it. These 72 rows are the modules at least 2 others use; the other 84, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -74,6 +74,7 @@ flowchart LR
 | [receiptsign](../scripts/receiptsign.py) | Who wrote a receipt: a detached SSH… | 4 | receipt | [githubapp_test](../scripts/githubapp_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
 | [agenteffects](../scripts/agenteffects.py) | Effects: what a task may DO, as a kind… | 3 | agentpolicy | [agent_test](../scripts/agent_test.py) |
 | [boundedinput](../scripts/boundedinput.py) | Bounded UTF-8 stdin for hooks and local… | 3 |  | [readiness_test](../scripts/readiness_test.py) |
+| [capability_catalog](../scripts/capability_catalog.py) | Headron permanent numerical capability… | 3 |  | [help_cap_auth_test](../scripts/help_cap_auth_test.py), [help_intent_test](../scripts/help_intent_test.py) +1 |
 | [cidrift](../scripts/cidrift.py) | Drift guard: every script CI runs is a… | 3 | cipipeline | [cilocal_test](../scripts/cilocal_test.py) |
 | [cipipeline](../scripts/cipipeline.py) | Headron's CI, declared in Python: every job,… | 3 | micrograph | [cilocal_test](../scripts/cilocal_test.py) |
 | [claims](../scripts/claims.py) | Claims: what Headron believes, the evidence… | 3 |  | [claims_test](../scripts/claims_test.py) |
@@ -90,7 +91,6 @@ flowchart LR
 | [agentrun](../scripts/agentrun.py) | The reference runner: the one caller in this… | 2 | agentaudit, agenteffects, agentpolicy, crosscache, headronlang, isolation, knowledge, obligations, runtime | [agent_test](../scripts/agent_test.py), [taskimage_test](../scripts/taskimage_test.py) |
 | [atlasindex](../scripts/atlasindex.py) | A retrieval index that obeys the policy this… | 2 | atomicfile, graph, microcode, port, sweep | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
 | [callshape](../scripts/callshape.py) | forbidden_calls_are_refused: "no module… | 2 | agentpolicy | [atlas_rules_test](../scripts/atlas_rules_test.py), [atomicfile_test](../scripts/atomicfile_test.py) +1 |
-| [capability_catalog](../scripts/capability_catalog.py) | Headron permanent numerical capability… | 2 |  | [help_intent_test](../scripts/help_intent_test.py), [polyglot_test](../scripts/polyglot_test.py) |
 | [cilocal](../scripts/cilocal.py) | `headron ci`: run the jobs… | 2 | agents, cipipeline, gaterunner, micrograph, microprogram, slot | [atlas_landing_test](../scripts/atlas_landing_test.py), [cilocal_test](../scripts/cilocal_test.py) +1 |
 | [computation_contract](../scripts/computation_contract.py) | Machine-readable and enforced outer… | 2 | calculation, compute_compose | [computation_contract_test](../scripts/computation_contract_test.py) |
 | [compute_compose](../scripts/compute_compose.py) | Bounded computation graph for variance… | 2 | calculation, domain_reconcile, finance | [compute_compose_test](../scripts/compute_compose_test.py) |

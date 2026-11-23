@@ -467,6 +467,10 @@ instrument_roster:
     help_intent.py: 'deterministic model-free intent compiler, slot resolver, and page-aware question ranker; its proof is help_intent_test.py'
     help_redact.py: 'sensitive-result redactor scrubbing API keys, tokens, and private credentials; its proof is help_intent_test.py'
     help_intent_test.py: 'a case module verifying model-free intent compilation, slot resolution, and credential redaction'
+    help_provenance.py: 'answer provenance compiler and freshness evaluator for Help and verification artifacts; its proof is help_provenance_test.py'
+    help_provenance_test.py: 'a case module verifying factual provenance compilation and freshness state evaluation'
+    help_cap_auth.py: 'capability authorization matrix, idempotency key generator, and execution location selector; its proof is help_cap_auth_test.py'
+    help_cap_auth_test.py: 'a case module verifying capability authorization matrices, idempotency hashing, and runtime selection'
     requirements.lock.txt: 'the hash-pinned closure of that input, verified by the build, not an instrument'
     build-requirements.lock.txt: 'the hash-pinned build tools the release job installs, not an instrument'
 
@@ -1449,7 +1453,7 @@ markdown_policy:
     - '(^|/)(archives?|ARCHIVE|_archive|DAILY NOTES|[Dd]aily)/'
     - '(^|/)[^/]*\d{4}-\d{2}[^/]*\.md$'
     - '(^|/)(DECISIONS|PROBLEMS|CHANGELOG|VERSIONING)\.md$'
-  generated: ['^docs/INSTRUMENTS\.md$', '^docs/MODULES\.md$']
+  generated: ['^docs/INSTRUMENTS\.md$', '^docs/MODULES\.md$', '^docs/MODULES-LEAVES\.md$']
   entries: [README.md, AGENTS.md, MODEL.md, docs/INDEX.md]
   loaded_by_harness: [.github/, .gemini/]
   oversize: {}
@@ -6288,10 +6292,11 @@ orphan_exemptions:
   scripts/help_intent.py: 'deterministic model-free intent compiler and slot resolver behind Headron Help; run on demand or via tests'
   scripts/help_redact.py: 'sensitive-result credential redactor scrubbing secrets prior to Help rendering; run on demand or via tests'
   capability_catalog.is_valid_capability: 'validation helper for permanent capability IDs (100..500); called on demand or via tests'
-  help_intent.compile_intent: 'deterministic model-free intent compiler mapping user queries to capability IDs; called by Help dispatcher or tests'
-  help_intent.rank_questions: 'page-aware question ranking engine for Help interface; called by Help UI or tests'
   help_intent.render_explanation: 'deterministic explanation generator from structured state; called by Help or tests'
   help_redact.redact_record: 'nested credential redaction for structured objects; called by Help or tests'
+  scripts/help_provenance.py: 'answer provenance compiler and freshness evaluator behind Headron Help; run on demand or via tests'
+  scripts/help_cap_auth.py: 'capability authorization matrix, idempotency key generator, and location selector behind Headron Help; run on demand or via tests'
+  help_provenance.verify_provenance: 'verification helper for cached provenance records; called by Help verification or tests'
 
 issue_route_terms: [atlas, binary_artifact, compatibility, context7, database, dbhub, dependencies, dependency_scan, environment, extension, fuzz, generated_artifact, github, http, integration_test, issue_labels, language_debugger, language_lane, links, manifest, merge, migration, module_size, mutation_test, orphans, ownership, payload_size, playwright, polyglot, property_test, query_plan, regression, routes, runtime_debugger, schema, semgrep, serena, task_profile, topic_branch, transaction, versions, webhook, worktree]
 

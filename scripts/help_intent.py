@@ -169,3 +169,50 @@ def render_explanation(intent: ResolvedIntent, status: str, evidence: list[str])
     for item in evidence[:5]:
         lines.append(f"- {item}")
     return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI dispatcher for model-free intent compilation and question ranking."""
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(description="Headron Help model-free intent compiler")
+    parser.add_argument("query", nargs="?", default="", help="User request to compile")
+    parser.add_argument("--page", default="overview", help="Active page name for question ranking")
+    parser.add_argument("--rank-questions", action="store_true", help="Rank questions for page")
+    parser.add_argument("--json", action="store_true", help="Print output as JSON")
+    args = parser.parse_args(argv)
+
+    if args.rank_questions or not args.query:
+        ranked = rank_questions(args.page)
+        if args.json:
+            print(json.dumps({"page": args.page, "questions": ranked}, indent=2))
+        else:
+            print(f"Questions for {args.page}:")
+            for q in ranked:
+                print(f"  - {q}")
+        return 0
+
+    resolved = compile_intent(args.query)
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "capability": resolved.capability,
+                    "confidence": resolved.confidence,
+                    "operation_name": resolved.operation_name,
+                    "arguments": resolved.arguments,
+                    "disambiguation": resolved.disambiguation,
+                },
+                indent=2,
+            )
+        )
+    else:
+        print(f"Capability: {resolved.capability} ({resolved.operation_name}) [{resolved.confidence}]")
+        if resolved.disambiguation:
+            print(f"Disambiguation: {', '.join(resolved.disambiguation)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
