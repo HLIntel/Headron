@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-82 modules that at most one other module imports: 32 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+84 modules that at most one other module imports: 34 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -69,7 +69,9 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [freshness](../scripts/freshness.py) | Which parts of this tree have not been re-examined lately — measured in CONTRACT VERSIONS | 0 |  | [handoff_test](../scripts/handoff_test.py) |
 | [handoff](../scripts/handoff.py) | A bounded, artifact-specific handoff — route evidence instead of a repository dump | 0 | agentpolicy, atlas | [handoff_test](../scripts/handoff_test.py) |
 | [headron_edit](../scripts/headron_edit.py) | The MCP route that may EDIT — separate, opt-in, and bounded by the task contract it is started… | 0 | agentaudit, agentpolicy, headron_mcp, safeedit | [atlas_guards_test](../scripts/atlas_guards_test.py), [edit_version_test](../scripts/edit_version_test.py) |
+| [help_cap_auth](../scripts/help_cap_auth.py) | Headron capability authorization matrix and idempotency engine (contract v1) | 0 | capability_catalog | [help_cap_auth_test](../scripts/help_cap_auth_test.py) |
 | [help_intent](../scripts/help_intent.py) | Headron Help model-free intent compiler and slot resolver (contract v1) | 0 | capability_catalog | [help_intent_test](../scripts/help_intent_test.py) |
+| [help_provenance](../scripts/help_provenance.py) | Headron Help answer provenance and freshness evaluator (contract v1) | 0 |  | [help_provenance_test](../scripts/help_provenance_test.py) |
 | [help_redact](../scripts/help_redact.py) | Headron Help sensitive result redactor (contract v1) | 0 |  | [help_intent_test](../scripts/help_intent_test.py) |
 | [installcheck](../scripts/installcheck.py) | Run the install command the documents give, in a clean home, and judge `headron doctor` by… | 0 |  | [cli_test](../scripts/cli_test.py) |
 | [judge](../scripts/judge.py) | `headron judge` — a small decision asked as a closed question, acted on only above a declared… | 0 | boundedinput, knowledge, model | [judge_test](../scripts/judge_test.py), [model_test](../scripts/model_test.py) |
