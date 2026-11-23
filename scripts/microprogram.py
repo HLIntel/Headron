@@ -412,7 +412,13 @@ class PolyglotMicro:
         if mode == "boundaries":
             res = discover_boundaries(path)
             refs = tuple(b.evidence_path if hasattr(b, "evidence_path") else str(b) for b in res)
-            return MicroResult(self.name, self.version, "ok", [b.to_dict() if hasattr(b, "to_dict") else b for b in res], evidence_refs=refs)
+            return MicroResult(
+                self.name,
+                self.version,
+                "ok",
+                [b.to_dict() if hasattr(b, "to_dict") else b for b in res],
+                evidence_refs=refs,
+            )
         if mode == "plan":
             cid = int(context.get("capability") or 220)
             res = negotiate_capability(cid, path)
@@ -425,13 +431,7 @@ class PolyglotMicro:
                 next=res.get("reason"),
             )
         fp = polyglot_mod.inspect(path)
-        return MicroResult(
-            self.name,
-            self.version,
-            "ok",
-            fp,
-            evidence_refs=tuple(fp.get("languages", [])),
-        )
+        return MicroResult(self.name, self.version, "ok", fp, evidence_refs=tuple(fp.get("languages", [])))
 
 
 import polyglot as polyglot_mod  # noqa: E402
