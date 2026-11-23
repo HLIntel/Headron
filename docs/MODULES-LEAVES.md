@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-84 modules that at most one other module imports: 34 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+84 modules that at most one other module imports: 30 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -28,6 +28,10 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [ghaudit](../scripts/ghaudit.py) | ghaudit — does the LIVE GitHub configuration match config/github-controls.json? | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [githubjob](../scripts/githubjob.py) | The GitHub App's wire and queue shapes, as types only: nothing imports this at run time | 1 |  | [githubapp_test](../scripts/githubapp_test.py) |
 | [githubreceipt](../scripts/githubreceipt.py) | Receipt loading, validation, and PR comment rendering for the Headron GitHub App | 1 | githubapp, receipt, receiptsign | [githubapp_test](../scripts/githubapp_test.py) |
+| [help_cap_auth](../scripts/help_cap_auth.py) | Headron capability authorization matrix and idempotency engine (contract v1) | 1 | capability_catalog | [help_cap_auth_test](../scripts/help_cap_auth_test.py) |
+| [help_intent](../scripts/help_intent.py) | Headron Help model-free intent compiler and slot resolver (contract v1) | 1 | capability_catalog | [help_intent_test](../scripts/help_intent_test.py) |
+| [help_provenance](../scripts/help_provenance.py) | Headron Help answer provenance and freshness evaluator (contract v1) | 1 |  | [help_provenance_test](../scripts/help_provenance_test.py) |
+| [help_redact](../scripts/help_redact.py) | Headron Help sensitive result redactor (contract v1) | 1 |  | [help_intent_test](../scripts/help_intent_test.py) |
 | [hostshape](../scripts/hostshape.py) | Shapes that break on the operator's HOST, checked from the records the host hands in | 1 |  | [schedtargets_test](../scripts/schedtargets_test.py) |
 | [i18n](../scripts/i18n.py) | Localized entry points with canonical, generated command references | 1 |  |  |
 | [identity](../scripts/identity.py) | Who owns this tree, compared against the declaration — and the rename, as one operation | 1 |  | [identity_test](../scripts/identity_test.py) |
@@ -45,7 +49,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [parsegate](../scripts/parsegate.py) | Every tracked artifact parses: the first thing the contract asks, since nothing after it means… | 1 | headronlang, treeformat |  |
 | [pipeline](../scripts/pipeline.py) | State-to-action pipeline — finite state machine: INGEST → CLASSIFY → VERIFY → EXIT | 1 | decide, reflex | [pipeline_test](../scripts/pipeline_test.py) |
 | [plantcheck](../scripts/plantcheck.py) | plants_can_still_apply: every mutation anchor in the planted suites still matches the file it… | 1 |  | [atlas_rules_test](../scripts/atlas_rules_test.py) |
-| [polyglot_boundary](../scripts/polyglot_boundary.py) | Headron cross-language boundary detector (contract v1) | 1 |  | [polyglot_test](../scripts/polyglot_test.py) |
+| [polyglot_plan](../scripts/polyglot_plan.py) | Headron polyglot capability negotiation and verification planning engine (contract v1) | 1 | capability_catalog, polyglot, polyglot_boundary | [polyglot_plan_test](../scripts/polyglot_plan_test.py) |
 | [privacy_guard](../scripts/privacy_guard.py) | Refuse personal data and secrets before they reach a commit, a push, or the shared history | 1 |  | [privacy_guard_test](../scripts/privacy_guard_test.py) |
 | [processpolicy](../scripts/processpolicy.py) | Declared workflow records and their stopping conditions | 1 | agentpolicy |  |
 | [ronbundle](../scripts/ronbundle.py) | A `.ron` bundle: one task's contract, receipts and evidence as a directory that verifies from… | 1 | atomicfile, obligations, receipt, receiptsign | [microprogram_test](../scripts/microprogram_test.py), [receiptsign_test](../scripts/receiptsign_test.py) |
@@ -69,10 +73,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [freshness](../scripts/freshness.py) | Which parts of this tree have not been re-examined lately — measured in CONTRACT VERSIONS | 0 |  | [handoff_test](../scripts/handoff_test.py) |
 | [handoff](../scripts/handoff.py) | A bounded, artifact-specific handoff — route evidence instead of a repository dump | 0 | agentpolicy, atlas | [handoff_test](../scripts/handoff_test.py) |
 | [headron_edit](../scripts/headron_edit.py) | The MCP route that may EDIT — separate, opt-in, and bounded by the task contract it is started… | 0 | agentaudit, agentpolicy, headron_mcp, safeedit | [atlas_guards_test](../scripts/atlas_guards_test.py), [edit_version_test](../scripts/edit_version_test.py) |
-| [help_cap_auth](../scripts/help_cap_auth.py) | Headron capability authorization matrix and idempotency engine (contract v1) | 0 | capability_catalog | [help_cap_auth_test](../scripts/help_cap_auth_test.py) |
-| [help_intent](../scripts/help_intent.py) | Headron Help model-free intent compiler and slot resolver (contract v1) | 0 | capability_catalog | [help_intent_test](../scripts/help_intent_test.py) |
-| [help_provenance](../scripts/help_provenance.py) | Headron Help answer provenance and freshness evaluator (contract v1) | 0 |  | [help_provenance_test](../scripts/help_provenance_test.py) |
-| [help_redact](../scripts/help_redact.py) | Headron Help sensitive result redactor (contract v1) | 0 |  | [help_intent_test](../scripts/help_intent_test.py) |
+| [help_dispatch](../scripts/help_dispatch.py) | Headron Help unified query dispatcher (contract v1) | 0 | capability_catalog, help_cap_auth, help_intent, help_provenance, help_redact, polyglot, polyglot_boundary, polyglot_plan | [help_dispatch_test](../scripts/help_dispatch_test.py) |
 | [installcheck](../scripts/installcheck.py) | Run the install command the documents give, in a clean home, and judge `headron doctor` by… | 0 |  | [cli_test](../scripts/cli_test.py) |
 | [judge](../scripts/judge.py) | `headron judge` — a small decision asked as a closed question, acted on only above a declared… | 0 | boundedinput, knowledge, model | [judge_test](../scripts/judge_test.py), [model_test](../scripts/model_test.py) |
 | [links](../scripts/links.py) | `headron links`: where this release is, and what each companion reads from it | 0 | commands |  |
@@ -81,7 +82,6 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [multimodel_bench](../scripts/multimodel_bench.py) | Multi-model cross-evaluation benchmark: Headron lift, tokens, and multi-model collaboration | 0 | abtest, agentbench, providers, resilience, taskbench | [multimodel_bench_test](../scripts/multimodel_bench_test.py) |
 | [packprobe](../scripts/packprobe.py) | packprobe — how many of each language pack's DECLARED commands resolve on this machine | 0 | packmanifest |  |
 | [pointers](../scripts/pointers.py) | The pointer table: every name in atlas.yaml that points at something else, in one place, read… | 0 | knowledge, packmanifest | [pointers_test](../scripts/pointers_test.py) |
-| [polyglot](../scripts/polyglot.py) | Headron polyglot capability resolver facade (contract v1) | 0 | capability_catalog, polyglot_boundary | [polyglot_test](../scripts/polyglot_test.py) |
 | [propose](../scripts/propose.py) | Propose: a loop that reads what Headron believes, drafts the revision, and never lands it | 0 | atomicfile, claims | [propose_test](../scripts/propose_test.py) |
 | [sandboxgen](../scripts/sandboxgen.py) | Generate the host sandbox a task contract needs, from config/agent-sandbox.json | 0 | headronlang | [atlas_guards_test](../scripts/atlas_guards_test.py) |
 | [schedtargets](../scripts/schedtargets.py) | Every ACTIVE scheduled job's target must exist on THIS host — `headron schedtargets [--root… | 0 |  | [schedtargets_test](../scripts/schedtargets_test.py) |
