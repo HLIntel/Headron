@@ -700,11 +700,7 @@ def measured_proof_case() -> None:
 def cli_record_cases() -> None:
     """EVERY `--json` COMMAND'S REAL OUTPUT, against the frozen schema (3.47.0).
 
-    A review found `port` emitting `headron-port/1` against no declaration while the documents called every
-    `--json` record frozen: atlas_test.external_api_cases built its records by hand, from the producers it knew.
-    Here the sample set is asserted EQUAL to the roster's `--json` commands, so a new one arrives with a
-    sample or this fails; `commands` is held by its own schema, and `verify` by its one producer, because
-    running verify inside the suite verify runs would recurse.
+    Sample set is asserted EQUAL to the roster's `--json` commands.
     """
     import commands
     import packmanifest
@@ -744,7 +740,8 @@ def cli_record_cases() -> None:
         "init": [["init", "--json"]],
         "intake": [
             ["intake", f"fix a bug in {here}", "--brief", "--json"],
-            ["intake", "add a cache", "--json"], ["intake", "--brief", "--json"],
+            ["intake", "add a cache", "--json"],
+            ["intake", "--brief", "--json"],
         ],
         "shell": [["shell", "--json", "ls -la"]],
         "inspect": [["inspect", str(tmp / "book.xlsx"), "--json"]],
@@ -758,8 +755,10 @@ def cli_record_cases() -> None:
         "resume": [["resume", "--json"]],
         "steps": [["steps", here, "--runtime", "cursor", "--json"]],
         "failures": [
-            ["failures", "--json"], ["failures", "--for", here, "--json"],
-            ["failures", "--match", "substring not found", "--json"], ["failures", "a_draft_probe_shape", "--draft", "x", "--json"],
+            ["failures", "--json"],
+            ["failures", "--for", here, "--json"],
+            ["failures", "--match", "substring not found", "--json"],
+            ["failures", "a_draft_probe_shape", "--draft", "x", "--json"],
         ],
         "successes": [["successes", "--json"], ["successes", "--for", here, "--json"]],
         "brainstorm": [["brainstorm", str(tmp / "pick.yaml"), "--json"]],
