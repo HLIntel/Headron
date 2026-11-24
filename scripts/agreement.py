@@ -27,7 +27,7 @@ import re
 import subprocess
 import sys
 
-from atlascore import ROOT, atlas, diff_names, rel, text_of, tracked
+from atlascore import ROOT, atlas, diff_names, rel, root_coherence_error, text_of, tracked
 
 
 def _file_of(reference: str) -> str:
@@ -335,6 +335,9 @@ def conformance_report() -> dict:
 
 def agreement_errors() -> list[str]:
     """What `atlas.py check` reads: the graph has no hole, and every document names real commands."""
+    incoherent = root_coherence_error()
+    if incoherent:
+        return [incoherent]
     return (
         [
             f"agreement graph: {name} resolves to no file in this tree — a declaration nothing implements is a claim"
