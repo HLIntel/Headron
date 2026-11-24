@@ -35,7 +35,6 @@ from typing import Any, NamedTuple, cast
 
 from atlascore import ROOT, atlas, read, resolved_once, route_targets, strict_yaml, text_of
 from packmanifest import entry_commands, manifest_schema, validate
-from processpolicy import process_condition_errors as process_condition_errors
 from processpolicy import process_errors as process_errors
 from processpolicy import process_record as process_record
 from shellsplit import pipeline_refusal, shell_statements

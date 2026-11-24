@@ -261,14 +261,6 @@ def available_providers(timeout: float = 2.0) -> list[str]:
     return [name for name in PROVIDERS if probe_provider(name, timeout=timeout)]
 
 
-def resolve_fallback(chain: list[str], timeout: float = 2.0) -> str | None:
-    """Find the first reachable provider from a priority chain."""
-    for name in chain:
-        if probe_provider(name, timeout=timeout):
-            return name
-    return None
-
-
 def list_models(name: str, timeout: float = 20.0) -> list[dict]:
     """[{id, free}] from a provider's model listing; `free` is None where the listing carries no flag.
 

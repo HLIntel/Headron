@@ -6287,7 +6287,6 @@ orphan_exemptions:
   scripts/multimodel_bench.py: 'multi-model cross-evaluation benchmark comparing Headron lift, tokens, and multi-model collaboration across providers; run on demand'
   crosscache.prune_cache: 'cross-session execution cache size management and deterministic pruning; run on demand'
   crosscache.cache_stats: 'cross-session execution cache metrics and footprint reporting; run on demand'
-  providers.resolve_fallback: 'fallback provider chain resolution for resilient multi-provider routing; run on demand'
   microcode.run_micro_audit: 'in-memory AST shape evaluation and telemetry runner called on demand or for fast diff audits'
   testgroups.scrub_git_env: the case harness every test module takes it from; a test is its only caller by design
   testgroups.run_counted: the case harness a test module runs its cases under; a test is its only caller by design
