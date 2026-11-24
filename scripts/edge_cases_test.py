@@ -423,6 +423,28 @@ def cache_invariant_case() -> None:
             cacheinv.ROOT = previous
 
 
+def toolchain_pin_case() -> None:
+    """A toolchain pin upgraded in one home alone is refused by toolchain_pins_agree."""
+    # THE DECLARATION MOVED, THE TYPED PIN DID NOT: the workflows and the replay shell cannot
+    # import the package, so their typed pins are checked against atlas.yaml/toolchain.
+    with mutated("atlas.yaml", lambda t: t.replace('  python: "3.13"', '  python: "3.12"', 1)):
+        case(
+            "a python pin upgraded in the declaration alone FAILS",
+            "a workflow still running the old interpreter while the declaration moved",
+            True,
+            "not the declared",
+            by="inv:toolchain_pins_agree",
+        )
+    with mutated(".github/workflows/release.yml", lambda t: t.replace("uv==0.12.21", "uv==0.12.20", 1)):
+        case(
+            "a workflow installing a uv the declaration does not name FAILS",
+            "the lock installed by a different uv than every other gate checks",
+            True,
+            "pins uv",
+            by="inv:toolchain_pins_agree",
+        )
+
+
 def shared_read_cases() -> None:
     """text_of holds a file's text against its stat, so what it must never do is answer from before a write."""
     import atlascore  # noqa: PLC0415
@@ -575,6 +597,7 @@ def run(module: ModuleType) -> None:
     named_enforcer_cases()
     whole_check_parse_case()
     cache_invariant_case()
+    toolchain_pin_case()
     shared_read_cases()
     walk_index_cases()
     flow_prose_cases()

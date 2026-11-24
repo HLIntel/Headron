@@ -106,7 +106,12 @@ def is_noreply(email: str) -> bool:
         (domain == "noreply.github.com" or domain.endswith(".noreply.github.com"))
         or local == "noreply"
         or domain in {"github.com", "anthropic.com", "cursor.com"}
-        and local.startswith("noreply")
+        and (
+            local.startswith("noreply")
+            # GitHub's own automation signs Dependabot commits from its service
+            # mailbox; it names a machine, never a person
+            or (domain == "github.com" and local == "support")
+        )
     )
 
 

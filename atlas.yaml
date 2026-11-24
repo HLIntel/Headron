@@ -101,6 +101,16 @@ identity:
     repository_ready: true
     repository_applied: true
     blocked_on: nothing on the platform; this tree is applying both halves
+
+# THE TOOLCHAIN IS A DECLARATION, like the owner above: a pin named once and derived or checked
+# everywhere else, so an upgrade is one edit here plus a regenerate, and a stale pin in a workflow,
+# the replay shell, or a gate cannot land. `toolchain_pins_agree` refuses every typed literal that
+# disagrees. Ruff is NOT here: its pin already lives in the done_set and is cross-checked by
+# atlas_rules_test — a second home would be the drift this block exists to end.
+toolchain:
+  python: "3.13"    # setup-python in every workflow, the replay runner's pin, the pinned-python gate
+  uv: "0.12.21"     # the release's install, the replay's gate, and the lock install the units run
+
 default_flow: MODEL.md -> docs/INDEX.md -> atlas.yaml -> runtime_adapter -> language_guide -> operating_card -> tool_manifest -> boundary -> task_route -> scoped_tools -> verify
 
 hard_invariants:
@@ -112,6 +122,7 @@ hard_invariants:
   - least_privilege
   - independent_verification
   - auditable_changes
+  - toolchain_pins_agree
   - rollback_high_impact
   - one_source_of_truth
   - atlas_consistency
@@ -327,6 +338,8 @@ instrument_roster:
     entryglance.py: 'renders the atlas.yaml glance block into README, llms.txt, CHAT.md and bootstrap; a hand edit is refused by generated_errors, planted in atlas_test.py'
     adaptive.py: 'typed second-stage process selection imported by mind.py; its behavior is covered by mind_test.py'
     cacheinv.py: 'repository cache invariant called by atlasinv and planted by edge_cases_test'
+    toolchaininv.py: 'the toolchain-pin invariant behind toolchain_pins_agree: every typed python/uv pin in the workflows, the replay shell and the derived gates equals atlas.yaml/toolchain; called by atlasinv'
+    closureinv.py: 'the dependency-closure invariant behind dependency_count_is_the_closure: the hash lock and the installed metadata walk agree; called by atlasinv'
     toolpins.py: 'the gate-tool pin drift guard: every hand-typed ruff==/zizmor@ copy and uv.lock name one version; run by atlas check (_pin_errors), planted in atlas_rules_test.py; not an instrument, because the instrument ratchet only falls'
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
     artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `headron inspect`; its proof is artifacts_test.py, run by the artifacts_tests gate'
