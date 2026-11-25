@@ -410,8 +410,16 @@ def snapshot(top_files: int = 10) -> dict:
     freshened old verdict. A missing marker is an empty snapshot, not an error — no run is a real state."""
     marker = _marker_path()
     if not marker.is_file():
-        return {"schema": 1, "command": "receipt snapshot", "measured_at": None, "total_checks": 0,
-                "pass_rate": 0.0, "top_touched_files": [], "open_gates": [], "note": "no verify on record"}
+        return {
+            "schema": 1,
+            "command": "receipt snapshot",
+            "measured_at": None,
+            "total_checks": 0,
+            "pass_rate": 0.0,
+            "top_touched_files": [],
+            "open_gates": [],
+            "note": "no verify on record",
+        }
     with contextlib.suppress(OSError, json.JSONDecodeError):
         data = json.loads(marker.read_text(encoding="utf-8"))
         rows = data.get("rows") or []
@@ -444,8 +452,16 @@ def snapshot(top_files: int = 10) -> dict:
             "top_touched_files": files.most_common(top_files),
             "open_gates": open_gates,
         }
-    return {"schema": 1, "command": "receipt snapshot", "measured_at": None, "total_checks": 0,
-            "pass_rate": 0.0, "top_touched_files": [], "open_gates": [], "note": "unreadable marker"}
+    return {
+        "schema": 1,
+        "command": "receipt snapshot",
+        "measured_at": None,
+        "total_checks": 0,
+        "pass_rate": 0.0,
+        "top_touched_files": [],
+        "open_gates": [],
+        "note": "unreadable marker",
+    }
 
 
 def main(argv: list[str]) -> int:

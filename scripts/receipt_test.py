@@ -81,7 +81,8 @@ def _without_repo_access(receipt_file: Path) -> subprocess.CompletedProcess:
         )
 
 
-def _verdict_case(verify: ModuleType, receipt: ModuleType) -> tuple:
+def _verdict_case(verify: ModuleType, receipt: ModuleType, module: ModuleType) -> tuple:
+    _snapshot_case(module, receipt)
     rows = [
         [],
         [{"verdict": "PASS"}],
@@ -145,8 +146,12 @@ def _snapshot_case(module: ModuleType, receipt: ModuleType) -> None:
             snap = receipt.snapshot()
     name = "receipt snapshot collapses the last verify's rows into one background-brain record"
     ok = (
-        snap["total_checks"] == 4 and snap["pass"] == 2 and snap["fail"] == 1 and snap["not_run"] == 1
-        and snap["pass_rate"] == 0.5 and ("scripts/x.py", 2) in snap["top_touched_files"]
+        snap["total_checks"] == 4
+        and snap["pass"] == 2
+        and snap["fail"] == 1
+        and snap["not_run"] == 1
+        and snap["pass_rate"] == 0.5
+        and ("scripts/x.py", 2) in snap["top_touched_files"]
         and {g["id"] for g in snap["open_gates"]} == {"unit_tests:scripts/x.py", "lint"}
     )
     if not ok:
@@ -165,6 +170,7 @@ def run(module: ModuleType) -> None:
 
     import receipt  # noqa: PLC0415
     import verify  # noqa: PLC0415
+
     schema = json.loads((ROOT / "tools" / "receipt.schema.json").read_text(encoding="utf-8"))
     with tempfile.TemporaryDirectory(prefix="headron-receipt-") as tmp:
         top = Path(tmp)
@@ -254,10 +260,9 @@ def run(module: ModuleType) -> None:
             candidate[field] = value
             candidate["receipt_id"] = receipt.digest({k: v for k, v in candidate.items() if k != "receipt_id"})
             malformed.append(candidate)
-        _snapshot_case(module, receipt)
         cases = [
             _consumer_binding_case(verify, top, same_repo, same_base),
-            _verdict_case(verify, receipt),
+            _verdict_case(verify, receipt, module),
             (
                 "a NOT RUN check, alone or beside PASSes, never yields PASS; an empty receipt is NOT RUN",
                 "a gate that did not run counted as a pass because the others passed, or no check at all counted as done",
