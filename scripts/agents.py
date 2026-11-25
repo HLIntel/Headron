@@ -44,6 +44,8 @@ import atomicfile
 
 LIVE_SECONDS = 600  # a session unseen this long is idle, not running
 KEEP_SECONDS = 7 * 86400  # a record older than this is removed when the registry is listed
+FIELD_GATE_TOP = 12  # the summary names the most-frequent failing / not-run gates, never the whole log
+FIELD_GATE_CHRONIC = 3  # a gate not run in at least this many runs is a chronic coverage gap, not a host skip
 SOURCES = ("hook", "mcp")
 
 # CONTEXT LIFECYCLE (3.60.0). Track token consumption per session to prevent context degradation.
@@ -575,6 +577,16 @@ def field_summary(streams: list[Path]) -> dict:
         return count if isinstance(count, int) else 0
 
     verifies = by["field_verify"]
+    # WHICH GATES FAIL, AND WHICH NEVER RUN — the generalizable shape a verify already records per run
+    # (`failed`/`not_run` gate ids), surfaced so a chronic gap is visible without reading a private log. A
+    # gate id is a declared word, never a path or a command, so this stays shareable.
+    failed_gates: Counter[str] = Counter()
+    not_run_gates: Counter[str] = Counter()
+    for body in verifies:
+        # A run names a gate per target (`unit_tests:pkg/x.py`); the generalizable shape is the gate, so the
+        # summary counts the word before the first ':', never the file — a per-file row is the private detail.
+        failed_gates.update(str(g).split(":", 1)[0] for g in (body.get("failed") or []))
+        not_run_gates.update(str(g).split(":", 1)[0] for g in (body.get("not_run") or []))
     return {
         "events": len(events),
         "broken_chains": len(broken),
@@ -597,6 +609,11 @@ def field_summary(streams: list[Path]) -> dict:
         "verify_check_verdicts": {
             v: sum(checks(b, v) for b in verifies) for v in ("PASS", "REUSED", "FAIL", "NOT RUN")
         },
+        # The gates a run named, by frequency: the failing shapes to write a rule for, and the ones that
+        # never run (a coverage gap a clean exit hides). Capped so the summary stays an index, not a log.
+        "verify_failed_gates": dict(failed_gates.most_common(FIELD_GATE_TOP)),
+        "verify_not_run_gates": dict(not_run_gates.most_common(FIELD_GATE_TOP)),
+        "verify_chronic_not_run": [g for g, n in not_run_gates.most_common() if n >= FIELD_GATE_CHRONIC],
         # The two sides of "NOT RUN is not a pass": a run with no failure and a check that never ran, held
         # non-clean; and a clean exit carrying a failed or unrun check, which must stay zero.
         "verify_gaps_held": sum(
