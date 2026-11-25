@@ -26,6 +26,7 @@ import json
 import math
 import re
 import sys
+from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -320,11 +321,16 @@ class ReceiptSummary:
         return asdict(self)
 
 
-def _load_last_verify_receipt(seen: set[str], records: list[dict]) -> None:
+def _marker_path() -> Path:
+    """The last verify's marker, resolved lazily so a plain verify never loads safeedit."""
     from safeedit import _git_path  # noqa: PLC0415
 
+    return _git_path("headron-last-verify.json")
+
+
+def _load_last_verify_receipt(seen: set[str], records: list[dict]) -> None:
     with contextlib.suppress(OSError, json.JSONDecodeError, KeyError):
-        last_v = _git_path("headron-last-verify.json")
+        last_v = _marker_path()
         if last_v.is_file():
             d = json.loads(last_v.read_text(encoding="utf-8"))
             if rows := d.get("rows", []):
@@ -364,7 +370,8 @@ def gather_receipts(limit: int = 20) -> list[dict]:
 
 
 USAGE = (
-    "usage: headron receipt verify <file> [--signed-by <identity> --trust <file> [--revoked <file>]]\n"
+    "usage: headron receipt snapshot   (one-screen background brain: totals, pass rate, touched files, open gates)\n"
+    "       headron receipt verify <file> [--signed-by <identity> --trust <file> [--revoked <file>]]\n"
     "       headron receipt sign <file> --key <private key>   (-h/--help prints this)"
 )
 
@@ -394,9 +401,59 @@ def _findings(command: str, path: Path, data: bytes, options: dict[str, str]) ->
     return receiptsign.verify_signed(path, options["--signed-by"], Path(options["--trust"]), revoked)
 
 
+def snapshot(top_files: int = 10) -> dict:
+    """The last verify's rows collapsed into one record a chat reads in a single call: totals, pass rate,
+    the most-touched files, and the gates still open (FAIL / NOT RUN / SKIP).
+
+    THE BACKGROUND BRAIN. A chat asked "where are we?" would otherwise parse every raw row; this is the
+    one-screen answer. It reads the same marker `gather_receipts` does, so it is the current truth, never a
+    freshened old verdict. A missing marker is an empty snapshot, not an error — no run is a real state."""
+    marker = _marker_path()
+    if not marker.is_file():
+        return {"schema": 1, "command": "receipt snapshot", "measured_at": None, "total_checks": 0,
+                "pass_rate": 0.0, "top_touched_files": [], "open_gates": [], "note": "no verify on record"}
+    with contextlib.suppress(OSError, json.JSONDecodeError):
+        data = json.loads(marker.read_text(encoding="utf-8"))
+        rows = data.get("rows") or []
+        tally = Counter(str(r.get("verdict")) for r in rows)
+        total = len(rows)
+        passed = tally.get("PASS", 0) + tally.get("REUSED", 0)
+        files: Counter[str] = Counter()
+        for row in rows:
+            rid = str(row.get("id") or "")
+            if ":" in rid:  # a per-target gate id names its file after the colon
+                files[rid.split(":", 1)[1]] += 1
+            for name in row.get("inputs") or []:
+                files[str(name)] += 1
+        open_gates = [
+            {"id": r.get("id"), "verdict": r.get("verdict"), "why": r.get("why")}
+            for r in rows
+            if r.get("verdict") in ("FAIL", "NOT RUN", "SKIP")
+        ]
+        return {
+            "schema": 1,
+            "command": "receipt snapshot",
+            "measured_at": data.get("measured_at") or marker.stat().st_mtime,
+            "contract": data.get("contract"),
+            "total_checks": total,
+            "pass": tally.get("PASS", 0),
+            "reused": tally.get("REUSED", 0),
+            "fail": tally.get("FAIL", 0),
+            "not_run": tally.get("NOT RUN", 0) + tally.get("SKIP", 0),
+            "pass_rate": round(passed / total, 4) if total else 0.0,
+            "top_touched_files": files.most_common(top_files),
+            "open_gates": open_gates,
+        }
+    return {"schema": 1, "command": "receipt snapshot", "measured_at": None, "total_checks": 0,
+            "pass_rate": 0.0, "top_touched_files": [], "open_gates": [], "note": "unreadable marker"}
+
+
 def main(argv: list[str]) -> int:
     if argv in (["-h"], ["--help"]):
         print(USAGE)
+        return 0
+    if argv[:1] == ["snapshot"]:
+        print(json.dumps(snapshot(), indent=2))
         return 0
     options = _signing_options(argv)
     if options is None:
