@@ -1,12 +1,15 @@
 """Run independent planted groups without losing later diagnostics to one failed fixture."""
 
+import ast
 import os
 import subprocess
 import time
 from collections.abc import Callable
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import TypeVar
 
+import atlascore
 import impact
 
 # A group is handed the suite module, or the SimpleNamespace fake a standalone run stands in for it.
@@ -46,6 +49,9 @@ def run_group(module: Harness, name: str, run: Callable[[Harness], object]):
     # RECORDED: while the test-impact recorder is armed, every repository file this group loads is
     # its dependency; a passing group is stored on those files' bytes, so the fast loop runs only the
     # groups a change can reach. Unarmed (and before Python 3.12), enter and leave do nothing.
+    if silent := silent_skips({name: atlascore.text_of(Path(run.__code__.co_filename))}):
+        _group_failed(module, name, f"returns on a missing tool with no host_skipped, so its count moves per host: {silent}")
+        return
     impact.enter()
     settings, began, ok = repo_settings(), time.perf_counter(), False
     try:
@@ -108,6 +114,43 @@ def host_skipped(module: ModuleType, cases: int, why: str) -> None:
     print(f"  skip  {cases} cases not run on this host: {why}")
 
 
+def silent_skips(sources: dict[str, str]) -> list[str]:
+    """`name:line` of each `if shutil.which(tool)` branch that returns with no `host_skipped` for that tool.
+
+    SECOND SIGHTING, MADE A RULE: a host without `go` once ran 4 fewer cases; then cilocal_test's uv case
+    returned bare on a runner with no uv, and the hosted check read 315/316 as a moved split while every
+    re-pin was measured on a Mac that had uv. A tool is covered when some branch keyed on it, anywhere in
+    that module, calls `host_skipped`. `run_group` refuses such a group before it runs.
+    """
+
+    def tools(test: ast.expr) -> set[str]:
+        return {
+            str(n.args[0].value) if n.args and isinstance(n.args[0], ast.Constant) else ast.unparse(n)
+            for n in atlascore.walked(test)
+            if isinstance(n, ast.Call) and ast.unparse(n.func).endswith("which")
+        }
+
+    def reaches(body: list[ast.stmt], kind: tuple[type, ...], call: str = "") -> bool:
+        return any(
+            isinstance(n, kind) and (not call or ast.unparse(getattr(n, "func", n)).endswith(call))
+            for stmt in body
+            for n in atlascore.walked(stmt)
+        )
+
+    found = []
+    for name, text in sources.items():
+        tree = atlascore.parsed_python(text, name)
+        if tree is None:
+            continue
+        branches = [n for n in atlascore.walked(tree) if isinstance(n, ast.If) and tools(n.test)]
+        covered = {t for n in branches if reaches(n.body, (ast.Call,), "host_skipped") for t in tools(n.test)}
+        for n in branches:
+            silent = reaches(n.body, (ast.Return, ast.Continue)) and not reaches(n.body, (ast.Call,), "host_skipped")
+            if silent and not tools(n.test) <= covered:
+                found.append(f"{name}:{n.lineno}")
+    return found
+
+
 def counted(module: ModuleType) -> int:
     """Cases that passed plus cases this host named as not runnable: what the pins are compared with."""
     return len(module.CASES) + sum(n for n, _ in getattr(module, "HOST_SKIPS", []))
@@ -148,7 +191,7 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # alone, never intended or derived; only the sums are derived, so a new case moves exactly one literal.
 SHARDS = ("all", "core", "guards", "guards-0", "guards-1")
 CORE_CASES = 162
-GUARD_PARTS = (241, 316)
+GUARD_PARTS = (241, 317)
 GUARDS_CASES = sum(GUARD_PARTS)
 
 
