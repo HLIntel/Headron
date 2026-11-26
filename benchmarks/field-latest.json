@@ -1,5 +1,5 @@
 {
-  "events": 4519,
+  "events": 4585,
   "broken_chains": 1,
   "broken_chain_details": [
     {
@@ -7,68 +7,68 @@
       "first_problem": "event 696: sequence says 695 \u2014 an event was removed"
     }
   ],
-  "refusals": 1193,
-  "gate_refusals": 148,
+  "refusals": 1194,
+  "gate_refusals": 165,
   "refusal_shapes": 38,
   "refires": 682,
   "refusals_by_control": {
-    "audit": 80,
+    "audit": 81,
     "unattributed": 1113
   },
   "refires_by_control": {
     "unattributed": 656,
     "audit": 26
   },
-  "refusals_without_session": 141,
-  "verify_runs": 1144,
-  "verify_pass": 207,
-  "verify_fail": 937,
+  "refusals_without_session": 142,
+  "verify_runs": 1155,
+  "verify_pass": 209,
+  "verify_fail": 946,
   "verify_exit_codes": {
-    "0": 207,
-    "1": 652,
-    "2": 285
+    "0": 209,
+    "1": 660,
+    "2": 286
   },
-  "verify_other_nonzero": 285,
+  "verify_other_nonzero": 286,
   "verify_check_verdicts": {
-    "PASS": 10595,
-    "REUSED": 1268,
-    "FAIL": 1494,
-    "NOT RUN": 8545
+    "PASS": 10618,
+    "REUSED": 1273,
+    "FAIL": 1511,
+    "NOT RUN": 8666
   },
-  "verify_gaps_held": 285,
+  "verify_gaps_held": 286,
   "verify_clean_with_gap": 0,
   "sessions_failed": 49,
   "sessions_recovered": 19,
-  "lessons_served": 923,
-  "lessons_shown": 1363,
+  "lessons_served": 931,
+  "lessons_shown": 1373,
   "lesson_shapes": 101,
-  "lands": 598,
+  "lands": 613,
   "lands_armed": 429,
-  "lands_not_armed": 169,
-  "landing_retries": 62,
+  "lands_not_armed": 184,
+  "landing_retries": 63,
   "lands_refused_by_reason": {
     "unrecorded": 59,
-    "replay": 27,
+    "replay": 38,
     "rebase": 2,
-    "gate": 14,
+    "gate": 17,
     "merge": 1,
     "diverged": 1
   },
-  "sessions_ended": 513,
-  "events_without_session": 1529,
-  "events_without_task": 4519,
+  "sessions_ended": 527,
+  "events_without_session": 1586,
+  "events_without_task": 4585,
   "months": 3,
   "current_months": 2,
   "archived_months": 1,
   "reporting_window": "all readable field streams (current and archived)",
   "measured_at": "3.64.0",
   "headline": {
-    "verifications": 1144,
-    "clean_verifications": 207,
-    "refusals": 1193,
-    "landings": 598,
-    "lessons": 923,
-    "sessions": 513
+    "verifications": 1155,
+    "clean_verifications": 209,
+    "refusals": 1194,
+    "landings": 613,
+    "lessons": 931,
+    "sessions": 527
   },
   "headline_dropped": {},
   "accepted_broken_chains": 1,

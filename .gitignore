@@ -36,6 +36,10 @@ atlas-*.tar.gz.sha256
 headron-v*.tar.gz
 headron-v*.tar.gz.sha256
 atlas-*.intoto.jsonl
+# Plugin bundles (headron-mind, chatgpt) are BUILT and attached to the release; a committed zip is a
+# second copy that ages. Two byte-identical bundles sat at the root once already.
+headron-*.zip
+*-plugin.zip
 
 # ClusterFuzzLite and Go build their own working directories; neither belongs in history.
 .clusterfuzzlite/build/

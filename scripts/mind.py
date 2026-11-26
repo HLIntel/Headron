@@ -48,7 +48,6 @@ from mind_diagnostics import diagnose as diagnose
 from mind_diagnostics import escalate as escalate
 from mind_diagnostics import recover as recover
 from mind_diagnostics import refuse as refuse
-from receipt import ReceiptSummary as ReceiptSummary
 from receipt import gather_receipts as gather_receipts
 
 if TYPE_CHECKING:

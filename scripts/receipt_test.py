@@ -81,7 +81,8 @@ def _without_repo_access(receipt_file: Path) -> subprocess.CompletedProcess:
         )
 
 
-def _verdict_case(verify: ModuleType, receipt: ModuleType) -> tuple:
+def _verdict_case(verify: ModuleType, receipt: ModuleType, module: ModuleType) -> tuple:
+    _snapshot_case(module, receipt)
     rows = [
         [],
         [{"verdict": "PASS"}],
@@ -128,6 +129,35 @@ def _consumer_binding_case(verify: ModuleType, top: Path, repo: Path, base: str)
         ok,
         binding,
     )
+
+
+def _snapshot_case(module: ModuleType, receipt: ModuleType) -> None:
+    """The background brain: one record from the last verify's rows; appends and prints its own case."""
+    rows = [
+        {"id": "contract", "verdict": "PASS"},
+        {"id": "unit_tests:scripts/x.py", "verdict": "FAIL", "why": "boom"},
+        {"id": "lint", "verdict": "NOT RUN", "why": "busy"},
+        {"id": "unit_tests:scripts/x.py", "verdict": "PASS"},
+    ]
+    with tempfile.TemporaryDirectory() as td:
+        marker = Path(td) / "headron-last-verify.json"
+        marker.write_text(json.dumps({"rows": rows, "measured_at": 1.0, "contract": "3.64.0"}))
+        with patch.object(receipt, "_marker_path", return_value=marker):
+            snap = receipt.snapshot()
+    name = "receipt snapshot collapses the last verify's rows into one background-brain record"
+    ok = (
+        snap["total_checks"] == 4
+        and snap["pass"] == 2
+        and snap["fail"] == 1
+        and snap["not_run"] == 1
+        and snap["pass_rate"] == 0.5
+        and ("scripts/x.py", 2) in snap["top_touched_files"]
+        and {g["id"] for g in snap["open_gates"]} == {"unit_tests:scripts/x.py", "lint"}
+    )
+    if not ok:
+        raise SystemExit(f"FAIL {name}\n  got: {snap!r}")
+    module.CASES.append((name, "a chat parsing 50 raw rows to learn pass rate, touched files and open gates"))
+    print(f"  ok    {name}")
 
 
 def run(module: ModuleType) -> None:
@@ -232,7 +262,7 @@ def run(module: ModuleType) -> None:
             malformed.append(candidate)
         cases = [
             _consumer_binding_case(verify, top, same_repo, same_base),
-            _verdict_case(verify, receipt),
+            _verdict_case(verify, receipt, module),
             (
                 "a NOT RUN check, alone or beside PASSes, never yields PASS; an empty receipt is NOT RUN",
                 "a gate that did not run counted as a pass because the others passed, or no check at all counted as done",

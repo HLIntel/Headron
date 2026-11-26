@@ -279,9 +279,7 @@ def roster_cases() -> None:
                   "a roster counted by file extension, which stops seeing a sibling written in another "
                   "language — it already excluded a declared instrument from its own check"))
     print(f"  ok    every one of {present} scripts under scripts/ is a declared instrument")
-    # THE ROSTER IS BUILT FROM EACH ROW'S `script:` VALUE, not its key, so renaming the key leaves the
-    # file claimed and plants nothing — that version of this plant was inert and is why this comment
-    # exists. Repointing the value is what actually leaves branchstate.py claimed by no row.
+    # THE ROSTER IS BUILT FROM EACH ROW'S `script:` VALUE, not its key: repoint the value (renaming the key is inert).
     with mutated("atlas.yaml", lambda s: s.replace("    script: scripts/branchstate.py\n",
                                                    "    script: scripts/verify.py\n", 1)):
         case("a script under scripts/ that no instrument row names FAILS, whatever its extension",
@@ -292,15 +290,12 @@ def roster_cases() -> None:
         case("a file under scripts/ that is neither an instrument nor a declared non-script FAILS",
              "a data file quietly counted as an instrument, or an instrument quietly counted as data",
              True, "named by no atlas.yaml/instruments entry", by='roster.instrument_roster_errors')
-    # AN UNREACHED INSTRUMENT MUST NAME ITS REASON. Removing the row must fail, because an arm that is
-    # built, measured and wired to nothing reads as covered.
+    # AN UNREACHED INSTRUMENT MUST NAME ITS REASON: an arm built, measured and wired to nothing reads as covered.
     with mutated("atlas.yaml", lambda s: s.replace("    'taskbench.py': '", "    'taskbench_moved.py': '", 1)):
         case("an instrument reached by no gate and declared nowhere FAILS",
              "an unshipped arm, which reads as covered precisely because it exists",
              True, "reached by no gate and no invariant", by='inv:instruments_are_reached_or_declared')
-    # SPECIFICITY: a row naming something a gate DOES reach must fail too, or it hides the next one.
-    # astshape.py IS a gate's own argv (the code_shape gate runs it), so declaring it unreached must
-    # fail: a stale row is a place for the next genuinely unreached instrument to hide.
+    # SPECIFICITY: a row naming what a gate DOES reach must fail too (astshape.py IS the code_shape argv).
     with mutated("atlas.yaml", lambda s: s.replace("    'packprobe.py': '",
                                                    "    'astshape.py': 'a stale row'\n    'packprobe.py': '", 1)):
         case("an unreached row naming an instrument a gate does name FAILS",
@@ -341,9 +336,8 @@ def own_enforcement_cases() -> None:
                   "absence of evidence wearing the label of evidence of absence — pytest exit 5 read "
                   "as a failing suite, which refused six working harnesses"))
     print("  ok    a test runner that collected nothing decides nothing")
-    # THE SAME TREE MUST GET THE SAME VERDICT FROM EITHER PATH SHAPE. `--staged` yields relative paths
-    # and `--tracked` absolute ones, and the declared prefixes are relative: comparing the raw path
-    # matched nothing for one of the two, and the fixtures came back refused.
+    # ONE TREE, ONE VERDICT, EITHER PATH SHAPE: --staged yields relative paths, --tracked absolute
+    # ones, and the declared prefixes are relative, so comparing the raw path matched neither.
     fixture = "benchmarks/agent/window/test_window.py"
     if enforce.check_file(ROOT / fixture)[0] != enforce.check_file(Path(fixture))[0]:
         raise SystemExit("FAIL enforce gives one tree two verdicts depending on the path shape it is handed")
@@ -389,16 +383,15 @@ def project_marker_cases() -> None:
                   "a checker that refuses a script for not being a project — and a clean sweep on a "
                   "machine that simply lacks the toolchain, read as a verdict"))
     print("  ok    a project-scoped checker with no project above the file skips instead of refusing it")
-    # A MARKER IS A GLOB AND A LITERAL NAME GLOBS TO ITSELF, so the three exact markers must still resolve.
-    # `atlas` bound by run() is the atlas MODULE, not the declaration reader — a name collision that
-    # cost one full suite run. Import the reader explicitly.
+    # A MARKER IS A GLOB AND A LITERAL NAME GLOBS TO ITSELF, so the three exact markers must resolve.
+    # `atlas` from run() is the atlas MODULE, not the declaration reader (that collision cost a run).
     from atlascore import atlas as declaration
     markers = ((declaration().get("gate_tools") or {}).get("compiler_or_typechecker") or {}).get("per_directory") or {}
     literal = [m for m in markers.values() if "*" not in m and "?" not in m]
     if not literal or not any("*" in m or "?" in m for m in markers.values()):
         raise SystemExit(f"FAIL the marker table proves nothing about globs: {markers}")
-    # EACH MARKER IS PLANTED, ONE PER TREE: the loop this replaces tested `not name` on a non-empty literal
-    # and could never fail. A file matching the marker sits two levels above the source; it must be found.
+    # EACH MARKER IS PLANTED, ONE PER TREE: the old loop tested `not name` on a literal and never
+    # failed. A file matching the marker sits two levels above the source; it must be found.
     for marker in markers.values():
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / marker.replace("*", "app").replace("?", "f")).write_text("", encoding="utf-8")
@@ -507,32 +500,29 @@ def surface_cases() -> None:
     into the example: the example is what the printer would be forgetting.
     """
     surface = "tools/agent-task.example.headron"
-    # 1. IT MUST NOT COMPILE WHEN THE NOTATION IS BROKEN. A front end that repairs its input is
-    #    worse than one that errors: the ambiguity leaves no trace.
+    # 1. IT MUST NOT COMPILE WHEN BROKEN: a front end that repairs its input leaves no trace.
     with mutated(surface, lambda s: s.replace("  route     python", "  flavour   python", 1)):
         case("an unknown key in a .headron program FAILS", "a notation that carries a typo through as a "
              "field nothing reads", True, "unknown key", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
-    # 2. THE ORACLE IS THE POINT. A surface free to disagree with the contract it claims to compile
-    #    to is a SECOND representation, which is the two-systems shape this repository refuses.
+    # 2. THE ORACLE IS THE POINT: a surface free to disagree with the contract it claims to compile
+    #    to is a SECOND representation, the two-systems shape this repository refuses.
     with mutated(surface, lambda s: s.replace("    tool_calls         13", "    tool_calls         14", 1)):
         case("a .headron program that no longer compiles to its contract FAILS",
              "a notation drifting from the schema it is a surface for, silently", True,
              "compiles to a contract that is not")
-    # 3. ONE VALUE, ONE DECLARATION. The version typed into a program is the copy that goes stale.
+    # 3. ONE VALUE, ONE DECLARATION: the version typed into a program is the copy that goes stale.
     with mutated(surface, lambda s: s.replace("  route     python",
                                               '  atlas_version 9.9.9\n  route     python', 1)):
         case("a DERIVED field typed into a .headron program FAILS",
              "a second declaration of the contract version, free to disagree with VERSION", True,
              "is DERIVED", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
-    # 4. AN EFFECT NOBODY DECLARED. The effects block takes bare words as well as settings, and a
-    #    bare word that is not a declared effect must be refused rather than carried as free text.
+    # 4. AN EFFECT NOBODY DECLARED: the effects block takes bare words, and one that is not a
+    #    declared effect must be refused rather than carried as free text.
     with mutated(surface, lambda s: s.replace("    execute\n", "    telepathy\n", 1)):
         case("an effect the roster does not declare, written in a program, FAILS",
              "a free-text effect field, where a typo grants nothing and refuses nothing", True,
              "telepathy", by=('agentpolicy.agent_policy_errors', 'inv:autonomous_profile_is_enforced'))
-    # 5. THE NOTATION IS SHIPPED, NOT MERELY CHECKED. `load_contract` is the one function that
-    #    knows a task may arrive as a program, and it is what agentrun and sandboxgen call — so a
-    #    program and its contract must be the SAME task to them, by hash, not by inspection.
+    # 5. SHIPPED, NOT CHECKED: load_contract feeds agentrun/sandboxgen, so program and contract must hash equal.
     import agentpolicy
     contract = headronlang.compile_path(ROOT / surface)
     from_surface = headronlang.load_contract(ROOT / surface)
@@ -542,9 +532,8 @@ def surface_cases() -> None:
     CASES.append(("the runtime loader gives one task for either form",
                   "a surface that checks clean and hands the runtime something else"))
     print("  ok    the runtime loader gives one task for either form")
-    # 6. A PROGRAM OUTSIDE THE CHECKOUT. The first version failed in the LABEL rather than the parse: `rel()` raises
-    #    for a path outside the root, so a consumer's own program died with a pathlib traceback. Planted in a real
-    #    temporary directory, because a unit test of _label would have asserted the fix and not the path that met it.
+    # 6. A PROGRAM OUTSIDE THE CHECKOUT: rel() raises for a path outside root, so a consumer's
+    #    program once died with a pathlib traceback. Planted in a temp dir, not a _label unit test.
     import tempfile
     with tempfile.TemporaryDirectory() as outside:
         away = Path(outside) / "away.headron"
@@ -555,9 +544,9 @@ def surface_cases() -> None:
     CASES.append(("a program outside the repository compiles",
                   "a portable notation whose compiler raises on a path it cannot make relative"))
     print("  ok    a program outside the repository compiles")
-    # 7. THE NUMBERS COME FROM THE SCHEMA, and the mutation breaks the DERIVATION, never the schema: the notation
-    #    reads its types FROM the schema, so planting a string there changes both sides and cannot fail. The roster
-    #    is emptied instead, as a front end deciding types some other way would behave, so every budget turns string.
+    # 7. THE NUMBERS COME FROM THE SCHEMA: the mutation breaks the DERIVATION, never the schema
+    #    (planting a string there changes both sides). The roster is emptied instead, so every
+    #    budget turns string as a front end deciding types another way would behave.
     honest_paths = headronlang.integer_paths
     headronlang.integer_paths = lambda: frozenset()
     try:
@@ -587,8 +576,21 @@ def surface_cases() -> None:
                   "a roster pointing one way only, so a change lands against declarations nobody "
                   "listed and the only way to find out is to break something"))
     print("  ok    a declaration implemented by no file FAILS")
-    # 9. A PRINTER THAT DROPS A FIELD THE READER ACCEPTED — `a_round_trip_that_drops_what_the_format
-    #    _allowed`, already a measured shape here, and a notation is exactly where it lands.
+    # 8b. A MISDIRECTED ROOT HIDES EVERY DECLARATION: co_filename 'outside ROOT' made rel() raise,
+    #     the edge loop swallowed it, one mismatch printed 132 phantoms. The check names it once.
+    import agreement
+    honest_coherence = agreement.root_coherence_error
+    agreement.root_coherence_error = lambda: "root incoherence: planted"
+    try:
+        drowned = agreement.agreement_errors()
+    finally:
+        agreement.root_coherence_error = honest_coherence
+    assert drowned == ["root incoherence: planted"], "a misdirected root printed phantoms"
+    CASES.append(("a misdirected root names the mismatch once, never one phantom per declaration",
+                  "a HEADRON_ROOT pointing elsewhere turns one mismatch into N phantoms"))
+    print("  ok    a misdirected root names the mismatch once, never one phantom per declaration")
+    # 9. A PRINTER THAT DROPS A FIELD THE READER ACCEPTED: `a_round_trip_that_drops_what_the_format
+    #    _allowed`, and a notation is exactly where it lands.
     honest = headronlang._read
     headronlang._read = lambda record, path: None if path == "network" else honest(record, path)
     try:

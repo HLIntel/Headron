@@ -850,6 +850,39 @@ def rel(path: Path, root: Path = ROOT) -> str:
     return path.resolve().relative_to(resolved_once(root)).as_posix()
 
 
+@functools.lru_cache(maxsize=8192)
+def within_root(path: Path, root: Path = ROOT) -> bool:
+    """Is `path` inside `root`? The predicate `rel()` raises on — so a caller that would DROP a
+    declaration on ValueError asks this first and reports the mismatch, rather than manufacturing a
+    phantom 'resolves to no file' for every row a misdirected root hides."""
+    try:
+        path.resolve().relative_to(resolved_once(root))
+        return True
+    except ValueError:
+        return False
+
+
+def root_coherence_error() -> str | None:
+    """The ONE error a misdirected ROOT earns, instead of one per declaration it hides.
+
+    FOUND THIS SESSION. `HEADRON_ROOT` pointed at one checkout while the interpreter imported this
+    module from ANOTHER, so every invariant's `__code__.co_filename` lay outside ROOT. `rel()` raised,
+    the edge loop's `except ValueError: continue` swallowed it, and the check printed 132 'resolves to
+    no file' findings for ONE environment mismatch. A guard that reads `__file__` must first prove the
+    code it reads was loaded from the tree it checks — `a_check_proven_on_one_shape_of_input` at the
+    root, and `a_guard_that_crashes_on_another_guards_input`'s sibling: a guard that is SILENT on a
+    shape it does not own invents findings on the one it does. Here `atlascore.__file__` is the witness:
+    if the atlas CORE was loaded from outside ROOT, nothing it resolves can be trusted."""
+    if within_root(Path(__file__)):
+        return None
+    return (
+        f"root incoherence: atlascore was loaded from {__file__}, which is outside ROOT "
+        f"({ROOT}); the atlas read and the code run are different trees. Point HEADRON_ROOT at "
+        "this checkout (or unset it to use the checkout above scripts/) — re-run, do not read the "
+        "per-declaration findings this mismatch produces"
+    )
+
+
 def link_target(source: Path, raw: str, root: Path = ROOT) -> Path | None:
     raw = raw.strip().strip("<>")
     if not raw or raw.startswith("#") or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", raw):
