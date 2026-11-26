@@ -50,7 +50,9 @@ def run_group(module: Harness, name: str, run: Callable[[Harness], object]):
     # its dependency; a passing group is stored on those files' bytes, so the fast loop runs only the
     # groups a change can reach. Unarmed (and before Python 3.12), enter and leave do nothing.
     if silent := silent_skips({name: atlascore.text_of(Path(run.__code__.co_filename))}):
-        _group_failed(module, name, f"returns on a missing tool with no host_skipped, so its count moves per host: {silent}")
+        _group_failed(
+            module, name, f"returns on a missing tool with no host_skipped, so its count moves per host: {silent}"
+        )
         return
     impact.enter()
     settings, began, ok = repo_settings(), time.perf_counter(), False
