@@ -8,7 +8,7 @@
     "tools/codexbrief.schema.json": "d90b333e00341d11",
     "tools/headron-commands.schema.json": "56f3386c40024220",
     "tools/polyglot.schema.json": "626d3a49260270fd",
-    "tools/receipt.schema.json": "e422edd545d73968",
+    "tools/receipt.schema.json": "4bf7c7cc84fb50ce",
     "tools/tools.schema.json": "0953fa7a57f53600"
   },
   "sections": {

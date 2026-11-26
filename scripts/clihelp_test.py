@@ -61,7 +61,20 @@ def verify_flags_case(module: ModuleType) -> None:
     lost = sorted(promised - {flag for a in command_table(parser)["verify"]["arguments"] for flag in a.option_strings})
     if lost:
         raise SystemExit(f"FAIL verify.py promises {lost}, which `headron verify` does not parse")
-    given = ["--json", "--changed", "--fresh", "--base", "b", "--change", "c", "--jobs", "2", "--receipt", "r"]
+    given = [
+        "--json",
+        "--changed",
+        "--fresh",
+        "--base",
+        "b",
+        "--change",
+        "c",
+        "--jobs",
+        "2",
+        "--receipt",
+        "r",
+        "--push",
+    ]
     back = forwarded_argv(parser.parse_args(["verify", *given]), "verify")
     if sorted(back) != sorted(given):
         raise SystemExit(f"FAIL verify flags did not reach verify.py: gave {given}, forwarded {back}")

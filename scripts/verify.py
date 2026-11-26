@@ -5,7 +5,7 @@ FAIL exits 1; NOT RUN exits 2; PASS exits 0. REUSED is a prior passing result
 for matching inputs and environment; --fresh reruns it. Read-only gates run
 concurrently with separate state homes; mutating gates run alone afterward.
 
-  python scripts/verify.py [--json] [--changed] [--change CLASS] [--fresh] [--jobs N] [--receipt PATH]
+  python scripts/verify.py [--json] [--changed] [--change CLASS] [--fresh] [--jobs N] [--receipt PATH] [--push]
 
 RECEIPT (receipt v1). --receipt PATH writes this run as a receipt (scripts/receipt.py, tools/receipt.schema.json):
 the same rows, one mapping to a verdict, plus the policy pinned to the base commit. The PR head's policy must
@@ -35,6 +35,7 @@ import receipt
 import resilience
 from atlascore import ROOT, atlas, changed_paths, diff_names, resolved_once, strict_yaml, text_of
 from localtools import find_tool
+from mind_verifier import finish_verify_receipt
 from verifyinputs import _digest, _input_names, input_digest
 
 TIMEOUT = 900  # seconds; a gate record's `timeout_ms` overrides it for that gate alone
@@ -669,25 +670,24 @@ def learn(rows: list[dict]) -> list[str]:
     return [k for k in seen if lessons[k] >= 2]
 
 
+def _flag_value(argv: list[str], flag: str, err: str) -> str | None:
+    val = next((arg.split("=", 1)[1] for arg in argv if arg.startswith(f"{flag}=")), None)
+    if flag in argv:
+        pos = argv.index(flag) + 1
+        if pos == len(argv) or argv[pos].startswith("--"):
+            raise SystemExit(err)
+        val = argv[pos]
+    return val
+
+
 def _parse_base(argv: list[str]) -> str | None:
     """Optional `--base <ref>` / `--base=<ref>` for consumer trees without origin (folded from product-readiness)."""
-    base = next((arg.split("=", 1)[1] for arg in argv if arg.startswith("--base=")), None)
-    if "--base" in argv:
-        position = argv.index("--base") + 1
-        if position == len(argv) or argv[position].startswith("--"):
-            raise SystemExit("verify: --base requires an existing commit or ref")
-        base = argv[position]
-    return base
+    return _flag_value(argv, "--base", "verify: --base requires an existing commit or ref")
 
 
 def _parse_change(argv: list[str]) -> str | None:
     """Optional `--change <class>` / `--change=<class>` for targeted change verification."""
-    change = next((arg.split("=", 1)[1] for arg in argv if arg.startswith("--change=")), None)
-    if "--change" in argv:
-        position = argv.index("--change") + 1
-        if position == len(argv) or argv[position].startswith("--"):
-            raise SystemExit("verify: --change requires a change class name")
-        change = argv[position]
+    change = _flag_value(argv, "--change", "verify: --change requires a change class name")
     if change:
         declared = (atlas().get("verification_policy") or {}).get("profiles") or {}
         if change not in declared:
@@ -697,12 +697,7 @@ def _parse_change(argv: list[str]) -> str | None:
 
 def _receipt_path(argv: list[str]) -> Path | None:
     """Optional `--receipt <path>` / `--receipt=<path>`: where this run's receipt is written."""
-    path = next((arg.split("=", 1)[1] for arg in argv if arg.startswith("--receipt=")), None)
-    if "--receipt" in argv:
-        position = argv.index("--receipt") + 1
-        if position == len(argv) or argv[position].startswith("--"):
-            raise SystemExit("verify: --receipt requires a file path")
-        path = argv[position]
+    path = _flag_value(argv, "--receipt", "verify: --receipt requires a file path")
     return Path(path) if path else None
 
 
@@ -771,17 +766,12 @@ def policy_pin(tree: Path, argv: list[str]) -> dict:
     return _pin(True, f"verification_policy unchanged from base {commit[:12]}", commit, digest)
 
 
-def write_receipt(path: Path, rows: list[dict], pin: dict, input_tree: str) -> str:
-    """This run's receipt: the rows the verdict is read from, through receipt.py's one mapping, and nothing else."""
-    body = receipt.build(rows, base_commit=pin["base_commit"], policy_digest=pin["digest"], input_digest=input_tree)
-    path.write_text(receipt.dumps(body), encoding="utf-8")
-    return body["receipt_id"]
-
-
 def main(argv: list[str]) -> int:
     overall_start = time.monotonic()
     tree_root = target_tree()
     receipt_to = _receipt_path(argv)
+    push = "--push" in argv
+    need_receipt = bool(receipt_to or push)
     live_stream = "--json" not in argv
     first_seen: dict[str, str] = {}
     on_row = (lambda r: print_row(r, first_seen)) if live_stream else None
@@ -789,31 +779,27 @@ def main(argv: list[str]) -> int:
     if not is_atlas_checkout(tree_root):
         tree = input_digest(tree_root)
         rows = consumer_rows(tree_root, _parse_base(argv), change_class)
-        pin = policy_pin(tree_root, argv) if receipt_to else None
+        pin = policy_pin(tree_root, argv) if need_receipt else None
         if pin:
             rows.append(pin["row"])
         if input_digest(tree_root) != tree:
             rows.append(
                 {"id": "input_stability", "verdict": "FAIL", "why": "repository inputs changed during verification"}
             )
-        receipt_id = write_receipt(receipt_to, rows, pin, tree) if receipt_to and pin else None
-        code = report(
+        binding = finish_verify_receipt(
+            receipt_to, push, live_stream, rows, pin, tree, tree_root, changed_paths(tree_root)
+        )
+        return report(
             rows,
             argv,
             _store(tree_root, "headron-last-verify.json"),
             measured=True,
             overall_start=overall_start,
-            binding={
-                "base": pin["base_commit"] if pin else None,
-                "policy_digest": pin["digest"] if pin else None,
-                "input_digest": tree,
-                "receipt_id": receipt_id,
-            },
+            binding=binding,
         )
-        return code
     changed = "--changed" in argv
-    if changed and receipt_to:
-        raise SystemExit("verify: --receipt needs the whole done set; drop --changed")
+    if changed and need_receipt:
+        raise SystemExit("verify: --receipt/--push needs the whole done set; drop --changed")
     gates = changed_gates(change_class) if changed else (atlas().get("verification_policy") or {}).get("done_set") or []
     if not gates:
         print("verify: verification_policy/done_set declares no gate — an empty done set passes nothing")
@@ -864,7 +850,7 @@ def main(argv: list[str]) -> int:
     rows += extra_lane
     from safeedit import _git_path  # noqa: PLC0415
 
-    pin = policy_pin(tree_root, argv) if receipt_to else None
+    pin = policy_pin(tree_root, argv) if need_receipt else None
     if pin:
         if on_row:
             on_row(pin["row"])
@@ -877,8 +863,8 @@ def main(argv: list[str]) -> int:
             on_row(row)
     elif len(passed) > len(saved):
         write_evidence(passed)
-    receipt_id = write_receipt(receipt_to, rows, pin, tree) if receipt_to and pin else None
-    code = report(
+    binding = finish_verify_receipt(receipt_to, push, live_stream, rows, pin, tree, tree_root, changed_paths(tree_root))
+    return report(
         rows,
         argv,
         _git_path("headron-last-verify.json"),
@@ -888,14 +874,8 @@ def main(argv: list[str]) -> int:
         streamed=live_stream,
         overall_start=overall_start,
         jobs=jobs,
-        binding={
-            "base": pin["base_commit"] if pin else None,
-            "policy_digest": pin["digest"] if pin else None,
-            "input_digest": tree,
-            "receipt_id": receipt_id,
-        },
+        binding=binding,
     )
-    return code
 
 
 GATE_HOME: list[str] = []  # one private directory per run, made on first use

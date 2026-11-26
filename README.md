@@ -99,7 +99,7 @@ See the [instrument limits](docs/CERTIFICATION.md#what-the-numbers-do-not-prove)
 <!-- prettier-ignore -->
 | Instrument | Recorded result |
 | :--- | :--- |
-| Enforcement | 31/31 breaks refused across 20 toolchains; **874** declared planted cases |
+| Enforcement | 31/31 breaks refused across 20 toolchains; **876** declared planted cases |
 | Verification outcomes | 22,068 checks: 10,618 PASS, 1,273 REUSED, 1,511 FAIL, 8,666 NOT RUN. 660 runs failed; 286 stopped with an unrun check; 0 reported clean despite a failed or unrun check |
 | Routing experiment | 89% fewer prompt tokens than whole-tree; 50% fewer than unassisted, across identified models |
 | Task bench, 3 Claude models (contract 2.29.0) | with Headron 137/138; blind 78/138; every task answered by both arms |
