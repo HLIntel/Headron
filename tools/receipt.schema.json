@@ -27,7 +27,19 @@
       "items": {"$ref": "#/$defs/check"}
     },
     "counts": {"$ref": "#/$defs/counts"},
-    "verdict": {"enum": ["PASS", "FAIL", "NOT RUN"]}
+    "verdict": {"enum": ["PASS", "FAIL", "NOT RUN"]},
+    "repo": {"type": ["string", "null"]},
+    "branch": {"type": ["string", "null"]},
+    "head_commit": {"anyOf": [{"$ref": "#/$defs/commit"}, {"type": "null"}]},
+    "diff_summary": {"type": "string"},
+    "failure_ids": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "files_touched": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/file_touched"}
+    }
   },
   "allOf": [
     {
@@ -58,8 +70,21 @@
       "additionalProperties": false,
       "properties": {
         "id": {"type": "string", "minLength": 1},
+        "name": {"type": "string"},
         "state": {"$ref": "#/$defs/state"},
+        "duration_ms": {"type": "integer", "minimum": 0},
         "why": {"description": "The cause, recorded for any state other than PASS. Absent on a PASS so a re-used proof and a fresh one read the same.", "type": "string"}
+      }
+    },
+    "file_touched": {
+      "type": "object",
+      "required": ["path"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "change_class": {"type": "string"},
+        "lines_added": {"type": "integer", "minimum": 0},
+        "lines_removed": {"type": "integer", "minimum": 0}
       }
     },
     "counts": {

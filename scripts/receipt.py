@@ -51,6 +51,8 @@ class Policy(TypedDict):
 class Check(TypedDict):
     id: str
     state: str
+    name: NotRequired[str]
+    duration_ms: NotRequired[int]
     why: NotRequired[str]
 
 
@@ -65,6 +67,12 @@ class ReceiptBody(TypedDict):
     checks: list[Check]
     counts: dict[str, int]
     verdict: str
+    repo: NotRequired[str | None]
+    branch: NotRequired[str | None]
+    head_commit: NotRequired[str | None]
+    files_touched: NotRequired[list[dict[str, Any]]]
+    diff_summary: NotRequired[str]
+    failure_ids: NotRequired[list[str]]
 
 
 class Receipt(ReceiptBody):
@@ -72,12 +80,53 @@ class Receipt(ReceiptBody):
 
 
 REQUIRED = ("receipt_id", "base_commit", "policy", "input_digest", "checks", "counts", "verdict")
+OPTIONAL = ("repo", "branch", "head_commit", "files_touched", "diff_summary", "failure_ids")
+ALLOWED = frozenset((*REQUIRED, "schema", "kind", *OPTIONAL))
+CHECK_KEYS = frozenset(("id", "name", "state", "why", "duration_ms"))
+FILE_TOUCHED_KEYS = frozenset(("path", "change_class", "lines_added", "lines_removed"))
 FINDING_WHY_CAP = 200
+
+
+def _non_bool_int(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def _optional_fields_error(receipt: dict) -> str | None:
+    head = receipt.get("head_commit")
+    if "head_commit" in receipt and head is not None and not (_is_sha_hex(head, 40) or _is_sha_hex(head, 64)):
+        return "head_commit is not a commit hash or null"
+    if "repo" in receipt and receipt["repo"] is not None and not isinstance(receipt["repo"], str):
+        return "repo is not a string or null"
+    if "branch" in receipt and receipt["branch"] is not None and not isinstance(receipt["branch"], str):
+        return "branch is not a string or null"
+    if "diff_summary" in receipt and not isinstance(receipt["diff_summary"], str):
+        return "diff_summary is not a string"
+    if "failure_ids" in receipt and (
+        not isinstance(receipt["failure_ids"], list) or not all(isinstance(f, str) for f in receipt["failure_ids"])
+    ):
+        return "failure_ids is not an array of strings"
+    if "files_touched" in receipt:
+        files = receipt["files_touched"]
+        if not isinstance(files, list):
+            return "files_touched is not an array"
+        for item in files:
+            if (
+                not isinstance(item, dict)
+                or not set(item) <= FILE_TOUCHED_KEYS
+                or not isinstance(item.get("path"), str)
+                or not item["path"]
+                or ("change_class" in item and not isinstance(item["change_class"], str))
+                or ("lines_added" in item and not _non_bool_int(item["lines_added"]))
+                or ("lines_removed" in item and not _non_bool_int(item["lines_removed"]))
+            ):
+                return "files_touched item is invalid"
+    return None
 
 
 def _shape_error(receipt: dict) -> str | None:
     """Check the v1 schema with the standard library, including nested fields."""
-    if set(receipt) != {*REQUIRED, "schema", "kind"}:
+    keys = set(receipt)
+    if not {*REQUIRED, "schema", "kind"} <= keys or not keys <= ALLOWED:
         return "receipt fields do not match schema 1"
     if isinstance(receipt["schema"], bool) or receipt["schema"] != 1 or receipt["kind"] != KIND:
         return "receipt schema or kind is invalid"
@@ -87,6 +136,8 @@ def _shape_error(receipt: dict) -> str | None:
     # Spelled here, not imported: this file verifies alone. gitobject_test holds the two to one answer.
     if base is not None and not (_is_sha_hex(base, 40) or _is_sha_hex(base, 64)):
         return "base_commit is not a commit hash or null"
+    if opt_err := _optional_fields_error(receipt):
+        return opt_err
     policy = receipt["policy"]
     if not isinstance(policy, dict) or set(policy) != {"source", "digest"} or policy["source"] != "base":
         return "policy fields or source are invalid"
@@ -96,12 +147,16 @@ def _shape_error(receipt: dict) -> str | None:
     if not isinstance(checks, list):
         return "checks is not an array"
     for check in checks:
-        if not isinstance(check, dict) or not {"id", "state"} <= set(check) <= {"id", "state", "why"}:
+        if not isinstance(check, dict) or not {"id", "state"} <= set(check) <= CHECK_KEYS:
             return "check fields are invalid"
         if not isinstance(check["id"], str) or not check["id"] or check["state"] not in STATES:
             return "check id or state is invalid"
         if "why" in check and not isinstance(check["why"], str):
             return "check why is not a string"
+        if "name" in check and not isinstance(check["name"], str):
+            return "check name is not a string"
+        if "duration_ms" in check and not _non_bool_int(check["duration_ms"]):
+            return "check duration_ms must be a nonnegative integer"
     counts = receipt["counts"]
     if not isinstance(counts, dict) or set(counts) != set(STATES):
         return "counts fields are invalid"
@@ -147,13 +202,69 @@ def as_check(row: Mapping[str, Any]) -> Check:
     re-used proof and a fresh one write the same bytes; a non-PASS always says why."""
     raw = row.get("state", row.get("verdict"))
     check: Check = {"id": str(row.get("id", "")), "state": check_state(raw)}
+    if isinstance(row.get("name"), str) and row["name"]:
+        check["name"] = row["name"]
+    if _non_bool_int(row.get("duration_ms")):
+        check["duration_ms"] = row["duration_ms"]
     if check["state"] != "PASS":
         check["why"] = str(row.get("why") or f"verdict {raw!r}")[:FINDING_WHY_CAP]
     return check
 
 
-def build(rows: list[dict], *, base_commit: str | None, policy_digest: str | None, input_digest: str) -> Receipt:
-    """One receipt from verify rows."""
+def repo_slug(remote: str) -> str | None:
+    """Normalize an https/ssh git remote URL into owner/repo, stripping credentials and ignoring local paths."""
+    raw = remote.strip()
+    if raw.startswith("git@") and ":" in raw:
+        slug = raw.split(":", 1)[1]
+    elif raw.startswith(("https://", "http://", "ssh://")):
+        rest = raw.split("://", 1)[1].split("/", 1)
+        slug = rest[1] if len(rest) == 2 else ""
+    else:
+        return None
+    slug = slug.removesuffix(".git").strip("/")
+    return slug if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", slug) else None
+
+
+def verify_context(tree_root: Path, rows: list[dict], changed: list[str]) -> dict[str, Any]:
+    """Optional workspace context for hosted chat triage (repo, branch, head, changed files, failures)."""
+    import subprocess  # noqa: PLC0415
+
+    def _git(*args: str) -> str:
+        done = subprocess.run(["git", *args], cwd=tree_root, capture_output=True, text=True, check=False, timeout=60)
+        return done.stdout.strip() if done.returncode == 0 else ""
+
+    ctx: dict[str, Any] = {}
+    if slug := repo_slug(_git("remote", "get-url", "origin")):
+        ctx["repo"] = slug
+    branch = _git("rev-parse", "--abbrev-ref", "HEAD")
+    if branch and branch != "HEAD":
+        ctx["branch"] = branch
+    head = _git("rev-parse", "--verify", "--quiet", "HEAD^{commit}")
+    if _is_sha_hex(head, 40) or _is_sha_hex(head, 64):
+        ctx["head_commit"] = head
+    touched = [{"path": p} for p in changed[:50]]
+    if touched:
+        ctx["files_touched"] = touched
+    failed = list(dict.fromkeys(str(r["id"]) for r in rows if r.get("verdict") == "FAIL" and r.get("id")))
+    if failed:
+        ctx["failure_ids"] = failed
+    return ctx
+
+
+def build(
+    rows: list[dict],
+    *,
+    base_commit: str | None,
+    policy_digest: str | None,
+    input_digest: str,
+    repo: str | None = None,
+    branch: str | None = None,
+    head_commit: str | None = None,
+    files_touched: list[dict[str, Any]] | None = None,
+    diff_summary: str | None = None,
+    failure_ids: list[str] | None = None,
+) -> Receipt:
+    """One receipt from verify rows, optionally enriched with workspace context for chat triage."""
     checks = [as_check(row) for row in rows]
     states = [check["state"] for check in checks]
     body: ReceiptBody = {
@@ -166,6 +277,18 @@ def build(rows: list[dict], *, base_commit: str | None, policy_digest: str | Non
         "counts": {state: states.count(state) for state in STATES},
         "verdict": verdict_of(states),
     }
+    if repo is not None:
+        body["repo"] = repo
+    if branch is not None:
+        body["branch"] = branch
+    if head_commit is not None:
+        body["head_commit"] = head_commit
+    if files_touched is not None:
+        body["files_touched"] = files_touched
+    if diff_summary is not None:
+        body["diff_summary"] = diff_summary
+    if failure_ids is not None:
+        body["failure_ids"] = failure_ids
     return {"receipt_id": digest(body), **body}
 
 
