@@ -275,6 +275,9 @@ def install_cases(module: ModuleType, base: Path) -> None:
     Offline against uv's cache, so no network decides it: with --require-hashes uv names the missing hash before
     resolving; without it, uv tries to resolve and fails for a different reason."""
     if shutil.which("uv") is None:
+        from testgroups import host_skipped
+
+        host_skipped(module, 1, "uv is not installed")
         return
     steps = [step for job in cipipeline.JOBS for step in job.steps if "pip install" in step.run]
     unhashed = base / "unhashed.lock.txt"
@@ -531,10 +534,25 @@ def rescue_tag_cases(module: ModuleType, base: Path) -> None:
     )
 
 
+def silent_skip_cases(module: ModuleType) -> None:
+    """A case that returns on a missing tool must name the skip: the shard pin must not depend on the host."""
+    from testgroups import silent_skips
+
+    bare = 'import shutil\ndef c(m):\n    if shutil.which("uv") is None:\n        return\n'
+    named = bare.replace("        return", "        host_skipped(m, 1, 'no uv')\n        return")
+    _case(
+        module,
+        "a case that returns on a missing tool without a named host skip is refused",
+        "cilocal_test returned bare with no uv: the hosted check ran guards-1 315/316, re-pinned on a Mac five times",
+        silent_skips({"planted": bare}) == ["planted:3"] and not silent_skips({"planted": named}),
+    )
+
+
 def run(module: ModuleType) -> None:
     with tempfile.TemporaryDirectory(prefix="headron-cilocal-") as directory:
         base = Path(directory)
         graph_cases(module)
+        silent_skip_cases(module)
         declaration_cases(module)
         drift_cases(module)
         install_cases(module, base)

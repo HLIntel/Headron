@@ -3,7 +3,7 @@
 [HEADRON](HEADRON.md) · [Proofs](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-158 modules and 484 imports between them, read from the source; 86 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 104 modules use it. These 75 rows are the modules at least 2 others use; the other 83, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+158 modules and 485 imports between them, read from the source; 86 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 105 modules use it. These 75 rows are the modules at least 2 others use; the other 83, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -41,7 +41,7 @@ flowchart LR
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
-| [atlascore](../scripts/atlascore.py) | Atlas primitives: the declared rosters, the… | 104 |  | [agent_test](../scripts/agent_test.py), [agentbench_test](../scripts/agentbench_test.py) +16 |
+| [atlascore](../scripts/atlascore.py) | Atlas primitives: the declared rosters, the… | 105 |  | [agent_test](../scripts/agent_test.py), [agentbench_test](../scripts/agentbench_test.py) +16 |
 | [agentpolicy](../scripts/agentpolicy.py) | The agent execution policy: six verdicts,… | 30 | agenteffects, agentvocab, dirscope, headronlang, packmanifest, processpolicy, shellsplit | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +9 |
 | [knowledge](../scripts/knowledge.py) | Where a fact may live, how it is retrieved,… | 15 |  | [atlas_landing_test](../scripts/atlas_landing_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [atomicfile](../scripts/atomicfile.py) | Replace one file whole: a reader sees the… | 11 |  | [atomicfile_test](../scripts/atomicfile_test.py) |
@@ -88,7 +88,7 @@ flowchart LR
 | [reflex](../scripts/reflex.py) | Command classification primitives —… | 3 | branchstate, callshape, decide, importgraph, port | [reflex_test](../scripts/reflex_test.py) |
 | [roster](../scripts/roster.py) | instrument_roster: which scripts are… | 3 | cidrift, cipipeline, dirscope, importgraph | [atlas_rules_test](../scripts/atlas_rules_test.py) |
 | [sweep](../scripts/sweep.py) | Fast semantic sweep: repo-wide… | 3 | graph, port | [sweep_test](../scripts/sweep_test.py) |
-| [testgroups](../scripts/testgroups.py) | Run independent planted groups without… | 3 | impact | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +9 |
+| [testgroups](../scripts/testgroups.py) | Run independent planted groups without… | 3 | impact | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +10 |
 | [adaptive](../scripts/adaptive.py) | Deterministic second-stage process selection… | 2 | mind, mind_diagnostics | [adaptive_scheduling_test](../scripts/adaptive_scheduling_test.py) |
 | [agentrun](../scripts/agentrun.py) | The reference runner: the one caller in this… | 2 | agentaudit, agenteffects, agentpolicy, crosscache, headronlang, isolation, knowledge, obligations, runtime | [agent_test](../scripts/agent_test.py), [taskimage_test](../scripts/taskimage_test.py) |
 | [atlasindex](../scripts/atlasindex.py) | A retrieval index that obeys the policy this… | 2 | atomicfile, graph, microcode, port, sweep | [atlas_guards_test](../scripts/atlas_guards_test.py), [atlas_test](../scripts/atlas_test.py) +1 |
