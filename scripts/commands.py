@@ -295,6 +295,7 @@ COMMAND_ROWS: tuple[tuple[str, str, str, tuple], ...] = (
             _arg(
                 "--receipt", default=None, help="write a receipt to this path; a whole run only, never with --changed"
             ),
+            _arg("--push", **_ON, help="upload the verified receipt to hosted Headron workspace"),
         ),
     ),
     (

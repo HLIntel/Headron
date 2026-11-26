@@ -193,7 +193,7 @@ def finish_suite(module: ModuleType, expected: int, guards_ran: int | None = Non
 # alone, never intended or derived; only the sums are derived, so a new case moves exactly one literal.
 SHARDS = ("all", "core", "guards", "guards-0", "guards-1")
 CORE_CASES = 162
-GUARD_PARTS = (241, 317)
+GUARD_PARTS = (243, 317)
 GUARDS_CASES = sum(GUARD_PARTS)
 
 

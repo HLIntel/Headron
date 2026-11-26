@@ -11,8 +11,10 @@ import os
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -131,6 +133,85 @@ def _consumer_binding_case(verify: ModuleType, top: Path, repo: Path, base: str)
     )
 
 
+def _chat_fields_case(
+    receipt: ModuleType, same_base: str, same_digest: str, _refused: Callable[[object], bool]
+) -> tuple:
+    """Chat enrichment fields (repo, branch, head_commit, files_touched, failure_ids) pass & enforce shape."""
+    rich = receipt.build(
+        [{"id": "unit_tests", "verdict": "PASS", "duration_ms": 420}],
+        base_commit=same_base,
+        policy_digest=same_digest,
+        input_digest="a" * 64,
+        repo="HLIntel/Headron",
+        branch="feat/auth",
+        head_commit=same_base,
+        files_touched=[
+            {"path": "src/auth.py", "change_class": "security_sensitive", "lines_added": 18, "lines_removed": 4}
+        ],
+        diff_summary="1 file changed, 18 insertions(+), 4 deletions(-)",
+        failure_ids=[],
+    )
+    valid_bytes = not receipt.verify_bytes(json.dumps(rich).encode())
+    valid_schema = not _refused(rich)
+    bad_files = dict(rich, files_touched=[{"path": ""}])
+    bad_files["receipt_id"] = receipt.digest({k: v for k, v in bad_files.items() if k != "receipt_id"})
+    refused_bad = bool(receipt.verify_bytes(json.dumps(bad_files).encode())) and _refused(bad_files)
+    return (
+        "receipt carries optional chat fields (repo, branch, files_touched) and verifies from its own bytes",
+        "a receipt with files_touched or diff_summary that fails schema validation or accepts empty touched paths",
+        valid_bytes and valid_schema and refused_bad,
+        (valid_bytes, valid_schema, refused_bad),
+    )
+
+
+def _upload_case(receipt: ModuleType) -> tuple:
+    """mind_verifier.upload_receipt handles Mind key /mcp uploads, DPoP device uploads, and refuses insecure URLs."""
+    import mind_verifier  # noqa: PLC0415
+
+    sample = _build(receipt, PASS_ROWS, policy_digest="b" * 64)
+    seen: list[tuple[str, dict[str, str]]] = []
+
+    def _fake_json_request(
+        url: str,
+        payload: dict[str, Any] | None = None,
+        *,
+        method: str = "POST",
+        headers: dict[str, str] | None = None,
+        timeout: int = 15,
+    ) -> tuple[int, dict[str, Any]]:
+        seen.append((url, headers or {}))
+        return 200, {"id": sample["receipt_id"], "duplicate": False, "result": {"structuredContent": {"ok": True}}}
+
+    with patch.dict(os.environ, {"HEADRON_MIND_KEY": "hm_test_key"}, clear=False):
+        with patch.object(mind_verifier, "_device_path", return_value=Path("/nonexistent/headron-device.json")):
+            with patch.object(mind_verifier, "_json_request", side_effect=_fake_json_request):
+                ok_key, _ = mind_verifier.upload_receipt(dict(sample), url="https://headron.tech")
+            ok_bad_url, _ = mind_verifier.upload_receipt(dict(sample), url="http://example.com")
+    return (
+        "receipt push uploads over https via Mind key or DPoP and refuses plain http remotes",
+        "a receipt upload that leaks a key over plain http or fails to target /mcp with Bearer auth",
+        ok_key and not ok_bad_url and seen[0][0] == "https://headron.tech/mcp" and "Authorization" in seen[0][1],
+        (ok_key, ok_bad_url, seen),
+    )
+
+
+def _malformed_receipts(receipt: ModuleType) -> list[dict]:
+    out = []
+    for field, value in (
+        ("base_commit", "bad"),
+        ("input_digest", "bad"),
+        ("policy", {"source": "base", "digest": "bad"}),
+        ("counts", {"PASS": True, "FAIL": 0, "NOT RUN": 0, "SKIP": 0}),
+        ("checks", [{"id": "", "state": "PASS"}]),
+        ("extra", 1),
+    ):
+        candidate = _build(receipt, PASS_ROWS)
+        candidate[field] = value
+        candidate["receipt_id"] = receipt.digest({k: v for k, v in candidate.items() if k != "receipt_id"})
+        out.append(candidate)
+    return out
+
+
 def _snapshot_case(module: ModuleType, receipt: ModuleType) -> None:
     """The background brain: one record from the last verify's rows; appends and prints its own case."""
     rows = [
@@ -242,27 +323,17 @@ def run(module: ModuleType) -> None:
         numeric_receipt["schema"] = 1.0
         numeric_receipt["counts"]["PASS"] = 2.0
         numeric_receipt["receipt_id"] = receipt.digest({k: v for k, v in numeric_receipt.items() if k != "receipt_id"})
-        malformed = []
+        malformed = _malformed_receipts(receipt)
         valid_json = receipt.dumps(_build(receipt, PASS_ROWS))
         duplicates = [
             valid_json.replace('"verdict": "PASS"', '"verdict": "FAIL", "verdict": "PASS"'),
             valid_json.replace('"source": "base"', '"source": "other", "source": "base"'),
         ]
-        for field, value in (
-            ("base_commit", "bad"),
-            ("input_digest", "bad"),
-            ("policy", {"source": "base", "digest": "bad"}),
-            ("counts", {"PASS": True, "FAIL": 0, "NOT RUN": 0, "SKIP": 0}),
-            ("checks", [{"id": "", "state": "PASS"}]),
-            ("extra", 1),
-        ):
-            candidate = _build(receipt, PASS_ROWS)
-            candidate[field] = value
-            candidate["receipt_id"] = receipt.digest({k: v for k, v in candidate.items() if k != "receipt_id"})
-            malformed.append(candidate)
         cases = [
             _consumer_binding_case(verify, top, same_repo, same_base),
             _verdict_case(verify, receipt, module),
+            _chat_fields_case(receipt, same_base, same["digest"], _refused),
+            _upload_case(receipt),
             (
                 "a NOT RUN check, alone or beside PASSes, never yields PASS; an empty receipt is NOT RUN",
                 "a gate that did not run counted as a pass because the others passed, or no check at all counted as done",

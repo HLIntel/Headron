@@ -1,19 +1,30 @@
 """Optional entitlement verification for customer-controlled Mind execution, and the Action's key activation."""
 
 import argparse
+import base64
+import hashlib
 import http.client
 import json
 import os
 import re
+import secrets
+import socket
 import subprocess
 import sys
+import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from http.client import HTTPMessage
+from pathlib import Path
 from typing import IO, Any
 
+import receipt
+from resilience import wait_until
+
 HOSTED = "https://headron.tech/api/mind"
+SITE_ORIGIN = "https://headron.tech"
 # The service answers a key with one of these; any other pairing of status and body is not an answer.
 KEY_STATES = {200: "active", 401: "invalid key", 402: "no active plan"}
 CLASSIFY_BATCH = 400  # paths per classifier call, well under the argument-length limit
@@ -249,6 +260,289 @@ def _activate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
+
+
+def _device_path() -> Path:
+    root = os.environ.get("HEADRON_HOME")
+    base = Path(root) if root else Path.home() / ".headron"
+    return base / "device.json"
+
+
+def _save_device(record: dict[str, Any]) -> None:
+    path = _device_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+    os.chmod(path, 0o600)
+
+
+def _read_text(path: Path) -> str:
+    with open(path, encoding="utf-8") as handle:
+        return handle.read()
+
+
+def _generate_p256_key() -> tuple[str, dict[str, str]]:
+    """Generate a P-256 keypair via openssl (no pip dependencies); return (private_pem, public_jwk)."""
+    with tempfile.TemporaryDirectory(prefix="headron-key-") as tmp:
+        key_file = Path(tmp) / "key.pem"
+        subprocess.run(
+            ["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", str(key_file)],
+            check=True,
+            capture_output=True,
+            timeout=15,
+        )
+        pub_der = subprocess.run(
+            ["openssl", "ec", "-in", str(key_file), "-pubout", "-outform", "DER"],
+            check=True,
+            capture_output=True,
+            timeout=15,
+        ).stdout
+        pem = _read_text(key_file)
+    if len(pub_der) < 65 or pub_der[-65] != 0x04:
+        raise ValueError("unexpected P-256 SPKI public key encoding")
+    point = pub_der[-64:]
+    jwk = {"kty": "EC", "crv": "P-256", "x": _b64url(point[:32]), "y": _b64url(point[32:])}
+    return pem, jwk
+
+
+def _der_ecdsa_to_p1363(der: bytes) -> bytes:
+    """Convert ASN.1 DER ECDSA (r, s) signature to IEEE P1363 64-byte (r || s) for ES256 JWT."""
+    if len(der) < 8 or der[0] != 0x30:
+        raise ValueError("invalid DER signature")
+    idx = 2 if der[1] < 0x80 else 2 + (der[1] & 0x7F)
+    coords = []
+    for _ in range(2):
+        if der[idx] != 0x02:
+            raise ValueError("expected ASN.1 INTEGER")
+        length = der[idx + 1]
+        raw = der[idx + 2 : idx + 2 + length].lstrip(b"\x00")
+        if len(raw) > 32:
+            raise ValueError("ECDSA integer exceeds 32 bytes")
+        coords.append(raw.rjust(32, b"\x00"))
+        idx += 2 + length
+    return coords[0] + coords[1]
+
+
+def _dpop_proof(private_pem: str, jwk: dict[str, str], method: str, url: str, access_token: str | None = None) -> str:
+    header = _b64url(json.dumps({"typ": "dpop+jwt", "alg": "ES256", "jwk": jwk}, separators=(",", ":")).encode())
+    claims: dict[str, Any] = {
+        "jti": secrets.token_hex(16),
+        "htm": method.upper(),
+        "htu": url.split("?", 1)[0].split("#", 1)[0],
+        "iat": int(time.time()),
+    }
+    if access_token:
+        claims["ath"] = _b64url(hashlib.sha256(access_token.encode("ascii")).digest())
+    payload = _b64url(json.dumps(claims, separators=(",", ":")).encode())
+    signing_input = f"{header}.{payload}".encode("ascii")
+    with tempfile.TemporaryDirectory(prefix="headron-dpop-") as tmp:
+        key_file = Path(tmp) / "k.pem"
+        key_file.write_text(private_pem, encoding="ascii")
+        os.chmod(key_file, 0o600)
+        der = subprocess.run(
+            ["openssl", "dgst", "-sha256", "-sign", str(key_file)],
+            input=signing_input,
+            check=True,
+            capture_output=True,
+            timeout=15,
+        ).stdout
+    sig = _b64url(_der_ecdsa_to_p1363(der))
+    return f"{header}.{payload}.{sig}"
+
+
+def _json_request(
+    url: str,
+    payload: dict[str, Any] | None,
+    *,
+    method: str = "POST",
+    headers: dict[str, str] | None = None,
+    timeout: int = 15,
+) -> tuple[int, dict[str, Any] | None]:
+    req_headers = {"Accept": "application/json", **(headers or {})}
+    body = None
+    if payload is not None:
+        body = json.dumps(payload).encode("utf-8")
+        req_headers["Content-Type"] = "application/json"
+    req = urllib.request.Request(url, data=body, headers=req_headers, method=method)
+    try:
+        with urllib.request.build_opener(NoRedirect()).open(req, timeout=timeout) as resp:
+            status, raw = resp.status, resp.read(65537)
+    except urllib.error.HTTPError as err:
+        with err:
+            status, raw = err.code, err.read(65537)
+    if len(raw) > 65536:
+        return status, None
+    try:
+        parsed = json.loads(raw)
+    except ValueError:
+        return status, None
+    return status, parsed if isinstance(parsed, dict) else None
+
+
+def _ensure_dpop_token(device: dict[str, Any], origin: str) -> dict[str, Any] | None:
+    if device.get("access_token") and time.time() < float(device.get("exp") or 0) - 30:
+        return device
+    token_url = f"{origin}/api/connect/token"
+    proof = _dpop_proof(device["private_pem"], device["jwk"], "POST", token_url)
+    status, data = _json_request(token_url, {"device_id": device["device_id"]}, headers={"DPoP": proof})
+    if status != 200 or not data or not data.get("access_token"):
+        return None
+    updated = {
+        **device,
+        "access_token": data["access_token"],
+        "exp": int(time.time()) + int(data.get("expires_in") or 900),
+    }
+    _save_device(updated)
+    return updated
+
+
+def upload_receipt(
+    receipt_data: dict[str, Any], *, url: str | None = None, subject: str | None = None
+) -> tuple[bool, str]:
+    """Upload a verified receipt via paired DPoP device or HEADRON_MIND_KEY / HEADRON_MIND_TOKEN."""
+    origin = (url or os.environ.get("HEADRON_MIND_URL") or SITE_ORIGIN).strip().rstrip("/")
+    parsed = urllib.parse.urlsplit(origin)
+    base_origin = f"{parsed.scheme}://{parsed.netloc}" if parsed.scheme and parsed.netloc else origin
+    if refusal := url_refusal(base_origin):
+        return False, f"upload url {refusal}"
+    device_file = _device_path()
+    if device_file.is_file():
+        try:
+            device = json.loads(_read_text(device_file))
+        except (OSError, ValueError):
+            device = None
+        if isinstance(device, dict) and device.get("device_id") and device.get("private_pem") and device.get("jwk"):
+            fresh = _ensure_dpop_token(device, base_origin)
+            if not fresh:
+                return False, "paired device token renewal failed; run `headron` connect again"
+            target = f"{base_origin}/api/trust/receipts"
+            proof = _dpop_proof(fresh["private_pem"], fresh["jwk"], "POST", target, fresh["access_token"])
+            body = {"receipt": receipt_data, **({"subject": subject} if subject else {})}
+            status, data = _json_request(
+                target, body, headers={"Authorization": f"DPoP {fresh['access_token']}", "DPoP": proof}
+            )
+            if status == 200 and data:
+                kind = "already recorded" if data.get("duplicate") else "recorded"
+                return True, f"uploaded via paired device ({kind}: {str(data.get('id') or '')[:12]})"
+            err = (data or {}).get("error_description") or (data or {}).get("error") or f"HTTP {status}"
+            return False, f"device upload refused: {err}"
+    key = (os.environ.get("HEADRON_MIND_TOKEN") or os.environ.get("HEADRON_MIND_KEY") or "").strip()
+    if key:
+        mcp_url = f"{base_origin}/mcp"
+        rpc = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "receipt.upload",
+                "arguments": {"receipt": receipt_data, **({"subject": subject} if subject else {})},
+            },
+        }
+        status, data = _json_request(
+            mcp_url, rpc, headers={"Authorization": f"Bearer {key}", "Accept": "application/json, text/event-stream"}
+        )
+        res = (data or {}).get("result") or {}
+        if status == 200 and not res.get("isError") and not (data or {}).get("error"):
+            return True, f"uploaded via Mind key ({str(receipt_data.get('receipt_id') or '')[:12]})"
+        msg = ((res.get("content") or [{}])[0] or {}).get("text") or ((data or {}).get("error") or {}).get("message")
+        return False, f"Mind key upload failed: {msg or f'HTTP {status}'}"
+    return False, "not configured: pair a device (`mind_verifier.py connect`) or set HEADRON_MIND_KEY"
+
+
+def finish_verify_receipt(
+    receipt_to: Path | None,
+    push: bool,
+    live_stream: bool,
+    rows: list[dict[str, Any]],
+    pin: dict[str, Any] | None,
+    tree: str,
+    tree_root: Path,
+    changed: list[str],
+) -> dict[str, Any]:
+    """Build, optionally write to disk, and optionally push the run's receipt, returning the report binding."""
+    rid = None
+    if (receipt_to or push) and pin:
+        extra = receipt.verify_context(tree_root, rows, changed)
+        body = receipt.build(
+            rows, base_commit=pin["base_commit"], policy_digest=pin["digest"], input_digest=tree, **extra
+        )
+        rid = body["receipt_id"]
+        if receipt_to is not None:
+            receipt_to.write_text(receipt.dumps(body), encoding="utf-8")
+        if push:
+            ok, msg = upload_receipt(dict(body))
+            if live_stream:
+                print(f"verify push: {'OK' if ok else 'FAIL'} — {msg}", file=sys.stdout if ok else sys.stderr)
+    return {
+        "base": pin["base_commit"] if pin else None,
+        "policy_digest": pin["digest"] if pin else None,
+        "input_digest": tree,
+        "receipt_id": rid,
+    }
+
+
+def _connect(args: argparse.Namespace) -> int:
+    origin = args.url.strip().rstrip("/")
+    if refusal := url_refusal(origin):
+        print(f"connect url {refusal}", file=sys.stderr)
+        return 1
+    pem, jwk = _generate_p256_key()
+    name = (args.name or socket.gethostname() or "headron-cli")[:64]
+    status, start = _json_request(
+        f"{origin}/api/connect/start", {"jwk": jwk, "name": name, "scopes": ["receipt_verification", "mind_api"]}
+    )
+    if status != 200 or not start or not start.get("device_code"):
+        print(f"connect start failed (HTTP {status})", file=sys.stderr)
+        return 1
+    print(f"Open: {start.get('verification_uri_complete') or start.get('verification_uri')}")
+    print(f"Code: {start.get('user_code')}")
+    interval = max(1, int(start.get("interval") or 5))
+    timeout = max(interval, int(start.get("expires_in") or 300))
+    token_url = f"{origin}/api/connect/token"
+    outcome: dict[str, Any] = {"code": 1}
+
+    def _poll() -> bool:
+        proof = _dpop_proof(pem, jwk, "POST", token_url)
+        t_status, tok = _json_request(token_url, {"device_code": start["device_code"]}, headers={"DPoP": proof})
+        if t_status == 200 and tok and tok.get("access_token"):
+            _save_device(
+                {
+                    "device_id": tok["device_id"],
+                    "url": origin,
+                    "access_token": tok["access_token"],
+                    "exp": int(time.time()) + int(tok.get("expires_in") or 900),
+                    "private_pem": pem,
+                    "jwk": jwk,
+                }
+            )
+            print(f"Paired device {tok['device_id']} -> {_device_path()}")
+            outcome["code"] = 0
+            return True
+        err = (tok or {}).get("error")
+        if err not in (None, "authorization_pending", "slow_down"):
+            print(f"Pairing refused: {err}", file=sys.stderr)
+            outcome["code"] = 1
+            return True
+        return False
+
+    if not wait_until(_poll, timeout=timeout, interval=interval):
+        print("Pairing timed out", file=sys.stderr)
+    return int(outcome["code"])
+
+
+def _push(args: argparse.Namespace) -> int:
+    path = Path(args.file)
+    try:
+        data = json.loads(_read_text(path))
+    except (OSError, ValueError) as exc:
+        print(f"cannot read receipt {path}: {exc}", file=sys.stderr)
+        return 1
+    ok, msg = upload_receipt(data, url=args.url or None, subject=args.subject or None)
+    print(msg, file=sys.stdout if ok else sys.stderr)
+    return 0 if ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="mind_verifier.py", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -259,7 +553,19 @@ def main(argv: list[str] | None = None) -> int:
     activate.add_argument("--event", default="", help="path to the GitHub event payload")
     activate.add_argument("--output", default="", help="path to append step outputs to")
     activate.add_argument("--summary", default="", help="path to append the job summary to")
-    return _activate(parser.parse_args(argv))
+    connect = commands.add_parser("connect", help="pair this device via RFC 8628 + DPoP with headron.tech")
+    connect.add_argument("--url", default=SITE_ORIGIN, help="hosted Headron origin")
+    connect.add_argument("--name", default="", help="device label (default hostname)")
+    push = commands.add_parser("push", help="upload a receipt JSON file to hosted Headron workspace")
+    push.add_argument("file", help="path to verify.json receipt")
+    push.add_argument("--url", default="", help="hosted Headron origin override")
+    push.add_argument("--subject", default="", help="optional subject label")
+    parsed = parser.parse_args(argv)
+    if parsed.command == "connect":
+        return _connect(parsed)
+    if parsed.command == "push":
+        return _push(parsed)
+    return _activate(parsed)
 
 
 if __name__ == "__main__":
