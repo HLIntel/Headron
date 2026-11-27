@@ -630,6 +630,55 @@ def leak_anchor_cases() -> None:
     print("  ok    the leak scan's anchors hide no leak of any kind")
 
 
+def merge_driver_cases() -> None:
+    """Generated text merges by regeneration: a block-only conflict resolves, a prose conflict still stops."""
+    import mergegen  # noqa: PLC0415
+
+    begin, end = "<!-- BEGIN generated: x (python scripts/atlas.py index --write) -->", "<!-- END generated: x -->"
+
+    def doc(prose: str, body: str) -> str:
+        return f"# Title\n\n{prose}\n\n{begin}\n{body}\n{end}\n\ntail\n"
+
+    with tempfile.TemporaryDirectory() as scratch:
+        base, ours, theirs = (Path(scratch) / n for n in ("base", "ours", "theirs"))
+
+        def merge(b: str, o: str, t: str) -> int:
+            for side, text in ((base, b), (ours, o), (theirs, t)):
+                side.write_text(text, encoding="utf-8")
+            return mergegen.merge_blocks(base, ours, theirs, "doc.md")
+
+        # both sides regenerated the block differently, and only theirs edited the prose
+        assert merge(doc("one", "B0"), doc("one", "B-ours"), doc("two", "B-theirs")) == 0, (
+            "a conflict inside a generated block stopped the merge"
+        )
+        merged = ours.read_text(encoding="utf-8")
+        assert "two" in merged and "B-ours" in merged and "<<<<<<<" not in merged, (
+            f"the block merge lost the prose edit or kept markers: {merged!r}"
+        )
+        assert merge(doc("one", "B0"), doc("mine", "B1"), doc("yours", "B2")) == 1, (
+            "a hand-written conflict was resolved by the generated-text driver"
+        )
+    assert not atlasgen.merge_attribute_errors(), atlasgen.merge_attribute_errors()
+    with mutated(".gitattributes", lambda s: s.replace("/README.md merge=headron-blocks\n", "", 1)):
+        assert any("README.md" in e for e in atlasgen.merge_attribute_errors()), (
+            "a generated document left out of .gitattributes was not refused"
+        )
+    with mutated(".gitattributes", lambda s: s + "/LICENSE merge=headron-generated\n"):
+        assert any("LICENSE" in e for e in atlasgen.merge_attribute_errors()), (
+            "a hand-written file handed to the generated-text driver was not refused"
+        )
+    with mutated(".gitattributes", lambda s: s.replace("/README.md merge=", "/README.m[d] merge=", 1)):
+        assert any("through a pattern" in e for e in atlasgen.merge_attribute_errors()), (
+            "a generated path reached only through a glob, which mergegen regen never reads, was not refused"
+        )
+    CASES.append(
+        (
+            "generated text merges by regeneration, prose by hand",
+            "a block conflict resolved by hand, or a prose conflict resolved by the driver",
+        )
+    )
+
+
 def run(module: ModuleType) -> None:
     global ROOT, CASES, case, mutated, atlas, _VERSION
     ROOT, CASES, case, mutated, atlas, _VERSION = (
@@ -650,3 +699,4 @@ def run(module: ModuleType) -> None:
     walk_index_cases()
     flow_prose_cases()
     leak_anchor_cases()
+    merge_driver_cases()

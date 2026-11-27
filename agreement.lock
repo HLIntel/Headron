@@ -12,7 +12,7 @@
     "tools/tools.schema.json": "0953fa7a57f53600"
   },
   "sections": {
-    "absent_input_owners": "81c18b1e31ce193b",
+    "absent_input_owners": "dc1bf9aeba73ccf0",
     "adaptive_recovery": "3091ec1dc9d0a93c",
     "agent_failure_modes": "8dd310a5f05711ca",
     "agent_policy": "c6d8d571bdc5c9db",
@@ -46,7 +46,7 @@
     "example_runners": "4acb6d1e8b5f9ffa",
     "external_versions": "d7a06e17498a8420",
     "first_sweep": "370ddd2f00895ef2",
-    "forbidden_calls": "247b55d73f897696",
+    "forbidden_calls": "c40b934f4a714232",
     "front_end": "3463c0cc19b0ce8f",
     "gate_alias_groups": "50cd95ac0ec6d66b",
     "gate_tools": "616bfaf5170d3cdf",
@@ -57,7 +57,7 @@
     "host_shapes": "7f67347de672e978",
     "identity": "d877c2f2f0093123",
     "install_commands": "a165d7b3c78cc831",
-    "instrument_roster": "ae7345f6367e4a98",
+    "instrument_roster": "a9f57f81a6de775b",
     "instruments": "edb804bc45bceaf5",
     "intents": "bdc178b851e1ea46",
     "issue_route_terms": "1eb7ea6cabea5e64",

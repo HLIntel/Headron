@@ -12,6 +12,12 @@ run_python() {
 		python3 "$@"
 	fi
 }
+# GENERATED TEXT MERGES BY REGENERATION (scripts/mergegen.py): define its git drivers in this clone,
+# and while a merge is being concluded by hand, regenerate before the rungs judge the result.
+run_python scripts/mergegen.py install || fail=1
+if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+	run_python scripts/mergegen.py regen || fail=1
+fi
 # enforce check --staged is the rung Headron ships to OTHER repositories, and until 3.32.0 it ran on
 # every repository except this one. Running it here found three defects in it, which is what an
 # unshipped arm always hides. It is the LAST rung because it is the slowest of the fast ones.

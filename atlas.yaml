@@ -184,9 +184,9 @@ forbidden_calls:
     attrs: [read_text]
     any_receiver: true
     roster: [scripts, fuzz]
-    exempt_files: [agents.py, atlas_cli.py, atlascore.py, datakit.py, edges.py, enforce.py, ghaudit.py, gitobject.py, impact.py, mcpsize.py, modelpack.py, providers.py, receipt.py, sandboxgen.py, schedtargets.py, slot.py]
+    exempt_files: [agents.py, atlas_cli.py, atlascore.py, datakit.py, edges.py, enforce.py, ghaudit.py, gitobject.py, impact.py, mcpsize.py, mergegen.py, modelpack.py, providers.py, receipt.py, sandboxgen.py, schedtargets.py, slot.py]
     exempt_suffix: _test.py
-    exempt_reason: 'atlascore owns the read. The rest read a person''s data, an agent''s live state, a store or another tree, or ship standing alone, and none of those sites is a tree read the contract repeats. slot reads /proc/stat, whose text changes every tick under an unchanged stat, so a stat-keyed cache would answer stale'
+    exempt_reason: 'atlascore owns the read. The rest read a person''s data, an agent''s live state, a store or another tree, or ship standing alone, and none of those sites is a tree read the contract repeats. slot reads /proc/stat, whose text changes every tick under an unchanged stat, so a stat-keyed cache would answer stale mergegen reads the merge temporaries git hands it mid-merge, when atlascore itself may hold conflict markers.'
     message: 'reads a file privately — atlascore.text_of holds the text against the file''s stat, so every instrument shares one read'
   root_resolved_per_call:
     why: 'MEASURED at 3.62.0: `ROOT.resolve()` per call walked every path component again, 11,046 of 58,722 stats in one contract run, to answer about one directory that does not move'
@@ -253,6 +253,8 @@ forbidden_calls:
 # tree — or because absence is the valid state and the reason says so. callshape.blind_skip_errors
 # refuses any other skip, and any row here whose skip is gone.
 absent_input_owners:
+  atlasgen.py:merge_attribute_errors:
+    reason: 'an installed tree has no .git and merges nothing, so there is no attribute for a merge to miss'
   atlasinv.py:duplicate_prose_errors:
     owned_by: contextcost.entry_cost_errors
     reason: 'an entry path naming a file that does not exist is entry_cost_errors'' finding'
@@ -340,6 +342,7 @@ instrument_roster:
     cacheinv.py: 'repository cache invariant called by atlasinv and planted by edge_cases_test'
     toolchaininv.py: 'the toolchain-pin invariant behind toolchain_pins_agree: every typed python/uv pin in the workflows, the replay shell and the derived gates equals atlas.yaml/toolchain; called by atlasinv'
     closureinv.py: 'the dependency-closure invariant behind dependency_count_is_the_closure: the hash lock and the installed metadata walk agree; called by atlasinv'
+    mergegen.py: 'the git merge driver for generated text, named by .gitattributes and run by git and the merge hooks, not by a person; atlas check (merge_attribute_errors) holds its path lists, and edge_cases_test plants its merges'
     toolpins.py: 'the gate-tool pin drift guard: every hand-typed ruff==/zizmor@ copy and uv.lock name one version; run by atlas check (_pin_errors), planted in atlas_rules_test.py; not an instrument, because the instrument ratchet only falls'
     cidrift.py: 'the CI-vs-done-set drift guard; it is a done-set gate (cidrift check) and a CI step, not an instrument, because the instrument ratchet only falls and a new instrument would fail it'
     artifacts.py: 'standard-library readers for .xlsx, .docx, .pptx and .zip, behind `headron inspect`; its proof is artifacts_test.py, run by the artifacts_tests gate'

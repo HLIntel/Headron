@@ -1,0 +1,13 @@
+#!/bin/sh
+# A MERGE THAT GIT CONCLUDED BY ITSELF still carries ours-side generated text (scripts/mergegen.py
+# keeps ours in every generated block and file). Git writes that merge commit from the index as it
+# stood before this hook, so a regeneration staged here would be left out: `regen --stop` stages it
+# and refuses, and `git commit --no-edit` concludes the merge through pre-commit. When nothing needed
+# regenerating, the pre-commit rungs judge the merged tree like any commit.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+if command -v uv >/dev/null 2>&1; then
+	uv run --frozen --extra crosscheck python scripts/mergegen.py regen --stop || exit 1
+else
+	python3 scripts/mergegen.py regen --stop || exit 1
+fi
+exec "$(dirname "$0")/pre-commit"
