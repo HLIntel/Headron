@@ -2928,18 +2928,22 @@ agent_failure_modes:
     prevented_by: abtest.py asking three question kinds over every pack and reporting the gap in
       both directions — an arm that wins on accuracy and loses on cost is the normal case
   a_lookup_that_reparses_per_call:
-    tell: 'a check got slower and a profile shows one loader called once per item'
-    enforced_by: [callshape.forbidden_call_errors, atlas_guards_test.parse_budget_cases]
+    tell: 'a check got slower and a profile shows one loader or reader called once per item, even a cached one'
+    enforced_by: [callshape.forbidden_call_errors, atlas_guards_test.parse_budget_cases, edge_cases_test.shared_read_cases]
     shape: a new rule calls an uncached loader once per item it checks, so its cost is items times
       parse — correct output, and a regression nothing sees because nothing measures time or calls
     looks_like: a green check that got slower. At 2.26.0 one check() parsed about 37 YAML files 671
       times (73% of its wall clock) and the suite took 137s; 315 of the parses came from a coverage
       rule written that session. Behind it, 11 reads bypassed the strict loader, so one defect was
-      a speed regression AND a silent duplicate-key hole
-    sightings: 1
+      a speed regression AND a silent duplicate-key hole. At 3.64.0 the read layer did it — text_of
+      held a file only 2s after its last write, so every plant and restore of atlas.yaml left it
+      unheld and one core shard re-read 300 KB 123,961 times (15.5s under cProfile)
+    sightings: 2
     prevented_by: strict_yaml cached by CONTENT, forbidden_calls/yaml_loader_bypass, and a parse budget derived from
       the tree — each tracked YAML file at most once per check — mutation-tested by planting the
-      cache off, which reproduces the 671 and is refused
+      cache off, which reproduces the 671 and is refused; text_of's racy window follows the clock
+      (atlascore.settled_after, 50ms on a sub-second stamp), held by a read budget of one disk read
+      per 50 calls, mutation-tested by planting the coarse window back
   a_pushed_lane_nothing_will_merge:
     tell: 'the branch is pushed and its pull request is open, but nothing is armed to merge it, so it sits unmerged'
     enforced_by: [.githooks/pre-push, branchstate.landing_verdict, branchstate.carried_by, handoff_test.carried_case]
@@ -3437,10 +3441,10 @@ agent_failure_modes:
   a_passed_verdict_recomputed_on_identical_content:
     shape: 'a gate verdict is recomputed for content it already judged — the same tree, the same gates — because the verdict was keyed to the attempt, not the content'
     looks_like: a land that waits behind every other lane's suite again after a push or forge refusal
-    tell: the refused land's tree hash equals the tree whose suite passed minutes ago
-    sightings: 1
-    prevented_by: clean_checkout_errors remembers a PASS by sha256 of the tree and gate argv in the git common dir; a failure or NOT RUN is never remembered
-    enforced_by: [branchstate.clean_checkout_errors, handoff_test.pass_cache_case]
+    tell: the refused land's tree hash equals the tree whose suite passed minutes ago — check EVERY layer that judges it, not the first one cached
+    sightings: 2
+    prevented_by: clean_checkout_errors remembers a PASS by sha256 of the tree and gate argv in the git common dir; a failure or NOT RUN is never remembered. At 3.64.0 the cache covered the gates but not the full local-ci replay, so a push refused after a green 574s replay re-ran the whole matrix on the same tree at the retry; cilocal.replay_once keys the replay the same way, and the pre-push hook admits a landing of the replayed commit without re-running fast
+    enforced_by: [branchstate.clean_checkout_errors, cilocal.replay_once, handoff_test.pass_cache_case, atlas_landing_test.full_replay_cases]
   a_negative_control_built_from_matchable_words:
     shape: 'a negative control is written in words the matcher can match, so a later real row shares two of them and the control fails for the wrong reason'
     looks_like: a suite that dies minutes in on a probe that was never about the change
@@ -3651,6 +3655,30 @@ not_a_success: [added, built, created, fixed, implemented, merged, landed, shipp
 # that prove it, so failure -> move -> guard is one graph: `headron failures --for` prints the move beside the
 # shape, and `successes_answer_recurring_failures` refuses a failure seen twice with no move.
 agent_success_patterns:
+  read_and_parse_through_the_shared_cache:
+    move: 'read every file through atlascore.text_of and parse YAML through atlascore.strict_yaml, so a
+      lookup repeated per item costs one read and one parse, not one per call'
+    when: 'adding an instrument, loader or per-item lookup that reads a tracked file'
+    verification: 'edge_cases_test.shared_read_cases: fifty atlas() calls do one disk read, and the guard fails
+      with the stamp cache planted off'
+    evidence: 'a two-second racy window made atlas.yaml un-cacheable after each plant and restore; one core shard
+      paid 123,961 re-reads until the window followed the stamp clock'
+    pairs: [a_lookup_that_reparses_per_call]
+    proven_by: [atlascore.text_of, edge_cases_test.shared_read_cases]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
+  key_every_verdict_on_the_tree_it_judged:
+    move: 'record a passing full replay under the git tree id and skip it, and the pre-push gate, for a commit
+      whose tree already passed'
+    when: 'a landing retry, or any layer that re-judges a tree already judged'
+    verification: 'atlas_landing_test.full_replay_cases: a retry on the same tree runs no replay and still pushes
+      and posts; atlas_guards_test.prepush_cases: only the replayed commit skips the gate'
+    evidence: 'a push refused after a 574 s full replay replayed the identical tree again on retry, making one land
+      take 18 minutes'
+    pairs: [a_passed_verdict_recomputed_on_identical_content]
+    proven_by: [cilocal.replay_once, atlas_landing_test.full_replay_cases]
+    kinds: [reusable, ai_beneficial]
+    reused: 1
   prove_a_task_plant_fails_before_spending_an_agent:
     move: 'run each benchmark task''s tests against its unchanged plant under many hash seeds, and against a
       reference fix kept outside the task, before any agent run is scored'

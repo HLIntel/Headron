@@ -189,6 +189,9 @@ def full_replay_cases() -> None:
         "post_local_ci": post,
     }
     real = {name: getattr(branchstate, name) for name in fakes}
+    scratch = tempfile.TemporaryDirectory()
+    real["_pass_ledger"] = branchstate._pass_ledger
+    branchstate._pass_ledger = lambda: Path(scratch.name) / "atlas-clean-pass"
     for name, value in fakes.items():
         setattr(branchstate, name, value)
     try:
@@ -197,9 +200,17 @@ def full_replay_cases() -> None:
         events.clear()
         verdict = True
         branchstate._land_once("lane")
+        green = list(events)
+        events.clear()
+        branchstate._land_once("lane")  # a retry on the same tree after a refused push
+        retry = list(events)
     finally:
         for name, value in real.items():
             setattr(branchstate, name, value)
+        scratch.cleanup()
+    if any(e.startswith("replay") for e in retry) or "git push" not in retry or "post abc" not in retry:
+        raise SystemExit(f"FAIL a retry on a tree whose full replay passed re-ran the whole matrix: {retry}")
+    events[:] = green
     if code != 65 or "git push" in red or "replay abc" not in red:
         raise SystemExit(f"FAIL a red full replay must refuse before any push: {code} {red}")
     if why != {"reason": "replay"}:
