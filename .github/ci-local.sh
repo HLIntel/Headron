@@ -65,8 +65,8 @@ if command -v uvx >/dev/null 2>&1; then
     real_uvx="$(command -v uvx)"
     pinned_bin="$work/pinned-uv-bin"
     mkdir -p "$pinned_bin"
-    printf '#!/bin/bash\nexec "%s" --from uv==0.12.21 uv "$@"\n' "$real_uvx" > "$pinned_bin/uv"
-    printf '#!/bin/bash\nexec "%s" --from uv==0.12.21 uvx "$@"\n' "$real_uvx" > "$pinned_bin/uvx"
+    printf '#!/bin/bash\nexec "%s" --from uv==0.13.9 uv "$@"\n' "$real_uvx" > "$pinned_bin/uv"
+    printf '#!/bin/bash\nexec "%s" --from uv==0.13.9 uvx "$@"\n' "$real_uvx" > "$pinned_bin/uvx"
     chmod +x "$pinned_bin/uv" "$pinned_bin/uvx"
     export PATH="$pinned_bin:$PATH"
 fi

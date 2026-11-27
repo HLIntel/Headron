@@ -445,6 +445,14 @@ def toolchain_pin_case() -> None:
             "pins uv",
             by="inv:toolchain_pins_agree",
         )
+    with mutated(".github/ci-local.sh", lambda t: t.replace("uv==0.13.9", "uv==0.13.8", 1)):
+        case(
+            "a replay shell wrapping a uv the declaration does not name FAILS",
+            "local-ci replaying a different uv than CI, refusing every land on the version alone",
+            True,
+            "pins uv",
+            by="inv:toolchain_pins_agree",
+        )
 
 
 def shared_read_cases() -> None:
