@@ -38,6 +38,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_derived_roster_written_out_by_hand` (any): the tool's list of items was typed by hand, and the declaration it should have read holds more items
 - `a_generated_page_loaded_as_a_component` (any): a slash command, skill or agent named HEADRON appears beside the real ones after a directory gained a scope
 - `a_gate_that_resolves_to_silence` (any): the plan lists a gate and `headron gate` prints no command for it
+- `a_lookup_that_reparses_per_call` (headron): a check got slower and a profile shows one loader or reader called once per item, even a cached one
 - `a_mutation_harness_scored_over_zero_runs` (any): every mutant is scored killed, or every one survived, though no test actually executed
 - `a_lane_on_a_replaced_history` (any): `headron landed <branch>` reports hundreds of unlanded commits for a lane that made two
 - `an_agent_landing_that_targets_the_atlas` (headron): every git call in the landing passes the policy root as its working directory, and nothing asks which repository the caller is standing in
@@ -50,6 +51,7 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `an_unallowlisted_tool_surface_that_grows` (any): the count of loaded tools, plugins and skills per agent rises with no declared allowlist entry naming why, and several loaded surfaces duplicate a CLI already on PATH
 - `a_cache_sweep_that_deletes_a_source_file` (headron): a source-shaped file (a recipe, a script, a config) under a cache path, and a live reference to that path
 - `a_value_quoted_by_hand` (headron): the value was typed between quotes rather than printed by the format's own emitter, and the breaking character sits inside prose
+- `a_passed_verdict_recomputed_on_identical_content` (any): the refused land's tree hash equals the tree whose suite passed minutes ago
 - `a_shared_lock_retried_once_against_siblings` (any): the land output prints 'landing again' once and then NOT RUN on the second attempt
 - `a_worktree_inside_the_tree_it_copies` (any): a failing path begins with .claude/worktrees/ or another directory that holds its own .git
 - `a_documented_step_names_a_dead_command` (any): exit 2 with invalid choice on a command copied verbatim from an entry surface
@@ -76,7 +78,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `an_arm_that_shipped_and_could_never_run` (any): installed users get an empty result from a feature that works in the source checkout
 - `a_later_definition_that_silently_wins` (any): a file grew by the size of one function and its def appears twice
 - `a_tie_that_was_an_artifact_of_the_question_set` (headron): two arms score identically over a question set of one or two kinds
-- `a_lookup_that_reparses_per_call` (any): a check got slower and a profile shows one loader called once per item
 - `a_lookup_by_name_that_finds_the_dead_record` (any): a lookup by name returns a record already merged or closed
 - `a_restore_that_erases_a_concurrent_write` (headron): an edit made while a suite ran in the background is gone and no command failed
 - `an_anchored_insert_that_silently_did_nothing` (any): the edit script printed ok and `git diff` does not show the insert
@@ -112,7 +113,6 @@ GENERATED from atlas.yaml/agent_failure_modes. `headron` = about Headron's own c
 - `a_required_kind_added_without_its_fixture` (any): the failure names a zero count of the newest required kind
 - `a_contract_repaired_one_named_field_at_a_time` (any): consecutive errors from one validator, each naming a different field
 - `an_artifact_written_that_nothing_reads` (headron): grep finds the file in the generator and in no reader
-- `a_passed_verdict_recomputed_on_identical_content` (any): the refused land's tree hash equals the tree whose suite passed minutes ago
 - `a_negative_control_built_from_matchable_words` (any): the noise probe returns a real row, and that row was added in the same change
 - `a_home_folder_that_is_a_repository` (headron): the home folder has a .git entry
 - `a_blocked_listing_read_as_absence` (headron): the same listing without the redirect says "Operation not permitted"

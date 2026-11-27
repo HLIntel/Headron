@@ -2,6 +2,20 @@
 
 GENERATED from atlas.yaml/agent_success_patterns.
 
+## read_and_parse_through_the_shared_cache
+
+- move: read every file through atlascore.text_of and parse YAML through atlascore.strict_yaml, so a lookup repeated per item costs one read and one parse, not one per call
+- when: adding an instrument, loader or per-item lookup that reads a tracked file
+- verify: edge_cases_test.shared_read_cases: fifty atlas() calls do one disk read, and the guard fails with the stamp cache planted off
+- answers: a_lookup_that_reparses_per_call
+
+## key_every_verdict_on_the_tree_it_judged
+
+- move: record a passing full replay under the git tree id and skip it, and the pre-push gate, for a commit whose tree already passed
+- when: a landing retry, or any layer that re-judges a tree already judged
+- verify: atlas_landing_test.full_replay_cases: a retry on the same tree runs no replay and still pushes and posts; atlas_guards_test.prepush_cases: only the replayed commit skips the gate
+- answers: a_passed_verdict_recomputed_on_identical_content
+
 ## prove_a_task_plant_fails_before_spending_an_agent
 
 - move: run each benchmark task's tests against its unchanged plant under many hash seeds, and against a reference fix kept outside the task, before any agent run is scored

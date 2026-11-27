@@ -260,12 +260,14 @@ def prepush_cases() -> None:
         gate.chmod(0o755)
         table.append((f"refs/heads/feat/x {sha} refs/heads/feat/x {zero}",
                       {"ATLAS_LANDING": "1", "TEST_GATE_EXIT": "7"}, 7))
+        for replayed, w in ((sha, 0), ("b" * 40, 7)):  # the commit the full replay passed is not re-gated
+            table.append((table[1][0], {"ATLAS_LANDING": "1", "ATLAS_REPLAYED": replayed, "TEST_GATE_EXIT": "7"}, w))
         for line, extra, want in table:
-            env = {k: v for k, v in _os.environ.items() if k not in ("ATLAS_LANDING", "TEST_GATE_EXIT")} | extra
+            env = {k: v for k, v in _os.environ.items() if k not in ("ATLAS_LANDING", "ATLAS_REPLAYED", "TEST_GATE_EXIT")} | extra
             got = subprocess.run(["sh", str(hook), "origin", "url"], input=line + "\n", env=env, cwd=repo,
                                  capture_output=True, text=True, check=False, timeout=60).returncode
             assert got == want, f"pre-push on {line.split()[2]!r} with {extra or 'no env'}: exit {got}, wanted {want}"
-    CASES.append((f"pre-push: bare lane and failed landing gate refused, {len(table) - 2} legitimate pushes admitted",
+    CASES.append((f"pre-push: bare lane and failed landing gate refused, {len(table) - 3} legitimate pushes admitted",
                   "a lane pushed with nothing to merge it — stranded, looking finished"))
     print("  ok    pre-push: bare lane refused; --land, delete, main and tags admitted")
     prepush_forge_cases()
