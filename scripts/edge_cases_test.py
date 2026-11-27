@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 import time
 import types
+import typing
 from pathlib import Path
 from types import ModuleType
 from typing import Any, cast
@@ -431,8 +432,10 @@ def shared_read_cases() -> None:
 
     moved_past = time.time_ns() + 50_000_000
     settled = atlascore._SETTLED_NS, atlascore._SETTLED_FINE_NS
-    whole = types.SimpleNamespace(st_mtime_ns=5_000_000_000, st_ctime_ns=5_000_000_000)  # a coarse clock
-    fine = types.SimpleNamespace(st_mtime_ns=5_000_000_001, st_ctime_ns=5_000_000_000)
+    whole = typing.cast(
+        "os.stat_result", types.SimpleNamespace(st_mtime_ns=5_000_000_000, st_ctime_ns=5_000_000_000)
+    )  # a coarse clock
+    fine = typing.cast("os.stat_result", types.SimpleNamespace(st_mtime_ns=5_000_000_001, st_ctime_ns=5_000_000_000))
     assert atlascore.settled_after(whole) == atlascore._SETTLED_NS, "a whole-second stamp was trusted early"
     assert atlascore.settled_after(fine) == atlascore._SETTLED_FINE_NS < atlascore._SETTLED_NS, (
         "a nanosecond stamp waited as long as a coarse one"
