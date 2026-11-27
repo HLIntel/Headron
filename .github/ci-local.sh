@@ -29,7 +29,14 @@ unset CODE_DEVELOPMENT_ROOT
 if [ -x "$PWD/.venv/bin/python" ]; then
     runner="$PWD/.venv/bin/python"
 elif command -v uv >/dev/null 2>&1; then
-    runner="$(uv run --frozen --extra crosscheck python -c 'import sys; print(sys.executable)' 2>/dev/null || python3 -c 'import sys; print(sys.executable)')"
+    # THE PINNED INTERPRETER WITH THE LOCK, RESOLVED NEVER FETCHED: CI runs 3.13 and installs the
+    # hash lock, and cilocal.py itself imports pyyaml before its install step can run — so the
+    # replay's runner is the locked project environment ON the pinned python, and only when this
+    # machine holds one (downloads never). Without it, the old fallbacks stand and the pin's own
+    # gate refuses, honestly.
+    runner="$(UV_PYTHON_DOWNLOADS=never uv run --frozen --python 3.13 --extra crosscheck python -c 'import sys; print(sys.executable)' 2>/dev/null \
+        || uv run --frozen --extra crosscheck python -c 'import sys; print(sys.executable)' 2>/dev/null \
+        || python3 -c 'import sys; print(sys.executable)')"
 else
     runner=$(python3 -c 'import sys; print(sys.executable)')
 fi
@@ -50,6 +57,19 @@ else
     "$runner" -m venv "$work/venv" || python3 -m venv "$work/venv"
 fi
 export VIRTUAL_ENV="$work/venv" PATH="$work/venv/bin:$PATH"
+# THE PINNED uv, RESOLVED NEVER INSTALLED: uvx runs the pinned version from its own cache, so the
+# replay's uv is the one CI runs and the Mac's own uv is untouched. A wrapper on this run's PATH,
+# not a shim in ~/.local/bin: the machine's tools stay the machine's. The wrappers call the real
+# uvx by absolute path, so they cannot find themselves.
+if command -v uvx >/dev/null 2>&1; then
+    real_uvx="$(command -v uvx)"
+    pinned_bin="$work/pinned-uv-bin"
+    mkdir -p "$pinned_bin"
+    printf '#!/bin/bash\nexec "%s" --from uv==0.13.9 uv "$@"\n' "$real_uvx" > "$pinned_bin/uv"
+    printf '#!/bin/bash\nexec "%s" --from uv==0.13.9 uvx "$@"\n' "$real_uvx" > "$pinned_bin/uvx"
+    chmod +x "$pinned_bin/uv" "$pinned_bin/uvx"
+    export PATH="$pinned_bin:$PATH"
+fi
 # THE RUN: scripts/cilocal.py runs the declared jobs through scripts/micrograph.py. No job list here: it defaults
 # to $CI_LOCAL_JOBS (what ~/.claude/bin/ci-local -j picked), else the CONTRACT jobs, edge-coverage included.
 # Not exec (the EXIT trap removes $work), so a TERM or INT to this shell is forwarded: killing only the shell

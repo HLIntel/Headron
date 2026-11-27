@@ -25,6 +25,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
+from atlascore import toolchain
 from micrograph import Node
 from micrograph import problems as graph_problems
 
@@ -64,15 +65,24 @@ class Job:
 
 # THE TOOLCHAIN PINS, CHECKED, NEVER INSTALLED: a run must not change the machine. A host whose tool is not the
 # pinned one answers refused with the version it found, so a green is never a different toolchain's green.
+# Both pins are DECLARED in atlas.yaml/toolchain and read here, so an upgrade is one declaration edit —
+# a version typed beside its own gate drifted the day the declaration moved.
+_PY_VERSION = toolchain()["python"]
+_UV_VERSION = toolchain()["uv"]
+_PY_V_PARTS = _PY_VERSION.split(".")
 PYTHON = Step(
-    "Check Python 3.13",
-    "python -c 'import sys; v = sys.version_info[:2]; sys.exit(0 if v == (3, 13) else f\"python {v} is not the pinned 3.13\")'",
+    f"Check Python {_PY_VERSION}",
+    f"python -c 'import sys; v = sys.version_info[: {len(_PY_V_PARTS)}]; "
+    f"sys.exit(0 if v == {tuple(int(part) for part in _PY_V_PARTS)} "
+    f'else f"python {{v}} is not the pinned {_PY_VERSION}")\'',
     timeout_s=30,
     tools=("python",),
 )
+_UV_PINNED = _UV_VERSION.replace(".", "\\.")
 UV = Step(
-    "Check uv 0.13.9",
-    'for tool in uv uvx; do "$tool" --version | grep -q "^$tool 0\\.13\\.9\\b" || { "$tool" --version; echo "$tool is not the pinned 0.13.9" >&2; exit 1; }; done',
+    f"Check uv {_UV_VERSION}",
+    f'for tool in uv uvx; do "$tool" --version | grep -q "^$tool {_UV_PINNED}\\b" '
+    f'|| {{ "$tool" --version; echo "$tool is not the pinned {_UV_VERSION}" >&2; exit 1; }}; done',
     timeout_s=30,
     tools=("uv", "uvx"),
 )

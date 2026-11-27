@@ -3,7 +3,7 @@
 Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-leaves (python scripts/atlas.py index --write) -->
-82 modules that at most one other module imports: 30 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
+84 modules that at most one other module imports: 30 entry points that nothing imports, and single-use helpers. The shared ones and the diagram are in [MODULES.md](MODULES.md).
 
 | module | what it is | used by | imports | tested by |
 |---|---|---:|---|---|
@@ -13,6 +13,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [atlas_cli](../scripts/atlas_cli.py) | Resolve WHICH atlas, then run the contract's CLI against it | 1 | atlas, headron_mcp | [bounds_test](../scripts/bounds_test.py), [cli_test](../scripts/cli_test.py) +1 |
 | [cacheinv](../scripts/cacheinv.py) | Refuse cache artifacts in the repository index or unignored source tree | 1 |  | [edge_cases_test](../scripts/edge_cases_test.py) |
 | [chatskill](../scripts/chatskill.py) | The claude.ai skill: Headron for a chat, with or without a sandbox, generated whole from… | 1 | agentpolicy, atlasgen, entryglance | [agent_test](../scripts/agent_test.py) |
+| [closureinv](../scripts/closureinv.py) | The dependency-closure invariant: a dependency count is the CLOSURE an install pulls in | 1 |  |  |
 | [codexbrief](../scripts/codexbrief.py) | Compact machine context for Codex and other runtimes | 1 | agentpolicy, dirscope |  |
 | [consumerimpact](../scripts/consumerimpact.py) | Conservative Python import impact from a consumer's base commit | 1 |  | [consumer_test](../scripts/consumer_test.py) |
 | [dateclaims](../scripts/dateclaims.py) | Calendar-claim validation, separate from CLI routing and contract orchestration | 1 |  |  |
@@ -55,6 +56,7 @@ Part of [MODULES](MODULES.md). What each instrument proves is in [INSTRUMENTS](I
 | [shellsplit](../scripts/shellsplit.py) | The shell-string helpers shell_verdict reads: top-level statements, pipeline stages, heredoc… | 1 |  |  |
 | [taskbench](../scripts/taskbench.py) | Does Headron make a model better at work OTHER than routing? Blind against with-Headron, per… | 1 | abtest, agentpolicy, providers |  |
 | [textguard](../scripts/textguard.py) | Characters in tracked text that a reader cannot see, or cannot tell apart | 1 |  |  |
+| [toolchaininv](../scripts/toolchaininv.py) | The toolchain invariant: every typed pin equals the atlas.yaml/toolchain declaration | 1 |  |  |
 | [toolpins](../scripts/toolpins.py) | Drift guard: a tool the done set pins by version is pinned to that one version everywhere | 1 |  |  |
 | [verifyinputs](../scripts/verifyinputs.py) | Content identities for verification evidence | 1 |  |  |
 | [workflowbench](../scripts/workflowbench.py) | Does Headron change what agents DO — alone, and when one hands work to another? Measured, per… | 1 | abtest, agentpolicy, dirscope | [atlas_test](../scripts/atlas_test.py) |

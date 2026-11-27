@@ -173,6 +173,13 @@ def main() -> int:
     expect("noreply local part clean", 0, "--staged", {"a.txt": b"send to noreply" + BAT + b"acme.io\n"})
     expect("github noreply clean", 0, "--staged", {"a.txt": b"user" + BAT + b"users.noreply.github.com\n"})
     expect("noreply lookalike refused", 1, "--staged", {"a.txt": b"user" + BAT + b"evilnoreply.github.com\n"}, "email")
+    # GitHub's own automation signs Dependabot commits from its service mailbox
+    expect(
+        "dependabot signoff clean",
+        0,
+        "--staged",
+        {"a.txt": b"Signed-off-by: dependabot[bot] <support" + BAT + b"github.com>\n"},
+    )
     # names: a denylisted term is refused, the rule is off without its file (named on stderr)
     expect("name refused", 1, "--staged", {"a.txt": b"written by Zorblax\n"}, "name", denylist="zorblax\n")
     expect("name clean without term", 0, "--staged", {"a.txt": b"written by nobody\n"}, denylist="zorblax\n")

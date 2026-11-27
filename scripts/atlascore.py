@@ -45,25 +45,51 @@ try:
 except ModuleNotFoundError:
     refuse_below_floor("tomllib")
 
-# ROOT, resolved for the three ways this code runs.
+
+# ROOT, resolved for the four ways this code runs.
 #
-# Normally it is the repository above this file. Two other cases are real and both were found by trying: a FROZEN build
+# Normally it is the repository above this file. Three other cases are real and all were found by trying: a FROZEN build
 # (ClusterFuzzLite compiles the fuzz target with PyInstaller, where __file__ points into a temporary extraction
-# directory and the data files travel in the bundle), and a VENDORED copy where the caller says where the tree is.
-# Neither is a special case for a scanner's benefit — both are "do not assume you are standing in a git checkout", which
-# is the same assumption that made the harness unusable outside one directory.
-ROOT = Path(
-    os.environ.get("HEADRON_ROOT")
-    or os.environ.get("CODE_DEVELOPMENT_ROOT")  # the old name: deprecated, still read
-    or getattr(sys, "_MEIPASS", None)
-    or Path(__file__).resolve().parents[1]
-)
+# directory and the data files travel in the bundle), a VENDORED copy where the caller says where the tree is, and a
+# WORKTREE or second checkout where this file itself lives in a different tree than a global HEADRON_ROOT names.
+# The fourth case is why the env override does not win unconditionally: a global export (a shell profile set once)
+# hijacked every worktree's check, and a clean checkout was judged against another tree's bytes — update drift by
+# environment. So when THIS file's own tree holds atlas.yaml, that tree is the atlas; the override answers only
+# when the code runs from outside a checkout (installed copy, vendored copy, frozen build).
+def _root() -> Path:
+    here = Path(__file__).resolve().parents[1]
+    if (here / "atlas.yaml").is_file():
+        return here
+    for name in ("HEADRON_ROOT", "CODE_DEVELOPMENT_ROOT"):  # the old name: deprecated, still read
+        candidate = os.environ.get(name)
+        if candidate and (Path(candidate) / "atlas.yaml").is_file():
+            return Path(candidate)
+    frozen: str | None = getattr(sys, "_MEIPASS", None)
+    return Path(frozen) if frozen else here
+
+
+ROOT = _root()
 
 
 def headron_home() -> Path:
     """Headron's own state on this machine: HEADRON_HOME, else ~/.headron. Every store lives under it, so a test that
     moves it moves them all, and no companion app's folder is a headron path."""
     return Path(os.environ.get("HEADRON_HOME") or Path.home() / ".headron")
+
+
+def toolchain() -> dict[str, str]:
+    """The declared toolchain pins — one home in atlas.yaml/toolchain, read by every gate that enforces one.
+
+    A version typed beside its own gate drifts the day the declaration moves (measured: three files
+    carried 0.12.21 and one carried the older pin, and only the gate that ran noticed)."""
+    pins = atlas().get("toolchain") or {}
+    if (
+        not isinstance(pins, dict)
+        or not pins
+        or not all(isinstance(v, str) and re.fullmatch(r"\d+(\.\d+)*", v) for v in pins.values())
+    ):
+        raise SystemExit("atlas.yaml/toolchain is missing or malformed; the pins are declared there once")
+    return pins
 
 
 def worktree() -> Path:
