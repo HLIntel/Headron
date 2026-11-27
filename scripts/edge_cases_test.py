@@ -488,6 +488,12 @@ def shared_read_cases() -> None:
                 pass
             else:
                 raise AssertionError("a strict read took the lenient read's answer")
+        finally:
+            atlascore._SETTLED_NS, atlascore._SETTLED_FINE_NS = settled
+            atlascore.atlas.cache_clear()
+        # the real windows, not the forced one: a same-size rewrite inside one ext4 ctime tick
+        # keeps its stamp, so under a forced settle the key cannot see it (36/60 failures on a Linux host)
+        try:
             config = Path(scratch) / "atlas.yaml"
             config.write_text("value: first\n", encoding="utf-8")
             atlascore.atlas.cache_clear()
@@ -503,7 +509,6 @@ def shared_read_cases() -> None:
                 else:
                     raise AssertionError("atlas accepted a configuration that stopped being a mapping")
         finally:
-            atlascore._SETTLED_NS, atlascore._SETTLED_FINE_NS = settled
             atlascore.atlas.cache_clear()
         # READ BUDGET (a_lookup_that_reparses_per_call, sighting 2): a file planted a moment ago is read
         # from disk ONCE once its clock has moved on. A window sized for a whole-second clock re-read
