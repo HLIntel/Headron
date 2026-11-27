@@ -3,7 +3,7 @@
 [HEADRON](HEADRON.md) · [Proofs](INSTRUMENTS.md).
 
 <!-- BEGIN generated: module-map (python scripts/atlas.py index --write) -->
-160 modules and 493 imports between them, read from the source; 86 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 108 modules use it. These 76 rows are the modules at least 2 others use; the other 84, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
+161 modules and 494 imports between them, read from the source; 86 test modules are left out of the rows. In the diagram an arrow is an import and the number is how many modules use that hub. `atlascore` is left out of the diagram and the imports column, because 108 modules use it. These 76 rows are the modules at least 2 others use; the other 85, entry points and single-use helpers, are in [MODULES-LEAVES.md](MODULES-LEAVES.md).
 
 ```mermaid
 flowchart LR
@@ -66,7 +66,7 @@ flowchart LR
 | [agentaudit](../scripts/agentaudit.py) | The audit stream: a hash chain, not a log | 4 |  | [agent_properties_test](../scripts/agent_properties_test.py), [agent_test](../scripts/agent_test.py) +2 |
 | [agents](../scripts/agents.py) | Which agent sessions are live on this… | 4 | agentaudit, atomicfile, cilocal, runtime | [agents_test](../scripts/agents_test.py), [atlas_landing_test](../scripts/atlas_landing_test.py) +2 |
 | [agreement](../scripts/agreement.py) | The agreement graph: which file implements… | 4 | atlasinv, commands | [atlas_landing_test](../scripts/atlas_landing_test.py), [atlas_rules_test](../scripts/atlas_rules_test.py) +1 |
-| [atlasgen](../scripts/atlasgen.py) | Every document section and file GENERATED… | 4 | abtest, chatskill, commands, contextcost, dirscope, entryglance, exrun, i18n, knowledgecli, packmanifest, textguard | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
+| [atlasgen](../scripts/atlasgen.py) | Every document section and file GENERATED… | 4 | abtest, chatskill, commands, contextcost, dirscope, entryglance, exrun, i18n, knowledgecli, mergegen, packmanifest, textguard | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
 | [atlasinv](../scripts/atlasinv.py) | The hard invariants: one function per… | 4 | agentpolicy, atlasgen, cacheinv, callshape, cidrift, closureinv, contextcost, declcheck, failureledger, knowledge, langbar, leaks, nativetools, orphans, packmanifest, plantcheck, roster, scoreboard, testgroups, toolchaininv, treeformat, yamlshape | [atlas_test](../scripts/atlas_test.py), [edge_cases_test](../scripts/edge_cases_test.py) +2 |
 | [calculation](../scripts/calculation.py) | Shared result and refusal contract for… | 4 | computation_contract, effects, microprogram, receipt | [computation_receipt_test](../scripts/computation_receipt_test.py) |
 | [graph](../scripts/graph.py) | Knowledge graph module — pointers, links,… | 4 | claims, exrun | [decide_test](../scripts/decide_test.py), [microprogram_test](../scripts/microprogram_test.py) |

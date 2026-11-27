@@ -520,6 +520,12 @@ def machine_dependence_errors() -> list[str]:
     return errors
 
 
+# Hook steps that refuse nothing, so verify has no verdict of theirs to repeat. Each says what it does.
+HOOK_NON_GATES = {
+    "scripts/mergegen.py": "defines the generated-text merge drivers and regenerates inside a merge; exit 1 only when it cannot"
+}
+
+
 def hook_agreement_errors() -> list[str]:
     """What the commit hook enforces, verify and CI must enforce too — a hook-only gate is a local habit."""
     hook = text_of(ROOT / ".githooks" / "pre-commit") if (ROOT / ".githooks" / "pre-commit").is_file() else ""
@@ -531,7 +537,7 @@ def hook_agreement_errors() -> list[str]:
     return [
         f".githooks/pre-commit runs `{r}`, which verification_policy/done_set does not — the hook and verify disagree"
         for r in ran
-        if not any(r in d or d in r for d in done)
+        if r not in HOOK_NON_GATES and not any(r in d or d in r for d in done)
     ]
 
 

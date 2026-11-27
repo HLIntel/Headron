@@ -324,7 +324,8 @@ def plugin_cases() -> None:
             raise SystemExit(f"FAIL the plugin probe did not notice {old!r} -> {new!r} in {path}: {planted}")
     with mutated(
         "agreement.lock",
-        lambda s: s.replace('"absent_input_owners": "81c18b1e31ce193b"', '"absent_input_owners": "0"', 1),
+        # derived, not a literal hash: every atlas.yaml edit to that section re-stamps the lock
+        lambda s: re.sub(r'"absent_input_owners": "[0-9a-f]+"', '"absent_input_owners": "0"', s, count=1),
     ):
         drifted = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "atlas.py"), "port", "--hook"],

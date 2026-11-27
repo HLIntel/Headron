@@ -11,6 +11,7 @@ from __future__ import annotations
 import functools
 import json
 import re
+import subprocess
 from collections.abc import Callable
 from pathlib import Path
 
@@ -18,6 +19,7 @@ import atlascore
 import chatskill
 import dirscope
 import i18n
+import mergegen
 import textguard
 from atlascore import ROOT, atlas, label_for, read, rel, route_for, route_targets, routes, strict_yaml, text_of, tracked
 from entryglance import glance_facts, glance_lines
@@ -762,7 +764,8 @@ BLOCKS: dict[str, tuple[tuple[str, ...], Callable[[], str]]] = {
 
 def document_errors() -> list[str]:
     """The document rules that live beside the generator, so the SHIPPED harness pays one call for all."""
-    checks = (generated_file_errors, relative_link_errors, current_version_errors, typed_size_errors,
+    checks = (generated_file_errors, merge_attribute_errors, relative_link_errors, current_version_errors,
+              typed_size_errors,
               textguard.hidden_unicode_errors, textguard.confusable_command_errors,
               missing_path_errors)
     return [error for check in checks for error in check()]
@@ -880,6 +883,29 @@ def generated_file_errors() -> list[str]:
                "policy reads the declaration, so an undeclared generated file is writable by a task "
                "contract and silently reverted by the next index --write"
                for p in sorted(built - declared)])
+
+
+def merge_attribute_errors() -> list[str]:
+    """.gitattributes hands every generated path, and only those, to its merge driver (scripts/mergegen.py).
+
+    The driver is stdlib-only and cannot read these registries mid-merge, so the paths are written
+    in .gitattributes; this check is what keeps that second list equal to the first.
+    """
+    if not (ROOT / ".git").exists():
+        return []  # an installed tree merges nothing
+    blocks = {p for files, _ in BLOCKS.values() for p in files} - set(GENERATED_FILES)
+    want = {**dict.fromkeys(GENERATED_FILES, mergegen.WHOLE), **dict.fromkeys(blocks, mergegen.BLOCKS)}
+    out = subprocess.run(["git", "check-attr", "-z", "merge", "--", *atlascore.ls_files(ROOT)], cwd=ROOT,
+                         capture_output=True, text=True, timeout=600).stdout.split("\0")
+    have = {out[i]: out[i + 2] for i in range(0, len(out) - 2, 3) if out[i + 2] in mergegen.DRIVERS}
+    lines = mergegen.declared(ROOT)
+    errors = [f".gitattributes gives '{p}' merge={have.get(p)}, not merge={kind}: a conflict in its "
+              "generated text would be resolved by hand" for p, kind in sorted(want.items()) if have.get(p) != kind]
+    errors += [f".gitattributes hands '{p}' to a generated-text merge driver, and no generator writes it"
+               for p in sorted(have) if p not in want]
+    return errors + [f".gitattributes reaches '{p}' through a pattern, not a '/{p} merge={kind}' line: "
+                     "mergegen regen reads only those lines and would not regenerate it"
+                     for p, kind in sorted(have.items()) if p in want and lines.get(p) != kind]
 
 
 def rendered(name: str, gap: str = "\n") -> str:
