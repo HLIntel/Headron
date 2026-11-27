@@ -42,6 +42,7 @@ DRIVERS = {
         "uv run --frozen python scripts/mergegen.py blocks %O %A %B %P",
     ),
 }
+USAGE = "usage: mergegen.py ours %A | blocks %O %A %B %P | install | regen [--stop]"
 BLOCK = re.compile(r"(<!-- BEGIN generated: (\S+)[^>]*-->)(.*?)(<!-- END generated: \2 -->)", re.S)
 
 
@@ -137,6 +138,9 @@ def regen(stop: bool = False) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
+    if args[:1] in (["-h"], ["--help"]):
+        print(USAGE)
+        return 0
     if args[:1] == ["ours"] and len(args) == 2:
         return 0  # %A already holds ours: the merge commit's regeneration writes the right text
     if args[:1] == ["blocks"] and len(args) == 5:
@@ -145,7 +149,7 @@ def main(argv: list[str] | None = None) -> int:
         return install()
     if args[:1] == ["regen"] and args[1:] in ([], ["--stop"]):
         return regen(stop=args[1:] == ["--stop"])
-    print("usage: mergegen.py ours %A | blocks %O %A %B %P | install | regen [--stop]", file=sys.stderr)
+    print(USAGE, file=sys.stderr)
     return 2
 
 
