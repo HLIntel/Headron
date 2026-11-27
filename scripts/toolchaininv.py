@@ -10,6 +10,7 @@ closed_by: atlas_test's invariant cases and `headron check`.
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from atlascore import ROOT, rel, text_of, toolchain
 
@@ -33,7 +34,7 @@ def _inv_toolchain_pins_agree() -> str | None:
         found = re.search(r'"(\d+(?:\.\d+)+)"', line)
         return found.group(1) if found else None
 
-    def typed_uv(where, n: int, line: str) -> str | None:
+    def typed_uv(where: Path, n: int, line: str) -> str | None:
         found = re.search(r"uv==([\d.]+)", line)
         if found and found.group(1) != uv_pin:
             return f"{rel(where)}:{n} pins uv {found.group(1)!r}, not the declared {uv_pin!r}"
