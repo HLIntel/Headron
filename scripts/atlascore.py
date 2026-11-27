@@ -234,7 +234,19 @@ def read(path: str) -> str:
 _TEXTS: dict[tuple[str, str], tuple[tuple[int, int, int, int], str]] = {}
 _TEXT_BYTES = [0]
 _TEXT_CAP_BYTES = 64 * 1024 * 1024
-_SETTLED_NS = 2_000_000_000
+_SETTLED_NS = 2_000_000_000  # a whole-second stamp: the filesystem's clock may be that coarse
+_SETTLED_FINE_NS = 50_000_000  # a sub-second stamp: 5x a 100 Hz kernel tick, the coarsest fine clock
+
+
+def settled_after(seen: os.stat_result) -> int:
+    """How long a file must sit unwritten before a stat stamp can stand for its bytes.
+
+    A stamp with sub-second digits came from a clock no coarser than a kernel tick (Linux stamps from
+    the jiffy clock, APFS in nanoseconds), so a later write lands on a later stamp once one tick has
+    passed. Only a whole-second stamp (FAT, HFS+, some network mounts) needs the full two seconds.
+    """
+    fine = seen.st_mtime_ns % 1_000_000_000 or seen.st_ctime_ns % 1_000_000_000
+    return _SETTLED_FINE_NS if fine else _SETTLED_NS
 
 
 def text_of(path: Path, errors: str = "strict") -> str:
@@ -243,9 +255,13 @@ def text_of(path: Path, errors: str = "strict") -> str:
     MEASURED: one contract run opened files 13,313 times to read 1,213 of them, each instrument reading
     the tree for itself. The answer is keyed on the stat rather than held by name, so a plant is a new key.
 
-    A FILE WRITTEN IN THE LAST TWO SECONDS IS NOT HELD. A coarse clock gives two same-size writes one
-    mtime, and a held answer would then outlive the second write: git calls this the racy index, and the
-    cure is the same. ctime counts too because `os.utime` can set an mtime back and cannot set a ctime.
+    A FILE WRITTEN TOO RECENTLY IS NOT HELD. A coarse clock gives two same-size writes one mtime, and a
+    held answer would then outlive the second write: git calls this the racy index, and the cure is the
+    same. ctime counts too because `os.utime` can set an mtime back and cannot set a ctime.
+
+    THE WINDOW FOLLOWS THE CLOCK (MEASURED, 3.65): a flat two seconds left every plant and restore of
+    atlas.yaml un-held for two seconds, and in that window every atlas() call re-read 300 KB and
+    re-hashed it as the parse key: 123,961 calls, 15.5 s of one core shard. See `settled_after`.
     """
     seen = path.stat()
     stamp = (seen.st_mtime_ns, seen.st_ctime_ns, seen.st_size, seen.st_ino)
@@ -254,7 +270,7 @@ def text_of(path: Path, errors: str = "strict") -> str:
     if hit and hit[0] == stamp:
         return hit[1]
     text = path.read_text(encoding="utf-8", errors=errors)
-    if time.time_ns() - max(seen.st_mtime_ns, seen.st_ctime_ns) > _SETTLED_NS:
+    if time.time_ns() - max(seen.st_mtime_ns, seen.st_ctime_ns) > settled_after(seen):
         if _TEXT_BYTES[0] + len(text) > _TEXT_CAP_BYTES:
             _TEXTS.clear()
             _TEXT_BYTES[0] = 0

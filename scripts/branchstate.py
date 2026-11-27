@@ -41,6 +41,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
+import cilocal
 import yaml
 from atlascore import ROOT, atlas, git_run, resolved_once, strict_yaml, text_of, worktree
 from cilocal import close_landing, merged_head, post_local_ci, record_landing, refuse, replay_local_ci, tag_rescue
@@ -627,7 +628,7 @@ def _land_once(branch: str) -> int:
         print(f"land: a CLEAN checkout of HEAD {'was NOT judged' if busy else 'fails'} — REFUSING to push. {refused}")
         return 75 if busy else refuse("gate", refused)  # it fails again on a retry: the commit
     is_atlas = _is_atlas()
-    if is_atlas and not replay_local_ci(_tree(), head):
+    if is_atlas and not cilocal.replay_once(_tree(), head, _git, (_pass_key, _passed, _record_pass), replay_local_ci):
         print(f"land: the full replay of {head[:12]} failed — REFUSING to push; nothing was published")
         return refuse("replay")
     gate = [str(_tree() / ".github" / "ci-local.sh"), "fast"]
@@ -642,7 +643,7 @@ def _land_once(branch: str) -> int:
     steps.append(
         ["gh", "pr", "merge", branch, "--auto", merge_method(f"origin/{base}", head), "--match-head-commit", head]
     )
-    landing_env = {**os.environ, "ATLAS_LANDING": "1"}  # the one caller .githooks/pre-push admits
+    landing_env = {**os.environ, "ATLAS_LANDING": "1", "ATLAS_REPLAYED": head if is_atlas else ""}  # pre-push
     for step in steps:
         if (step[:2] == ["git", "push"] or step[:3] == ["gh", "pr", "merge"]) and (
             _git("rev-parse", "HEAD") != head or _git("status", "--porcelain")

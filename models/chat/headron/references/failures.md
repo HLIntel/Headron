@@ -254,6 +254,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - tell: the plan lists a gate and `headron gate` prints no command for it
 - do instead: role_coverage_errors in atlasinv, which refuses any (pack, role) pair that is neither runnable nor declared `none` — 44 of 315 pairs at 2.26.0, every one closable by a command the same manifest already declared
 
+## a_lookup_that_reparses_per_call
+
+- shape: a new rule calls an uncached loader once per item it checks, so its cost is items times parse — correct output, and a regression nothing sees because nothing measures time or calls
+- looks like: a green check that got slower. At 2.26.0 one check() parsed about 37 YAML files 671 times (73% of its wall clock) and the suite took 137s; 315 of the parses came from a coverage rule written that session. Behind it, 11 reads bypassed the strict loader, so one defect was a speed regression AND a silent duplicate-key hole. At 3.64.0 the read layer did it — text_of held a file only 2s after its last write, so every plant and restore of atlas.yaml left it unheld and one core shard re-read 300 KB 123,961 times (15.5s under cProfile)
+- tell: a check got slower and a profile shows one loader or reader called once per item, even a cached one
+- do instead: strict_yaml cached by CONTENT, forbidden_calls/yaml_loader_bypass, and a parse budget derived from the tree — each tracked YAML file at most once per check — mutation-tested by planting the cache off, which reproduces the 671 and is refused; text_of's racy window follows the clock (atlascore.settled_after, 50ms on a sub-second stamp), held by a read budget of one disk read per 50 calls, mutation-tested by planting the coarse window back
+
 ## a_mutation_harness_scored_over_zero_runs
 
 - shape: a harness that reads an exit code as a verdict, so a run that never happened scores exactly like a run that failed — and a probe run in a different process vouches for it
@@ -337,6 +344,13 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a one-line ledger or config edit after which the whole file stops parsing, or parses short
 - tell: the value was typed between quotes rather than printed by the format's own emitter, and the breaking character sits inside prose
 - do instead: every value is generated: `safeedit.py quote` for one scalar, `safeedit.py entry` for a ledger entry, a quoted heredoc for a shell message
+
+## a_passed_verdict_recomputed_on_identical_content
+
+- shape: a gate verdict is recomputed for content it already judged — the same tree, the same gates — because the verdict was keyed to the attempt, not the content
+- looks like: a land that waits behind every other lane's suite again after a push or forge refusal
+- tell: the refused land's tree hash equals the tree whose suite passed minutes ago — check EVERY layer that judges it, not the first one cached
+- do instead: clean_checkout_errors remembers a PASS by sha256 of the tree and gate argv in the git common dir; a failure or NOT RUN is never remembered. At 3.64.0 the cache covered the gates but not the full local-ci replay, so a push refused after a green 574s replay re-ran the whole matrix on the same tree at the retry; cilocal.replay_once keys the replay the same way, and the pre-push hook admits a landing of the replayed commit without re-running fast
 
 ## a_shared_lock_retried_once_against_siblings
 
@@ -519,13 +533,6 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: the strongest possible result — equal accuracy at a third of the cost. At 2.26.0, over two question kinds, routed and whole_tree tied at 98.5%; a third kind at 2.27.0 separated them, 96.8% against 97.5%, and the honest claim became a trade rather than a free lunch
 - tell: two arms score identically over a question set of one or two kinds
 - do instead: abtest.py asking three question kinds over every pack and reporting the gap in both directions — an arm that wins on accuracy and loses on cost is the normal case
-
-## a_lookup_that_reparses_per_call
-
-- shape: a new rule calls an uncached loader once per item it checks, so its cost is items times parse — correct output, and a regression nothing sees because nothing measures time or calls
-- looks like: a green check that got slower. At 2.26.0 one check() parsed about 37 YAML files 671 times (73% of its wall clock) and the suite took 137s; 315 of the parses came from a coverage rule written that session. Behind it, 11 reads bypassed the strict loader, so one defect was a speed regression AND a silent duplicate-key hole
-- tell: a check got slower and a profile shows one loader called once per item
-- do instead: strict_yaml cached by CONTENT, forbidden_calls/yaml_loader_bypass, and a parse budget derived from the tree — each tracked YAML file at most once per check — mutation-tested by planting the cache off, which reproduces the 671 and is refused
 
 ## a_lookup_by_name_that_finds_the_dead_record
 
@@ -771,13 +778,6 @@ GENERATED from atlas.yaml/agent_failure_modes, most-sighted first.
 - looks like: a lockfile kept current by the generator
 - tell: grep finds the file in the generator and in no reader; it changes in every commit
 - do instead: the lock is one digest per parsed section and doctor and the land refresh diff the installed CLI against it
-
-## a_passed_verdict_recomputed_on_identical_content
-
-- shape: a gate verdict is recomputed for content it already judged — the same tree, the same gates — because the verdict was keyed to the attempt, not the content
-- looks like: a land that waits behind every other lane's suite again after a push or forge refusal
-- tell: the refused land's tree hash equals the tree whose suite passed minutes ago
-- do instead: clean_checkout_errors remembers a PASS by sha256 of the tree and gate argv in the git common dir; a failure or NOT RUN is never remembered
 
 ## a_negative_control_built_from_matchable_words
 

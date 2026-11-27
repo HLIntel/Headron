@@ -13,6 +13,8 @@ import re
 import subprocess
 import tempfile
 import time
+import types
+import typing
 from pathlib import Path
 from types import ModuleType
 from typing import Any, cast
@@ -435,7 +437,7 @@ def toolchain_pin_case() -> None:
             "not the declared",
             by="inv:toolchain_pins_agree",
         )
-    with mutated(".github/workflows/release.yml", lambda t: t.replace("uv==0.12.21", "uv==0.12.20", 1)):
+    with mutated(".github/workflows/release.yml", lambda t: t.replace("uv==0.13.9", "uv==0.13.8", 1)):
         case(
             "a workflow installing a uv the declaration does not name FAILS",
             "the lock installed by a different uv than every other gate checks",
@@ -451,7 +453,15 @@ def shared_read_cases() -> None:
     import resilience  # noqa: PLC0415
 
     moved_past = time.time_ns() + 50_000_000
-    settled = atlascore._SETTLED_NS
+    settled = atlascore._SETTLED_NS, atlascore._SETTLED_FINE_NS
+    whole = typing.cast(
+        "os.stat_result", types.SimpleNamespace(st_mtime_ns=5_000_000_000, st_ctime_ns=5_000_000_000)
+    )  # a coarse clock
+    fine = typing.cast("os.stat_result", types.SimpleNamespace(st_mtime_ns=5_000_000_001, st_ctime_ns=5_000_000_000))
+    assert atlascore.settled_after(whole) == atlascore._SETTLED_NS, "a whole-second stamp was trusted early"
+    assert atlascore.settled_after(fine) == atlascore._SETTLED_FINE_NS < atlascore._SETTLED_NS, (
+        "a nanosecond stamp waited as long as a coarse one"
+    )
     with tempfile.TemporaryDirectory() as scratch:
         target = Path(scratch) / "held.txt"
         target.write_text("first", encoding="utf-8")
@@ -460,7 +470,8 @@ def shared_read_cases() -> None:
         target.write_text("other", encoding="utf-8")
         assert atlascore.text_of(target) == "other", "a same-size rewrite answered from before it"
         try:
-            atlascore._SETTLED_NS = -(10**18)  # everything counts as settled, so the key alone must catch the write
+            # everything counts as settled, so the key alone must catch the write
+            atlascore._SETTLED_NS = atlascore._SETTLED_FINE_NS = -(10**18)
             held = target.stat()
             assert atlascore.text_of(target) == "other"
             assert (str(target), "strict") in atlascore._TEXTS, "a settled file was not held"
@@ -492,7 +503,31 @@ def shared_read_cases() -> None:
                 else:
                     raise AssertionError("atlas accepted a configuration that stopped being a mapping")
         finally:
-            atlascore._SETTLED_NS = settled
+            atlascore._SETTLED_NS, atlascore._SETTLED_FINE_NS = settled
+            atlascore.atlas.cache_clear()
+        # READ BUDGET (a_lookup_that_reparses_per_call, sighting 2): a file planted a moment ago is read
+        # from disk ONCE once its clock has moved on. A window sized for a whole-second clock re-read
+        # atlas.yaml on every atlas() call for two seconds after each plant: 123,961 calls in one shard.
+        config = Path(scratch) / "atlas.yaml"
+        config.write_text("value: planted\n", encoding="utf-8")
+        landed = config.stat().st_mtime_ns + 2 * atlascore._SETTLED_FINE_NS
+        resilience.wait_until(lambda: time.time_ns() > landed, timeout=2, interval=0.01)
+
+        def disk_reads() -> int:
+            atlascore._TEXTS.pop((str(config), "strict"), None)
+            atlascore.atlas.cache_clear()
+            with mock.patch.object(Path, "read_text", autospec=True, side_effect=Path.read_text) as reads:
+                with mock.patch.object(atlascore, "ROOT", Path(scratch)):
+                    for _ in range(50):
+                        atlascore.atlas()
+            return sum(1 for call in reads.call_args_list if call.args[0] == config)
+
+        assert disk_reads() == 1, "a settled plant was re-read from disk on every atlas() call"
+        try:  # MUTATION: the flat whole-second window this replaced must be refused
+            atlascore._SETTLED_FINE_NS = atlascore._SETTLED_NS
+            assert disk_reads() == 50, "the read budget cannot see a window that holds nothing"
+        finally:
+            atlascore._SETTLED_NS, atlascore._SETTLED_FINE_NS = settled
             atlascore.atlas.cache_clear()
     CASES.append(("text_of never answers from before a write", "a held answer outliving the write that replaced it"))
     print("  ok    text_of never answers from before a write")

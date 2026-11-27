@@ -75,6 +75,23 @@ Recurring mistakes become automated enforcement guards:
 3. **Capacity-Aware Execution**: The scheduler prioritizes landing operations over speculative background work, throttling concurrent processes by observed machine capacity and idle cycles rather than static thread counts.
 4. **Context Compaction**: Targeted repository routing delivers the obligations a file owes without whole-tree ingestion, reducing agent context requirements while preserving complete evidence.
 
+## Incremental computation: recompute only what moved
+
+Every derived answer in the engine is keyed on the identity of its inputs, never on a name, so an unchanged input costs a lookup and a changed one costs exactly one recompute. There are three layers, each keyed on what it reads:
+
+| Layer | Key | Where |
+|---|---|---|
+| file text | stat stamp (mtime, ctime, size, inode), held once the file's clock has moved on | `atlascore.text_of` |
+| parsed YAML | blake2b of the text | `atlascore.strict_yaml` |
+| gate verdicts | git tree id of a clean checkout + gate argv | `branchstate.clean_checkout_errors` |
+| full local-ci replay | git tree id + the replay entry point | `cilocal.replay_once` |
+
+**The racy window follows the clock.** A stamp only stands for a file's bytes once a later write would get a later stamp. A stamp with sub-second digits comes from a clock no coarser than a kernel tick, so it is held after 50 ms. A whole-second stamp waits the full two seconds (`atlascore.settled_after`). A flat two-second window sized for the coarsest clock made every plant and restore of `atlas.yaml` un-cacheable for two seconds, and one core shard paid 123,961 re-reads for it.
+
+**Every layer that judges a tree reads the same verdict store.** The gate cache once covered the clean-checkout gates but not the full replay behind them, so a push refused after a green 574 s replay re-ran the whole matrix on the identical tree at the retry, and the pre-push hook ran `fast` a third time in the landing worktree's own venv. The replay now keys on the tree, and the hook admits the exact commit the replay passed (`ATLAS_REPLAYED`) without re-gating it (`a_passed_verdict_recomputed_on_identical_content`).
+
+**The rule for a new instrument:** read through `text_of` / `read` and parse through `strict_yaml`. A loader that bypasses them pays items × parse, gives correct output, and stays invisible until a profile shows it (`a_lookup_that_reparses_per_call`). The parse budget (`atlas_guards_test.parse_budget_cases`) and the read budget (`edge_cases_test.shared_read_cases`) each fail with their cache planted off.
+
 ## Ordered work
 
 | Priority | Mechanism and next implementation | Evidence required to advance |

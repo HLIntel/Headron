@@ -355,6 +355,27 @@ def replay_local_ci(tree: Path, sha: str) -> bool:
             subprocess.run(["git", "worktree", "remove", "--force", str(clean)], cwd=tree, check=False, timeout=600)
 
 
+def replay_once(tree: Path, head: str, git: Callable[..., str], cache: tuple, replay: Callable) -> bool:
+    """The full replay of `head`, remembered by TREE like a clean-checkout pass (3.50.0 cached the gates,
+    not this): a push refused after a green 574s replay re-ran the whole matrix on the same tree at the
+    retry. The tree holds ci-local.sh and all it runs, so a changed contract is a changed key; only a PASS
+    is kept, and an unrecorded pass costs one re-run, never a verdict. `cache` is (key_of, passed, record)."""
+    key_of, passed, record = cache
+    tree_id = git("rev-parse", f"{head}^{{tree}}")
+    key = key_of(tree_id, [(["<full-replay>", ".github/ci-local.sh"], ".")], tree) if tree_id else ""
+    if key and passed(key):
+        print(f"  ok   full replay of tree {tree_id[:12]} already passed — not re-run")
+        return True
+    if not replay(tree, head):
+        return False
+    try:
+        if key:
+            record(key)
+    except OSError:
+        pass
+    return True
+
+
 def post_local_ci(branch: str, tree: Path, git: Callable[..., str], replayed: str = "") -> bool:
     """Post success only for a complete replay of the exact pushed atlas commit; `replayed` is one already run."""
     sha = git("rev-parse", "HEAD")
