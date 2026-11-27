@@ -71,8 +71,8 @@ PYTHON = Step(
     tools=("python",),
 )
 UV = Step(
-    "Check uv 0.12.21",
-    'for tool in uv uvx; do "$tool" --version | grep -q "^$tool 0\\.12\\.21\\b" || { "$tool" --version; echo "$tool is not the pinned 0.12.21" >&2; exit 1; }; done',
+    "Check uv 0.13.9",
+    'for tool in uv uvx; do "$tool" --version | grep -q "^$tool 0\\.13\\.9\\b" || { "$tool" --version; echo "$tool is not the pinned 0.13.9" >&2; exit 1; }; done',
     timeout_s=30,
     tools=("uv", "uvx"),
 )
